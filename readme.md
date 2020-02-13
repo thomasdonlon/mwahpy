@@ -1,11 +1,11 @@
  MILKYWAY@HOME PYTHON PACKAGE (MWAHPY)
 ========================================
 
-COPYRIGHT TOM DONLON, 2020 RPI
+Copyright Tom Donlon, 2020 RPI
 
 github user: thomasdonlon
 
-REQUIRES PYTHON >3.2.3
+Requires Python v.>3.2.3
 
 -----------------------------------------
 
