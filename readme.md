@@ -1,6 +1,6 @@
 ========================================
   
-  ILKYWAY@HOME PYTHON PACKAGE (MWAHPY)
+ MILKYWAY@HOME PYTHON PACKAGE (MWAHPY)
                  v1.0
 
      COPYRIGHT TOM DONLON, 2020 RPI
