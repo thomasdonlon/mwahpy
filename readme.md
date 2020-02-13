@@ -1,12 +1,13 @@
+ MILKYWAY@HOME PYTHON PACKAGE (MWAHPY)
 ========================================
-  MILKYWAY@HOME PYTHON PACKAGE (MWAHPY)
-                 v1.0
 
-     COPYRIGHT TOM DONLON, 2020 RPI
-        github user: thomasdonlon
+Copyright Tom Donlon, 2020 RPI
 
-          REQUIRES PYTHON >3.2.3
-========================================
+github user: thomasdonlon
+
+Requires Python v.>3.2.3
+
+-----------------------------------------
 
 MilkyWay@home is a computational astrophysics project located at RPI and
 run by Dr. Heidi Newberg. The project contains two main components,
@@ -30,9 +31,10 @@ Issues with the package can be directed to my github profile or on the
 MilkyWay@home forums at milkyway.cs.rpi.edu. Improvements or additions are
 welcome, just send a pull request to the mwahpy github repository.
 
-========================================
+
 INSTALLATION
 ========================================
+
 NOT TESTED AND NOT GUARANTEED TO WORK
 
 1. Download the mwahpy github repository
@@ -56,7 +58,6 @@ I plan on eventually figuring out how to make it installable with pip, but
 that's not a huge concern at the moment, as this is not meant to be a
 widely used package, and is oriented mainly at a specific group.
 
-========================================
 CONTENTS
 ========================================
 
@@ -68,3 +69,4 @@ date are listed below:
  - easy importing of data from N-body output
  - easy manipulation of data after reading in
  - easy visualization of the imported data through plotting functionality
+
