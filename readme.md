@@ -61,12 +61,17 @@ widely used package, and is oriented mainly at a specific group.
 CONTENTS
 ========================================
 
-A non-exhaustive list of contents of the package are listed below:
-
-A non-exhaustive list of contents to be added to the package at a later
-date are listed below:
+A non-exhaustive list of contents of the package is given below:
 
  - easy importing of data from N-body output
  - easy manipulation of data after reading in
+ - A variety of coordinate transformations for typical coordinate systems used in Galactic astronomy
  - easy visualization of the imported data through plotting functionality
+ 
+TODO
+========================================
 
+ - Finish refactoring coords.py
+ - Unit testing of coordinate transformations
+ - Refactor/combine orbit fitting scripts into this package as mwahpy.orbit_fitting subpackage
+ - Write API
