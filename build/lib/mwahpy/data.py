@@ -8,7 +8,7 @@ imported data from N-body output files.
 #===============================================================================
 
 import numpy as np
-import coords as co
+import coord_trans as ct
 import astropy
 from astropy.coordinates import SkyCoord
 import astropy.units as u

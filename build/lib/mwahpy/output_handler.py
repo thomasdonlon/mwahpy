@@ -9,7 +9,7 @@ as well as write data out in a variety of formats
 
 import numpy as np
 import random
-from data import Data
+from plotting import Data
 
 import flags
 import mwahpy_global as mg

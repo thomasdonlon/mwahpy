@@ -41,7 +41,7 @@ def rotAroundArbAxis(x, y, z, ux, uy, uz, theta):
 
     #make sure that u is normalized
     norm_u = (ux**2 + uy**2 + uz**2)**0.5
-    if round(norm_u, 8 != 1.):
+    if round(norm_u, 8 != 1.:
         ux /= norm_u
         uy /= norm_u
         uz /= norm_u
