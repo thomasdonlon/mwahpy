@@ -422,10 +422,10 @@ def getPlaneNormal(params):
 #NONSTANDARD/UNIQUE COORDINATE TRANFORMATIONS
 #===============================================================================
 
-#gal2plane: np.array(floats), np.array(floats), np.array(floats), float, (float, float, float), (float, float, float) --> np.array(floats), np.array(floats), np.array(floats)
+#gal2plane: np.array(floats), np.array(floats), np.array(floats), (float, float, float), (float, float, float) --> np.array(floats), np.array(floats), np.array(floats)
 #takes in galactic coordinates for a star(s) and returns their x,y,z coordinates with respect to a rotated plane with the normal vector provided
 #Newby 2013 et al, appendix
-def gal2plane(x,y,z, normal=(0,0,0), point=(1,0,0)):
+def cart_to_plane(x, y, z, normal, point):
 
     #ensure that normal and point are normalized
     len_normal = (normal[0]**2 + normal[1]**2 + normal[2]**2)**0.5
@@ -450,11 +450,21 @@ def gal2plane(x,y,z, normal=(0,0,0), point=(1,0,0)):
 
     return new_xyz[0], new_xyz[1], new_xyz[2]
 
+#gal2plane: np.array(floats), np.array(floats), np.array(floats), (float, float, float), (float, float, float) --> np.array(floats), np.array(floats), np.array(floats)
+#takes in galactic coordinates for a star(s) and returns their x,y,z coordinates with respect to a rotated plane with the normal vector provided
+#Newby 2013 et al, appendix
+def gal_to_plane(l, b, d, normal, point):
+
+    x, y, z = gal_to_cart(l, b, d)
+    x, y, z = cart_to_plane(x, y, z, normal, point)
+
+    return x, y, z
+
 #-------------------------------------------------------------------------------
 
-def gal2LamBet(x,y,z, normal=(0,0,0), point=(1,0,0)):
+def gal_to_LamBet(l, b, d, normal, point):
 
-    x_prime, y_prime, z_prime = gal2plane(x,y,z,h, normal=normal, point=point)
+    x_prime, y_prime, z_prime = gal_to_plane(l, b, d, normal, point)
     Lam = np.arctan2(y_prime, x_prime)*180/np.pi #convert to degrees
     #correct Lam to be between 0 and 360 instead of -180 to 180
     i = 0
@@ -464,6 +474,24 @@ def gal2LamBet(x,y,z, normal=(0,0,0), point=(1,0,0)):
         i += 1
 
     Bet = np.arcsin(z_prime/(x_prime**2 + y_prime**2 + z_prime**2)**0.5)*180/np.pi #convert to degrees
+
+    return Lam, Bet
+
+#-------------------------------------------------------------------------------
+
+def cart_to_LamBet(x,y,z, normal, point):
+
+    x_prime, y_prime, z_prime = cart_to_plane(x,y,z, normal=normal, point=point)
+    Lam = np.arctan2(y_prime, x_prime)*180/np.pi #convert to degrees
+    #correct Lam to be between 0 and 360 instead of -180 to 180
+    i = 0
+    while i < len(Lam):
+        if Lam[i] < 0:
+            Lam[i] += 360
+        i += 1
+
+    Bet = np.arcsin(z_prime/(x_prime**2 + y_prime**2 + z_prime**2)**0.5)*180/np.pi #convert to degrees
+    
     return Lam, Bet
 
 #-------------------------------------------------------------------------------

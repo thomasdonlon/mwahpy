@@ -15,7 +15,7 @@ import astropy.units as u
 import random
 import galpy
 
-import mwahpy_global
+from glob import struct_to_sol
 import flags
 
 #===============================================================================

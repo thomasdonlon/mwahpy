@@ -12,7 +12,7 @@ import random
 from data import Data
 
 import flags
-import mwahpy_global as mg
+import glob
 
 #===============================================================================
 # FUNCTIONS
@@ -51,7 +51,7 @@ def readOutput(f, subsample=1.0):
     #   push it to github
 
     if flags.progressBars:
-        flen = mg.fileLen(f)
+        flen = glob.fileLen(f)
 
     f = open(f, 'r')
 
@@ -77,7 +77,7 @@ def readOutput(f, subsample=1.0):
                 i += 1
             if flags.progressBars:
                 j += 1
-                mg.progressBar(j, flen)
+                glob.progressBar(j, flen)
 
     #return the data class using the array dictionary we built
     if flags.verbose:
