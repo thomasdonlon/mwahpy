@@ -9,6 +9,6 @@ progressBars=1 #Display progress bars
 #slows down a program, but is useful for making sure that
 #a long program is running, as well as for debugging
 
-calcEnergy=1 #calculate energies in a Data object
+calcEnergy=0 #calculate energies in a Data object
 #this has some decent overhead associated with it, so if speed is super
 #important to you, you can turn off this flag

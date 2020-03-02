@@ -1,6 +1,9 @@
-#============================
-#Tom Donlon, 2018
-#============================
+'''
+This is a self-contained orbit fitting program.
+
+This orbit fitter is unique compared to other common orbit fitters in that it
+uses a galactocentric generalized plane coordinate system when fitting data
+'''
 
 #TODO: Allow different coordinate systems input
 #TODO: Allow vlos/vgsr input for optimization
@@ -373,7 +376,7 @@ def test():
     d = np.array([20, 18, 15, 12, 10, 12, 15, 18, 20, 23])
     d_err = np.array([5, 5, 5, 5, 5, 5, 5, 5, 5, 5])
 
-    params, normal, point, x2 = fit_orbit(l, b, b_err, d, d_err, max_it=1, polish=False)
+    params, normal, point, x2 = fit_orbit(l, b, b_err, d, d_err)
     L, B = co.gal_to_LamBet(l, b, d, normal, point)
     plotOrbitLamBet(L, B, params, normal, point)
     plotOrbitgal(l, b, d, params)

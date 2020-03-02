@@ -15,12 +15,22 @@ import astropy.units as u
 import random
 import galpy
 
-from glob import struct_to_sol
+import mwahpy_glob
 import flags
 
 #===============================================================================
 # DATA CLASS
 #===============================================================================
+
+#AttrDict is used as a helper class in Data to allow referencing attributes
+#as dict keys and vice-versa.
+#this is probably a bad way to implement this but it works, and it's better than
+#making Data inherit from dict, which was the other solution I was able to
+#strum up
+class AttrDict(dict):
+    def __init__(self, *args, **kwargs):
+        super(AttrDict, self).__init__(*args, **kwargs)
+        self.__dict__ = self
 
 class Data():
 
@@ -35,8 +45,9 @@ class Data():
         #it seems like magic but it works by accessing the way python handles attributes
         #within each class. There are pros and cons, the most notable thing is
         #that it creates a memory leak in python <3.2.3
-        super(Data, self).__init__(*args, **kwargs)
-        self.__dict__ = self
+        ad = AttrDict() #this is a private helper class that allows for the
+                        #desired indexing behavior
+        self.__dict__ = ad.__dict__
 
         self.id = np.array(id_val)
         self.x = np.array(x)
@@ -56,23 +67,17 @@ class Data():
         self.centerOfMass = centerOfMass
         self.centerOfMomentum = centerOfMomentum
 
-        self.msol = self.mass * struct_to_sol
+        self.msol = self.mass * mwahpy_glob.struct_to_sol
 
         #ICRS information
         c = SkyCoord(l=self.l*u.degree, b=self.b*u.degree, frame='galactic')
         c_trans = c.transform_to('icrs')
         self.ra = c_trans.ra.degree
         self.dec = c_trans.dec.degree
-        self.rv, self.pmra, self.pmdec = ct.getrvpm(self.ra, self.dec, self.dist, self.vx, self.vy, self.vz)
+        self.rv, self.pmra, self.pmdec = co.getrvpm(self.ra, self.dec, self.dist, self.vx, self.vy, self.vz)
         self.pmtot = (self.pmra**2 + self.pmdec**2)**0.5
         #4.848e-6 is arcsec->rad, 3.086e16 is kpc->km, and 3.156e7 is sidereal yr -> seconds
         self.vtan = 4.74*self.dist*self.pmtot #eq. to self.r*np.tan(self.pmtot*4.848e-6) * 3.086e16 / 3.156e7
-
-        #galactocentric information
-        self.r = (self.x**2 + self.y**2 + self.z**2)**0.5
-        self.vgsr = self.vlos + 10.1*np.cos(self.b*np.pi/180)*np.cos(self.l*np.pi/180) + 224*np.cos(self.b*np.pi/180)*np.sin(self.l*np.pi/180) + 6.7*np.sin(self.b*np.pi/180)
-        self.rad = (self.x*self.vx + self.y*self.vy + self.z*self.vz)/self.r
-        self.rot = self.lz/(self.x**2 + self.y**2)**0.5
 
         #angular momentum information
         self.lx = self.y * self.vz - self.z * self.vy
@@ -80,6 +85,12 @@ class Data():
         self.lz = self.x * self.vy - self.y * self.vx
         self.lperp = (self.lx**2 + self.ly**2)**0.5
         self.ltot = (self.lx**2 + self.ly**2 + self.lz**2)**0.5
+
+        #galactocentric information
+        self.r = (self.x**2 + self.y**2 + self.z**2)**0.5
+        self.vgsr = self.vlos + 10.1*np.cos(self.b*np.pi/180)*np.cos(self.l*np.pi/180) + 224*np.cos(self.b*np.pi/180)*np.sin(self.l*np.pi/180) + 6.7*np.sin(self.b*np.pi/180)
+        self.rad = (self.x*self.vx + self.y*self.vy + self.z*self.vz)/self.r
+        self.rot = self.lz/(self.x**2 + self.y**2)**0.5
 
         #-----------------------------------------------------------------------
         if flags.calcEnergy:
@@ -97,22 +108,31 @@ class Data():
             self.PE = PE
             self.KE = KE
             self.energy = PE + KE
-
-            #update array_dict
-            self.array_dict['PE'] = self.PE
-            self.array_dict['KE'] = self.KE
-            self.array_dict['energy'] = self.energy
         #-----------------------------------------------------------------------
+
+    def __getitem__(self, i):
+        return self.__dict__[i]
+
+    def __setitem__(self, i, val):
+        self.__dict__[i] = val
+
+    #creates a deep copy of the Data object
+    def copy(self):
+        out = Data()
+        for key in self.__dict__.keys():
+            out[str(key)] = self[str(key)].copy()
+
+        return out
 
     #cuts the first n entries from every attribute in the data structure
     def cutFirstN(self, n):
-        for key in self.keys():
-            self.key = self.key[n:]
+        for key in self.__dict__.keys():
+            self[str(key)] = self[str(key)][n:]
 
     #cuts the last n entries from every attribute in the data structure
     def cutLastN(self, n):
-        for key in self.keys():
-            self.key = self.key[:len(self.key) - n]
+        for key in self.__dict__.keys():
+            self[str(key)] = self[str(key)][:len(self[str(key)]) - n]
 
     #splits the Data into two new Data structures,
     #the first has the data points up to entry n and
@@ -126,12 +146,29 @@ class Data():
 
         return Data1, Data2
 
+    #splits the Data into a list of new Data structures,
+    #where the Data is split every time ID wraps back to zero
+    def splitAtIdWrap(self):
+
+        outlist = []
+        indices = np.where(self.id==0)[0][1:] #1D list of arrays,
+                                              #remove first index because
+                                              #that SHOULD always be 0
+        Data1 = Data()
+        Data2 = self.copy()
+        for i in indices: #psuedo-recursive
+            Data1, Data2 = Data2.split(i)
+            outlist.append(Data1)
+        outlist.append(Data2)
+
+        return outlist
+
     #append a data object onto this one
     #TODO: fix breakage if this object has energy but the appended object doesn't
     def appendData(self, d):
         #d: the data to append to this object
         for key in self.keys():
-            self.key = np.append(self.key, d.key)
+            self[str(key)] = np.append(self[str(key)], d[str(key)])
 
     #append the nth item of another data object onto this one
     #TODO: fix breakage if this object has energy but the appended object doesn't
@@ -142,7 +179,7 @@ class Data():
         if id:
             n = np.where(d['id'] == id)[0]
         for key in self.keys():
-            self.key = np.append(self.key, d.key[n])
+            self[str(key)] = np.append(self[str(key)], d[str(key)][n])
 
     #---------------------------------------------------------------------------
     # OUTPUT

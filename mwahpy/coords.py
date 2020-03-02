@@ -448,7 +448,7 @@ def cart_to_plane(x, y, z, normal, point):
     COB = linalg.inv(np.array([x_plane, y_plane, z_plane]).T)
     new_xyz = np.matmul(COB, xyz)
 
-    return new_xyz[0], new_xyz[1], new_xyz[2]
+    return x, y, z
 
 #gal2plane: np.array(floats), np.array(floats), np.array(floats), (float, float, float), (float, float, float) --> np.array(floats), np.array(floats), np.array(floats)
 #takes in galactic coordinates for a star(s) and returns their x,y,z coordinates with respect to a rotated plane with the normal vector provided
@@ -491,7 +491,7 @@ def cart_to_LamBet(x,y,z, normal, point):
         i += 1
 
     Bet = np.arcsin(z_prime/(x_prime**2 + y_prime**2 + z_prime**2)**0.5)*180/np.pi #convert to degrees
-    
+
     return Lam, Bet
 
 #-------------------------------------------------------------------------------
@@ -607,7 +607,7 @@ def Sgr2gal(Lam, Bet):
 
 #-------------------------------------------------------------------------------
 
-#sky2pole: array(float), array(float), tuple(float, float), tuple(float, float) -> array(float), array(float)
+#sky_to_pole: array(float), array(float), tuple(float, float), tuple(float, float) -> array(float), array(float)
 #rotate the positions on the sky (sky1, sky2) into a new frame determined by
 #the pole of the new frame (pole1, pole2) and the origin of the new frame (origin1, origin2)
 #The output is the longitude and latitude in the new coordinate frame
@@ -616,7 +616,7 @@ def Sgr2gal(Lam, Bet):
 #are in the same coordinate system as the (sky1, sky2) coordinates.
 #e.g. if sky1 is a list of RAs and sky2 is a list of Decs, then
 #the pole and origin arguments must also be specified in RA Dec.
-def sky2pole(sky1, sky2, pole, origin, wrap=False, rad=False):
+def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
     #sky1, sky2: positions of the data on the sky (e.g. sky1 = array(RA), sky2 = array(Dec), etc.)
     #pole1, pole2: position of the pole of the new coordinate system
     #origin1, origin2: position of the origin of the new coordinate system
