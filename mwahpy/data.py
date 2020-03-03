@@ -3,6 +3,8 @@ The contents of this file are focused on the Data class, which is used for stora
 imported data from N-body output files.
 '''
 
+#TODO: split functions should fix id values? Maybe not, depends on what the behavior is supposed to do
+
 #===============================================================================
 # IMPORTS
 #===============================================================================
@@ -116,6 +118,9 @@ class Data():
     def __setitem__(self, i, val):
         self.__dict__[i] = val
 
+    def __len__(self):
+        return len(self.id)
+
     #creates a deep copy of the Data object
     def copy(self):
         out = Data()
@@ -141,7 +146,7 @@ class Data():
         Data1 = self.copy()
         Data2 = self.copy()
 
-        Data1.cutLastN(n)
+        Data1.cutLastN(len(Data1) - n)
         Data2.cutFirstN(n)
 
         return Data1, Data2
@@ -151,14 +156,15 @@ class Data():
     def splitAtIdWrap(self):
 
         outlist = []
-        indices = np.where(self.id==0)[0][1:] #1D list of arrays,
-                                              #remove first index because
-                                              #that SHOULD always be 0
-        Data1 = Data()
+        indices = np.where(self.id==0)[0] #1D list of arrays,
+
+        print(indices)
         Data2 = self.copy()
-        for i in indices: #psuedo-recursive
-            Data1, Data2 = Data2.split(i)
+        i = 1
+        while i < len(indices): #pseudo recursive
+            Data1, Data2 = Data2.split(indices[i] - indices[i-1])
             outlist.append(Data1)
+            i += 1
         outlist.append(Data2)
 
         return outlist
