@@ -158,7 +158,6 @@ class Data():
         outlist = []
         indices = np.where(self.id==0)[0] #1D list of arrays,
 
-        print(indices)
         Data2 = self.copy()
         i = 1
         while i < len(indices): #pseudo recursive

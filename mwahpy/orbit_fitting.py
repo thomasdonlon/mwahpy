@@ -21,7 +21,6 @@ from galpy.orbit import Orbit
 
 import coords as co
 import flags
-import glob
 from pot import pot
 
 '''
