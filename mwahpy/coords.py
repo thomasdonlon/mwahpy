@@ -35,6 +35,7 @@ def wrapLong(long):
 
 #rotate the given data around the provided axis
 def rotAroundArbAxis(x, y, z, ux, uy, uz, theta):
+    #TODO: Allow radians or degrees
     #x, y, z: 3D cartesian coordinates of the data
     #ux, uy, uz: 3d cartesian coordinates of the axis vector u = (ux, uy, uz)
     #theta: angle to rotate data counter-clockwise around axis (rad)
@@ -60,6 +61,56 @@ def rotAroundArbAxis(x, y, z, ux, uy, uz, theta):
     z = xyz[2]
 
     return x, y, z
+
+def long_lat_to_unit_vec(l, b, left_handed=False, rad=False):
+
+    use_array = True
+    if type(l) != type(np.array([])):
+        use_array = False
+        l = np.array([l])
+        b = np.array([b])
+
+    if not rad:
+        l = l*np.pi/180
+        b = b*np.pi/180
+
+    if left_handed:
+        #left-handed
+        x = -1 * np.cos(l)*np.cos(b)
+    else:
+        #right-handed
+        x = np.cos(l)*np.cos(b)
+
+    y = np.sin(l)*np.cos(b)
+    z = np.sin(b)
+
+    if not use_array:
+        x = x[0]
+        y = y[0]
+        z = z[0]
+
+    return x, y, z
+
+def comp_wise_dot(M, v, normalize=False):
+    #performs a component-wise dot product for matrix M of vectors, with vector v
+    #if normalize == True, normalize v and each component of M
+    tol = 1e-6
+
+    out = np.zeros(len(M))
+
+    if normalize:
+        v = v / linalg.norm(v)
+
+    for i in range(len(M)):
+        if normalize:
+            if linalg.norm(M[i]) < tol: #required to handle singularities
+                out[i] = 0
+            else:
+                out[i] = np.dot(M[i], v) / linalg.norm(M[i])
+        else:
+            out[i] = np.dot(M[i], v)
+
+    return out
 
 #===============================================================================
 #FIRST ORDER COORDINATE/POSITION TRANSFORMATIONS
@@ -91,7 +142,7 @@ def cart_to_gal(x, y, z, left_handed=False):
 
 #-------------------------------------------------------------------------------
 
-def gal_to_cart(l, b, r, left_handed=False):
+def gal_to_cart(l, b, r, left_handed=False, rad=False):
 
     use_array = True
     if type(l) != type(np.array([])):
@@ -100,18 +151,19 @@ def gal_to_cart(l, b, r, left_handed=False):
         b = np.array([b])
         r = np.array([r])
 
-    l_rad = l*np.pi/180
-    b_rad = b*np.pi/180
+    if not rad:
+        l = l*np.pi/180
+        b = b*np.pi/180
 
     if left_handed:
         #left-handed
-        x = 8 - r*np.cos(l_rad)*np.cos(b_rad)
+        x = 8 - r*np.cos(l)*np.cos(b)
     else:
         #right-handed
-        x = r*np.cos(l_rad)*np.cos(b_rad) - 8
+        x = r*np.cos(l)*np.cos(b) - 8
 
-    y = r*np.sin(l_rad)*np.cos(b_rad)
-    z = r*np.sin(b_rad)
+    y = r*np.sin(l)*np.cos(b)
+    z = r*np.sin(b)
 
     if not use_array:
         x = x[0]
@@ -618,11 +670,19 @@ def Sgr2gal(Lam, Bet):
 #the pole and origin arguments must also be specified in RA Dec.
 def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
     #sky1, sky2: positions of the data on the sky (e.g. sky1 = array(RA), sky2 = array(Dec), etc.)
-    #pole1, pole2: position of the pole of the new coordinate system
-    #origin1, origin2: position of the origin of the new coordinate system
-    #wrap: if True, Lam is constrained to only positive values. Otherwise, [-180,180] is the typical Lam output
-    #rad: is True, inputs are in radians. ALL inputs should be in degrees if rad=False
+    #pole: position of the pole of the new coordinate system, tuple
+    #origin: position of the origin of the new coordinate system, tuple
+    #wrap: if True, Lam is constrained to only positive values. Otherwise, Lam is in [-180,180]
+    #rad: is True, ALL inputs are in radians. ALL inputs should be in degrees if rad=False
 
+    use_array = True
+    if type(sky1) != type(np.array([])):
+        use_array = False
+        sky1 = np.array([sky1])
+        sky2 = np.array([sky2])
+
+    sky1 = sky1.copy() #fix aliasing
+    sky2 = sky2.copy()
     pole1 = pole[0]
     pole2 = pole[1]
     origin1 = origin[0]
@@ -636,6 +696,7 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
         origin1 *= np.pi/180
         origin2 *= np.pi/180
 
+    '''
     #construct a 3D frame in the current long/lat frame
     #all points have unit distance
     x = np.cos(sky1)*np.cos(sky2)
@@ -645,6 +706,7 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
 
     #rotate old pole into correct lat by rotating around y-axis
     theta = np.pi/2 - pole2 #angle to rotate
+    print('Theta:', theta)
     cos = np.cos(theta)
     sin = np.sin(theta)
     Ry = np.array([[cos,    0, sin],
@@ -684,6 +746,62 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
     #calculate Lam, Bet in new frame
     Lam = np.arctan2(y, x)
     Bet = np.arcsin(z/(x**2 + y**2 + z**2)**0.5)
+    '''
+
+    #--------------------
+    #calculate latitude
+    #--------------------
+    #simplified dot product using only the latitude and longitudes
+    udotv = np.cos(sky1 - pole1)*np.cos(sky2)*np.cos(pole2) + np.sin(sky2)*np.sin(pole2)
+    #^^^ can be simplified to run only 3 trig functions instead of 5
+    #using product-to-sum formulas
+
+    #regardless, the longitude half of this function is much longer than this half
+    #so optimize that first
+
+    Bet = np.pi/2 - np.arccos(udotv)
+
+    #--------------------
+    #calculate longitude
+    #--------------------
+    #this is the simplest way I could figure out how to do this without rotation matrices
+    #and Euler angles. Was having problems with those because all of the literature
+    #mixes notations and there are a lot of different conventions
+
+    #unit vectors from cartesian origin to pole and new polar origin
+    nx, ny, nz = long_lat_to_unit_vec(pole1, pole2, rad=True)
+    Ox, Oy, Oz = long_lat_to_unit_vec(origin1, origin2, rad=True)
+
+    n = np.array([nx, ny, nz]).T
+    O = np.array([Ox, Oy, Oz]).T
+
+    #Use this to determine hemisphere of point
+    Oprime = np.cross(n, O) #should be magnitude = 1, or close to it
+    #if a bad origin is defined (not on equator) this will not unit length
+
+    #unit vectors to the points:
+    px, py, pz = long_lat_to_unit_vec(sky1, sky2, rad=True)
+    p = np.array([px, py, pz]).T
+
+    #convert p into rejection on the pole vector (project into new equator plane)
+    pdotn = comp_wise_dot(p, n)
+    pdotnxn = p.copy()
+    for i in range(len(pdotn)):
+        pdotnxn[i] = pdotn[i]*n
+
+    rejnp = p - pdotnxn
+
+    #construct arrays for the angle between the new polar origin vector and the point
+    #and also the array to tell you which hemisphere the point is in
+    Lam = np.arccos(comp_wise_dot(rejnp, O, normalize=True))
+    hemi = comp_wise_dot(rejnp, Oprime)
+
+    #correct angles on the far hemisphere'
+    for i in range(len(Lam)):
+        if hemi[i] < 0:
+            Lam[i] = 2*np.pi - Lam[i]
+
+    #---------------------------
 
     if not rad:
         Lam *= 180/np.pi
@@ -691,6 +809,10 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
 
     if wrap:
         Lam = wrapLong(Lam) #TODO: wrapLong should allow for radians
+
+    if not use_array:
+        Lam = Lam[0]
+        Bet = Bet[0]
 
     return Lam, Bet
 
@@ -752,6 +874,20 @@ class TestInverses(unittest.TestCase):
         l, b, r = cyl_to_gal(R, z, phi)
         new_R, new_z, new_phi = gal_to_cyl(l, b, r)
         self.assertTrue((round(new_R, prec) == round(R, prec)) and (round(new_z, prec) == round(z, prec)) and (round(new_phi, prec) == round(phi, prec)))
+
+    def test_sky_to_pole(self):
+        tol = 0.001 #tolerance for this test
+        ra = np.linspace(10, 350, 10) #avoid poles, which do not test well but work
+        #the ra rotates strangely but the dec = +/-90 so it doesn't matter
+        dec = np.linspace(-80, 80, 10)
+        ra_new, dec_new = sky_to_pole(ra, dec, (0, 90), (0, 0)) #null transformation
+        self.assertTrue((np.sum(np.abs(ra_new - ra)) <= tol) and (np.sum(np.abs(dec_new - dec)) <= tol))
+
+        ra = np.linspace(10, 350, 10) #avoid poles, which do not test well but work
+        dec = np.linspace(-80, 80, 10)
+        L, B = sky_to_pole(ra, dec, (0, 0), (90, 0))
+        ra_new, dec_new = sky_to_pole(L, B, (90, 0), (0, 90)) #this *should* be the inverse transformation
+        self.assertTrue((np.sum(np.abs(ra_new - ra)) <= tol) and (np.sum(np.abs(dec_new - dec)) <= tol))
 
 #===============================================================================
 # RUNTIME
