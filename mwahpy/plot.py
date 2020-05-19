@@ -86,7 +86,7 @@ def hist(d, x, show=False, *args, **kwargs):
 
     return h
 
-def hist2d(d, x, y, show=false, *args, **kwargs):
+def hist2d(d, x, y, show=False, *args, **kwargs):
     #d (Data): the data object being plotted
     #x (str): the x-axis parameter
     #y (str): the y-axis parameter

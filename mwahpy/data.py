@@ -223,6 +223,45 @@ class Data():
 
         print('Data output to ' + f_name)
 
+    #---------------------------------------------------------------------------
+    # MISCELLANEOUS
+    #---------------------------------------------------------------------------
+
+    #NOTE: Does not correctly adjust all parameters
+    #might be better to rotate x, y, vx, vy and then re-initialize the data object
+    def rotateAroundZAxis(self, theta, rad=False): #rotates counter-clockwise
+        #rad: True if theta is in radians
+
+        if not rad:
+            theta *= np.pi/180
+
+        cos = np.cos(theta)
+        sin = np.sin(theta)
+
+        R = np.array([[cos, -1*sin],
+                      [sin, cos]])
+
+        #update position
+        xy = np.array([self.x, self.y])
+        new_xy = np.matmul(R, xy)
+
+        self.x = new_xy[0]
+        self.y = new_xy[1]
+
+        #update velocities
+        vxvy = np.array([self.vx, self.vy])
+        new_vxvy = np.matmul(R, vxvy)
+
+        self.vx = new_vxvy[0]
+        self.vy = new_vxvy[1]
+
+        #update angular momenta
+        self.lx = self.y * self.vz - self.z * self.vy
+        self.ly = self.x * self.vz - self.z * self.vx
+        self.lz = self.x * self.vy - self.y * self.vx
+
+        #TODO: update other parameters that will be impacted by this (vlos, pm's)
+
 #===============================================================================
 # FUNCTIONS INVOLVING DATA CLASSES
 #===============================================================================

@@ -14,6 +14,8 @@ import unittest
 #===============================================================================
 #HELPER FUNCTIONS
 #===============================================================================
+#These functions aren't meant to be accessed by outside files or by end users,
+#and as such they are not well documented, named, or tested
 
 def wrapLong(long):
 
@@ -697,6 +699,11 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
         origin2 *= np.pi/180
 
     '''
+    This was an attempt at a 3D euler angle method for sky_to_pole, but it's bugged.
+    I ended up moving to the simplified vector arithmetic version that is implemented below.
+    This method, if debugged, would probably avoid the singularities at the poles that
+    sky_to_pole runs into currently.
+
     #construct a 3D frame in the current long/lat frame
     #all points have unit distance
     x = np.cos(sky1)*np.cos(sky2)
@@ -875,8 +882,10 @@ class TestInverses(unittest.TestCase):
         new_R, new_z, new_phi = gal_to_cyl(l, b, r)
         self.assertTrue((round(new_R, prec) == round(R, prec)) and (round(new_z, prec) == round(z, prec)) and (round(new_phi, prec) == round(phi, prec)))
 
+    #higher order coordinate transformations
+
     def test_sky_to_pole(self):
-        tol = 0.001 #tolerance for this test
+        tol = 1e-6 #tolerance for this test
         ra = np.linspace(10, 350, 10) #avoid poles, which do not test well but work
         #the ra rotates strangely but the dec = +/-90 so it doesn't matter
         dec = np.linspace(-80, 80, 10)
