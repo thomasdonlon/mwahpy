@@ -17,7 +17,7 @@ import astropy.units as u
 import random
 import galpy
 
-import mwahpy_glob
+import mwahpyGlob
 import flags
 
 #===============================================================================
@@ -41,6 +41,10 @@ class Data():
         #readOutput is the preferred way to input data to this data structure
         #but if you're really feeling adventurous you can always do it yourself
 
+        #-----------------------------------------------------------------------
+        # HOUSEKEEPING
+        #-----------------------------------------------------------------------
+
         #this data structure allows access to a dictionary like an attribute, i.e.
         #   d = AttrDict({'a':1, 'b':2})
         #   d['a'] == d.a //returns True
@@ -50,6 +54,15 @@ class Data():
         ad = AttrDict() #this is a private helper class that allows for the
                         #desired indexing behavior
         self.__dict__ = ad.__dict__
+
+        #this has to be manually updated any time a new iterable quantity is added
+        #to the Data class. This allows us to control what values are iterated over.
+        self.indexList = [self.id, self.x, self.y, self.z, self.l, self.b, self.dist, self.vx, self.vy, self.vz, \
+                          self.mass, self.vlos, self.msol, self.ra, self.dec, self.rv, self.pmra, self.pmdec,  self.pmtot, self.vtan, \
+                          self.lx, self.ly, self.lz, self.lperp, self.ltot, self.r, self.vgsr, self.rad, self.rad]
+        self.index = 0
+
+        #-----------------------------------------------------------------------
 
         self.id = np.array(id_val)
         self.x = np.array(x)
@@ -69,7 +82,7 @@ class Data():
         self.centerOfMass = centerOfMass
         self.centerOfMomentum = centerOfMomentum
 
-        self.msol = self.mass * mwahpy_glob.struct_to_sol
+        self.msol = self.mass * mwahpyGlob.struct_to_sol
 
         #ICRS information
         c = SkyCoord(l=self.l*u.degree, b=self.b*u.degree, frame='galactic')
@@ -103,14 +116,37 @@ class Data():
             #in a logarithmic halo, the magnitude of the potential doesn;t impact the result,
             #just the difference in potentials. So, you can specify a potential offset
             #to keep bound objects' total energy negative.
-            PE = galpy.potential.evaluatePotentials(mg.pot, (self.x**2 + self.y**2)**0.5 * u.kpc, self.z*u.kpc, ro=8., vo=220.) - pot_offset
+            PE = galpy.potential.evaluatePotentials(mwahpyGlob.pot, (self.x**2 + self.y**2)**0.5 * u.kpc, self.z*u.kpc, ro=8., vo=220.) - pot_offset
             KE = 0.5*(self.vx**2 + self.vy**2 + self.vz**2)
 
             #set attributes
             self.PE = PE
             self.KE = KE
             self.energy = PE + KE
+
+            #allow iteration over these attributes
+            self.indexList = self.indexList + [self.PE, self.KE, self.energy]
+
         #-----------------------------------------------------------------------
+
+    #---------------------------------------------------------------------------
+    # ITERATOR CONTROL
+    #self.indexList allows us to ignore things that are not identically iterable in self.__dict__(),
+    #such as the centers of mass and momentum
+
+    def __iter__(self):
+        self.index = 0
+        return self
+
+    def __next__(self):
+        if self.index == len(self.indexList):
+            raise StopIteration
+        else:
+            self.index += 1
+            return self.indexList[self.index - 1]
+
+    #---------------------------------------------------------------------------
+    # These allow for the behavior we want from the class attributes, i.e. self.id == self['id']
 
     def __getitem__(self, i):
         return self.__dict__[i]
@@ -118,10 +154,17 @@ class Data():
     def __setitem__(self, i, val):
         self.__dict__[i] = val
 
+    #---------------------------------------------------------------------------
+
+    def update(self):
+        self.centerOfMass = [self.x*self.mass/(self.len() * sum(self.mass)), self.y*self.mass/(self.len() * sum(self.mass)), self.z*self.mass/(self.len() * sum(self.mass))]
+        self.centerOfMomentum = [self.vx*self.mass/(self.len() * sum(self.mass)), self.vy*self.mass/(self.len() * sum(self.mass)), self.vz*self.mass/(self.len() * sum(self.mass))]
+
     def __len__(self):
         return len(self.id)
 
     #creates a deep copy of the Data object
+    #this can't be done by iterating over the object, since comass etc. have to be copied as well
     def copy(self):
         out = Data()
         for key in self.__dict__.keys():
@@ -131,13 +174,17 @@ class Data():
 
     #cuts the first n entries from every attribute in the data structure
     def cutFirstN(self, n):
-        for key in self.__dict__.keys():
-            self[str(key)] = self[str(key)][n:]
+        for key in self:
+            key = key[n:]
+        if flags.updateData:
+            self.update()
 
     #cuts the last n entries from every attribute in the data structure
     def cutLastN(self, n):
-        for key in self.__dict__.keys():
-            self[str(key)] = self[str(key)][:len(self[str(key)]) - n]
+        for key in self:
+            key = key[:len(self) - n]
+        if flags.updateData:
+            self.update()
 
     #splits the Data into two new Data structures,
     #the first has the data points up to entry n and
@@ -148,6 +195,10 @@ class Data():
 
         Data1.cutLastN(len(Data1) - n)
         Data2.cutFirstN(n)
+
+        if flags.updateData:
+            Data1.update()
+            Data2.update()
 
         return Data1, Data2
 
@@ -166,25 +217,33 @@ class Data():
             i += 1
         outlist.append(Data2)
 
+        if flags.updateData:
+            for d in outlist:
+                d.update()
+
         return outlist
 
     #append a data object onto this one
-    #TODO: fix breakage if this object has energy but the appended object doesn't
     def appendData(self, d):
         #d: the data to append to this object
-        for key in self.keys():
+        for key in self.__dict__.keys():
             self[str(key)] = np.append(self[str(key)], d[str(key)])
 
+        if flags.updateData:
+            self.update()
+
     #append the nth item of another data object onto this one
-    #TODO: fix breakage if this object has energy but the appended object doesn't
     def appendPoint(self, d, n=0, id=None):
         #d: the data object with the item being appended
         #n: the index of the item in d to be appended
         #id: if not None, uses finds the first item with matching id and appends that
         if id:
             n = np.where(d['id'] == id)[0]
-        for key in self.keys():
+        for key in self.__dict__.keys():
             self[str(key)] = np.append(self[str(key)], d[str(key)][n])
+
+        if flags.updateData:
+            self.update()
 
     #---------------------------------------------------------------------------
     # OUTPUT
@@ -213,7 +272,7 @@ class Data():
         #                        like a billion different arrays, although zip()
         #                        is "better programming"
             if flags.progressBars:
-                mg.progressBar(i, len(self.id))
+                mwahpyGlob.progressBar(i, len(self.id))
             line = ''
             for key in array_dict:
                 line += (str(array_dict[key][i]) + ',')
@@ -262,6 +321,9 @@ class Data():
 
         #TODO: update other parameters that will be impacted by this (vlos, pm's)
 
+        if flags.updateData:
+            self.update()
+
 #===============================================================================
 # FUNCTIONS INVOLVING DATA CLASSES
 #===============================================================================
@@ -274,6 +336,9 @@ class Data():
 #   You MUST specify values for radius and center, or set rect=True
 #   if rect=True, y, xbounds, and ybounds must be specified
 #   if rect=False and y is given, then do 2D radial cut
+#TODO: Allow an arbitrary length array of axes and bounds, instead of this
+#   manually setting rectangular or not nonsense. Should make a range subset
+#   function as well as a rectangular one
 def subset(data, x, y=None, rect=False, center=None, radius=None, xbounds=None, ybounds=None):
     #data (Data): the data object being cut
     #x (str): the x-axis parameter
@@ -312,41 +377,47 @@ def subset(data, x, y=None, rect=False, center=None, radius=None, xbounds=None, 
             i = 0
             while i < len(data[x]):
                 if flags.progressBars:
-                    mg.progressBar(i, len(data[x]))
+                    mwahpyGlob.progressBar(i, len(data[x]))
                 #check if within bounds
                 if xbounds[0] < data[x][i] < xbounds[1] and ybounds[0] < data[y][i] < ybounds[1]:
-                    data_out.append_point(data, i)
+                    data_out.appendPoint(data, i)
                 i+=1
             if flags.verbose:
                 print(str(len(data_out[x])) + ' objects found in bounds')
+            if flags.updateData:
+                data_out.update()
             return data_out
 
     else: #Not rectangular cut
-        if not(radius) or not(center): #radius and/or center weren't provided
-            raise Exception('Must provide <center> and <radius> for a radial cut')
+        if radius==None or center==None: #radius and/or center weren't provided
+            raise Exception('Must provide <center> and <radius> for a non-rectangular cut')
         else:
-            if ax2: #do 2D cut
+            if y: #do 2D cut
                 if not(type(center) is tuple): #make sure center is a tuple
                     raise Exception('Must provide tuple for <center> if <y> is provided')
                 else:
                     i = 0
                     while i < len(data[x]):
                         if flags.progressBars:
-                            mg.progressBar(i, len(data[x]))
+                            mwahpyGlob.progressBar(i, len(data[x]))
                         if radius >= ((array_dict[x][i] - center[0])**2 + (array_dict[y][i] - center[1])**2)**0.5:
-                            data_out.append_point(data, i)
+                            data_out.appendPoint(data, i)
                         i+=1
                     if flags.verbose:
                         print(str(len(data_out[x])) + ' objects found in bounds')
+                    if flags.updateData:
+                        data_out.update()
                     return data_out
             else: #do 1D cut
                 i = 0
                 while i < len(data[x]):
                     if flags.progressBars:
-                        mg.progressBar(i, len(data[x]))
-                    if radius >= abs(array_dict[x][i] - center):
-                        data_out.append_point(data, i)
+                        mwahpyGlob.progressBar(i, len(data[x]))
+                    if radius >= abs(data[x][i] - center):
+                        data_out.appendPoint(data, i)
                     i+=1
                 if flags.verbose:
-                    print(str(len(data_out[x])) + ' objects found in bounds')
+                    print('\n'+str(len(data_out[x])) + ' objects found in bounds')
+                if flags.updateData:
+                    data_out.update()
                 return data_out

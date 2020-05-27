@@ -12,3 +12,11 @@ progressBars=1 #Display progress bars
 calcEnergy=0 #calculate energies in a Data object
 #this has some decent overhead associated with it, so if speed is super
 #important to you, you can turn off this flag
+
+updateData=1 #update all data objects immediately when necessary
+#this will keep things like center of mass, center of momentum, etc.
+#accurate for the Data class, but will reduce performance somewhat. Should only be
+#turned off if you REALLY know what you're doing, and you're sure that not updating
+#Data objects won't impact what you're doing.
+
+#Data classes can still be updated manually when necessary with Data.update()

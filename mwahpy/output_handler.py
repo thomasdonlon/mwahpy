@@ -54,7 +54,7 @@ def readOutput(f, subsample=1.0):
     if flags.progressBars:
         flen = mwahpy_glob.fileLen(f)
     if flags.verbose:
-        print('Reading in data from ' + str(f) + '...')
+        print('\nReading in data from ' + str(f) + '...')
 
     f = open(f, 'r')
 
