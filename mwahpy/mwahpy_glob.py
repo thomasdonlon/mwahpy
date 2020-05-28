@@ -16,7 +16,7 @@ import astropy.units as u
 
 G = 6.67e-11*u.m**3/(u.kg*u.s**2)
 
-struct_to_sol = 222288.47 #this many solar masses make up one structural nass unit (the output of mwah)
+structToSol = 222288.47 #this many solar masses make up one structural nass unit (the output of mwah)
 
 #===============================================================================
 # FUNCTIONS

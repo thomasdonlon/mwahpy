@@ -16,7 +16,7 @@ from galpy.potential import HernquistPotential
 from galpy.potential import LogarithmicHaloPotential
 from galpy.potential import MiyamotoNagaiPotential
 
-from mwahpy_glob import G
+from mwahpyGlob import G
 
 #===============================================================================
 # CONSTANTS

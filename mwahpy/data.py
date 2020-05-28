@@ -4,6 +4,8 @@ imported data from N-body output files.
 '''
 
 #TODO: split functions should fix id values? Maybe not, depends on what the behavior is supposed to do
+#   this could probably be added into update
+#TODO: UNIT TESTS
 
 #===============================================================================
 # IMPORTS
@@ -84,7 +86,7 @@ class Data():
         self.centerOfMass = centerOfMass
         self.centerOfMomentum = centerOfMomentum
 
-        self.msol = self.mass * mwahpyGlob.struct_to_sol
+        self.msol = self.mass * mwahpyGlob.structToSol
 
         #ICRS information
         c = SkyCoord(l=self.l*u.degree, b=self.b*u.degree, frame='galactic')
