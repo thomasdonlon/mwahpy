@@ -13,7 +13,7 @@ from data import Data
 import sys
 
 import flags
-import mwahpyGlob
+import mwahpy_glob
 
 #===============================================================================
 # FUNCTIONS
@@ -52,7 +52,7 @@ def readOutput(f, subsample=1.0):
     #   push it to github
 
     if flags.progressBars:
-        flen = mwahpyGlob.fileLen(f)
+        flen = mwahpy_glob.fileLen(f)
     if flags.verbose:
         print('\nReading in data from ' + str(f) + '...')
 
@@ -78,7 +78,7 @@ def readOutput(f, subsample=1.0):
                 i += 1
             if flags.progressBars:
                 j += 1
-                mwahpyGlob.progressBar(j, flen)
+                mwahpy_glob.progressBar(j, flen)
 
     #return the data class using the array dictionary we built
     if flags.verbose:
@@ -87,4 +87,7 @@ def readOutput(f, subsample=1.0):
     d = Data(id_val=array_dict[1], x=array_dict[2], y=array_dict[3], z=array_dict[4], l=array_dict[5], b=array_dict[6], r=array_dict[7], vx=array_dict[8], vy=array_dict[9], vz=array_dict[10], mass=array_dict[11], vlos=array_dict[12], centerOfMass=comass, centerOfMomentum=comom)
     if flags.verbose:
         sys.stdout.write('done\n')
+
+    f.close()
+
     return d

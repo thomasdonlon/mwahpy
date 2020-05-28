@@ -18,9 +18,12 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 import random
 import galpy
+import unittest
+import os
 
-import mwahpyGlob
+import mwahpy_glob
 import flags
+import output_handler
 
 #===============================================================================
 # DATA CLASS
@@ -38,7 +41,7 @@ class AttrDict(dict):
 
 class Data():
 
-    def __init__(self, id_val=[], x=[], y=[], z=[], l=[], b=[], r=[], vx=[], vy=[], vz=[], mass=[], vlos=[], centerOfMass=[], centerOfMomentum=[], pot_offset=0, *args, **kwargs):
+    def __init__(self, id_val=[], x=[], y=[], z=[], l=[], b=[], r=[], vx=[], vy=[], vz=[], mass=[], vlos=[], centerOfMass=[0, 0, 0], centerOfMomentum=[0, 0, 0], pot_offset=0, *args, **kwargs):
         #all this is typically specified by the readOutput function in output_handler
         #readOutput is the preferred way to input data to this data structure
         #but if you're really feeling adventurous you can always do it yourself
@@ -56,14 +59,6 @@ class Data():
         ad = AttrDict() #this is a private helper class that allows for the
                         #desired indexing behavior
         self.__dict__ = ad.__dict__
-
-        #this has to be manually updated any time a new iterable quantity is added
-        #to the Data class. This allows us to control what values are iterated over.
-        self.indexList = [self.id, self.x, self.y, self.z, self.l, self.b, self.dist, self.vx, self.vy, self.vz, \
-                          self.mass, self.vlos, self.msol, self.ra, self.dec, self.rv, self.pmra, self.pmdec,  self.pmtot, self.vtan, \
-                          self.lx, self.ly, self.lz, self.lperp, self.ltot, self.r, self.vgsr, self.rad, self.rad, \
-                          self.dFromCOM]
-        self.index = 0
 
         #-----------------------------------------------------------------------
 
@@ -86,7 +81,7 @@ class Data():
         self.centerOfMass = centerOfMass
         self.centerOfMomentum = centerOfMomentum
 
-        self.msol = self.mass * mwahpyGlob.structToSol
+        self.msol = self.mass * mwahpy_glob.structToSol
 
         #ICRS information
         c = SkyCoord(l=self.l*u.degree, b=self.b*u.degree, frame='galactic')
@@ -112,7 +107,7 @@ class Data():
         self.rot = self.lz/(self.x**2 + self.y**2)**0.5
 
         #relative information
-        self.dFromCOM = ((self.x - self.centerOfMass[0])**2 + (self.y - self.centerOfMass[1])**2 + (self.z - self.centerOfMass[2])**2)**0.5
+        self.distFromCOM = ((self.x - self.centerOfMass[0])**2 + (self.y - self.centerOfMass[1])**2 + (self.z - self.centerOfMass[2])**2)**0.5
 
         #-----------------------------------------------------------------------
         if flags.calcEnergy:
@@ -123,7 +118,7 @@ class Data():
             #in a logarithmic halo, the magnitude of the potential doesn;t impact the result,
             #just the difference in potentials. So, you can specify a potential offset
             #to keep bound objects' total energy negative.
-            PE = galpy.potential.evaluatePotentials(mwahpyGlob.pot, (self.x**2 + self.y**2)**0.5 * u.kpc, self.z*u.kpc, ro=8., vo=220.) - pot_offset
+            PE = galpy.potential.evaluatePotentials(mwahpy_glob.pot, (self.x**2 + self.y**2)**0.5 * u.kpc, self.z*u.kpc, ro=8., vo=220.) - pot_offset
             KE = 0.5*(self.vx**2 + self.vy**2 + self.vz**2)
 
             #set attributes
@@ -135,6 +130,16 @@ class Data():
             self.indexList = self.indexList + [self.PE, self.KE, self.energy]
 
         #-----------------------------------------------------------------------
+        # HOUSEKEEPING
+        #-----------------------------------------------------------------------
+
+        #this has to be manually updated any time a new iterable quantity is added
+        #to the Data class. This allows us to control what values are iterated over.
+        self.indexList = [self.id, self.x, self.y, self.z, self.l, self.b, self.dist, self.vx, self.vy, self.vz, \
+                          self.mass, self.vlos, self.msol, self.ra, self.dec, self.rv, self.pmra, self.pmdec,  self.pmtot, self.vtan, \
+                          self.lx, self.ly, self.lz, self.lperp, self.ltot, self.r, self.vgsr, self.rad, self.rad, \
+                          self.distFromCOM]
+        self.index = 0
 
     #---------------------------------------------------------------------------
     # ITERATOR CONTROL
@@ -163,13 +168,13 @@ class Data():
 
     #---------------------------------------------------------------------------
 
-    def update(self):
-        self.centerOfMass = [self.x*self.mass/(self.len() * sum(self.mass)), self.y*self.mass/(self.len() * sum(self.mass)), self.z*self.mass/(self.len() * sum(self.mass))]
-        self.centerOfMomentum = [self.vx*self.mass/(self.len() * sum(self.mass)), self.vy*self.mass/(self.len() * sum(self.mass)), self.vz*self.mass/(self.len() * sum(self.mass))]
-        self.dFromCOM = ((self.x - self.centerOfMass[0])**2 + (self.y - self.centerOfMass[1])**2 + (self.z - self.centerOfMass[2])**2)**0.5
-
     def __len__(self):
         return len(self.id)
+
+    def update(self):
+        self.centerOfMass = [np.sum(self.x*self.mass/sum(self.mass)), np.sum(self.y*self.mass/sum(self.mass)), np.sum(self.z*self.mass/sum(self.mass))]
+        self.centerOfMomentum = [np.sum(self.vx*self.mass/sum(self.mass)), np.sum(self.vy*self.mass/sum(self.mass)), np.sum(self.vz*self.mass/sum(self.mass))]
+        self.distFromCOM = ((self.x - self.centerOfMass[0])**2 + (self.y - self.centerOfMass[1])**2 + (self.z - self.centerOfMass[2])**2)**0.5
 
     #creates a deep copy of the Data object
     #this can't be done by iterating over the object, since comass etc. have to be copied as well
@@ -280,7 +285,7 @@ class Data():
         #                        like a billion different arrays, although zip()
         #                        is "better programming"
             if flags.progressBars:
-                mwahpyGlob.progressBar(i, len(self.id))
+                mwahpy_glob.progressBar(i, len(self.id))
             line = ''
             for key in array_dict:
                 line += (str(array_dict[key][i]) + ',')
@@ -385,7 +390,7 @@ def subset(data, x, y=None, rect=False, center=None, radius=None, xbounds=None, 
             i = 0
             while i < len(data[x]):
                 if flags.progressBars:
-                    mwahpyGlob.progressBar(i, len(data[x]))
+                    mwahpy_glob.progressBar(i, len(data[x]))
                 #check if within bounds
                 if xbounds[0] < data[x][i] < xbounds[1] and ybounds[0] < data[y][i] < ybounds[1]:
                     data_out.appendPoint(data, i)
@@ -407,7 +412,7 @@ def subset(data, x, y=None, rect=False, center=None, radius=None, xbounds=None, 
                     i = 0
                     while i < len(data[x]):
                         if flags.progressBars:
-                            mwahpyGlob.progressBar(i, len(data[x]))
+                            mwahpy_glob.progressBar(i, len(data[x]))
                         if radius >= ((array_dict[x][i] - center[0])**2 + (array_dict[y][i] - center[1])**2)**0.5:
                             data_out.appendPoint(data, i)
                         i+=1
@@ -420,7 +425,7 @@ def subset(data, x, y=None, rect=False, center=None, radius=None, xbounds=None, 
                 i = 0
                 while i < len(data[x]):
                     if flags.progressBars:
-                        mwahpyGlob.progressBar(i, len(data[x]))
+                        mwahpy_glob.progressBar(i, len(data[x]))
                     if radius >= abs(data[x][i] - center):
                         data_out.appendPoint(data, i)
                     i+=1
@@ -429,3 +434,74 @@ def subset(data, x, y=None, rect=False, center=None, radius=None, xbounds=None, 
                 if flags.updateData:
                     data_out.update()
                 return data_out
+
+#===============================================================================
+# UNIT TESTING
+#===============================================================================
+#Most of the tests in this file read in the test.out MW@h output file that is
+#packaged along with the developer version of mwahpy. Without this file, these
+#tests will fail. If a different file is used, these tests will also fail.
+
+#NOTE: test.out does not have correct COM information, since it is a
+#truncated version of a much larger MW@h output file. 
+
+#to run tests, run this file like you would run a regular python script
+
+#to add more tests,
+# 1) Find a test class that fits the description of the test you want to add,
+#    then add that test to the class as a function beginning with "test", OR
+# 2) Create a new class beginning with "test" and composed of just (unittest.TestCase)
+#    and then add new functions that begin with "test_" to that class.
+#    This should be used if new tests do not fit the descriptions of other
+#    test classes
+
+#after changing this file, it should be run in order to make sure all tests pass
+#if tests don't pass, congratulations you broke something
+#please fix it
+
+prec = 8 #number of digits to round to when comparing values
+#WARNING: Tests may (but are not expected to) fail at high levels of prec
+
+class TestDataClass(unittest.TestCase):
+
+    def testDataInitialize(self):
+        d = Data() #check default initialization
+        d = output_handler.readOutput('../test/test.out') #check loading from a file
+
+    def testDataDict(self):
+        d = output_handler.readOutput('../test/test.out')
+        self.assertTrue(d.x[0] == d['x'][0])
+
+        d.x[0] = 1
+        self.assertTrue(d['x'][0] == 1)
+
+    def testDataIter(self):
+        d = output_handler.readOutput('../test/test.out')
+
+        for key, k in zip(d, d.indexList):
+            self.assertTrue(key[0] == k[0])
+            key[0] = 1
+
+        self.assertTrue(d.x[0] == d['x'][0] == 1)
+
+class TestDataMethods(unittest.TestCase):
+
+    def testUpdate(self):
+        d = output_handler.readOutput('../test/test.out')
+        d.update()
+
+        self.assertTrue(len(d.centerOfMass) == 3)
+        self.assertTrue(round(abs(d.centerOfMass[0] - 0.7835947518080879) + abs(d.centerOfMass[1] - 0.2947546230649471) + abs(d.centerOfMass[2] + 0.1318053758650839), prec) == 0)
+
+        self.assertTrue(len(d.centerOfMomentum) == 3)
+        self.assertTrue(round(abs(d.centerOfMomentum[0] - 6.001115213580641) + abs(d.centerOfMomentum[1] + 65.29652414026405) + abs(d.centerOfMomentum[2] + 26.462554427407223), prec) == 0)
+
+        self.assertTrue(len(d.distFromCOM) == len(d))
+        self.assertTrue(round(abs(d.distFromCOM[0] - ((d.centerOfMass[0] - d.x[0])**2 + (d.centerOfMass[1] - d.y[0])**2 + (d.centerOfMass[2] - d.z[0])**2)**0.5), prec) == 0)
+
+#===============================================================================
+# RUNTIME
+#===============================================================================
+
+if __name__ == '__main__':
+    unittest.main()
