@@ -59,7 +59,8 @@ class Data():
         #to the Data class. This allows us to control what values are iterated over.
         self.indexList = [self.id, self.x, self.y, self.z, self.l, self.b, self.dist, self.vx, self.vy, self.vz, \
                           self.mass, self.vlos, self.msol, self.ra, self.dec, self.rv, self.pmra, self.pmdec,  self.pmtot, self.vtan, \
-                          self.lx, self.ly, self.lz, self.lperp, self.ltot, self.r, self.vgsr, self.rad, self.rad]
+                          self.lx, self.ly, self.lz, self.lperp, self.ltot, self.r, self.vgsr, self.rad, self.rad, \
+                          self.dFromCOM]
         self.index = 0
 
         #-----------------------------------------------------------------------
@@ -79,6 +80,7 @@ class Data():
 
         #NOTE: Any time you update the position data, you have to update
         #   the center of mass (and same for velocity and COMomentum)
+        #   This is done automatically if flags.updateData is on
         self.centerOfMass = centerOfMass
         self.centerOfMomentum = centerOfMomentum
 
@@ -106,6 +108,9 @@ class Data():
         self.vgsr = self.vlos + 10.1*np.cos(self.b*np.pi/180)*np.cos(self.l*np.pi/180) + 224*np.cos(self.b*np.pi/180)*np.sin(self.l*np.pi/180) + 6.7*np.sin(self.b*np.pi/180)
         self.rad = (self.x*self.vx + self.y*self.vy + self.z*self.vz)/self.r
         self.rot = self.lz/(self.x**2 + self.y**2)**0.5
+
+        #relative information
+        self.dFromCOM = ((self.x - self.centerOfMass[0])**2 + (self.y - self.centerOfMass[1])**2 + (self.z - self.centerOfMass[2])**2)**0.5
 
         #-----------------------------------------------------------------------
         if flags.calcEnergy:
@@ -159,6 +164,7 @@ class Data():
     def update(self):
         self.centerOfMass = [self.x*self.mass/(self.len() * sum(self.mass)), self.y*self.mass/(self.len() * sum(self.mass)), self.z*self.mass/(self.len() * sum(self.mass))]
         self.centerOfMomentum = [self.vx*self.mass/(self.len() * sum(self.mass)), self.vy*self.mass/(self.len() * sum(self.mass)), self.vz*self.mass/(self.len() * sum(self.mass))]
+        self.dFromCOM = ((self.x - self.centerOfMass[0])**2 + (self.y - self.centerOfMass[1])**2 + (self.z - self.centerOfMass[2])**2)**0.5
 
     def __len__(self):
         return len(self.id)
