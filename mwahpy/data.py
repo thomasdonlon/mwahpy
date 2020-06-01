@@ -127,7 +127,7 @@ class Data():
             self.energy = PE + KE
 
             #allow iteration over these attributes
-            self.indexList = self.indexList + [self.PE, self.KE, self.energy]
+            self.indexList = self.indexList + ['PE', 'KE', 'energy']
 
         #-----------------------------------------------------------------------
         # HOUSEKEEPING
@@ -135,10 +135,10 @@ class Data():
 
         #this has to be manually updated any time a new iterable quantity is added
         #to the Data class. This allows us to control what values are iterated over.
-        self.indexList = [self.id, self.x, self.y, self.z, self.l, self.b, self.dist, self.vx, self.vy, self.vz, \
-                          self.mass, self.vlos, self.msol, self.ra, self.dec, self.rv, self.pmra, self.pmdec,  self.pmtot, self.vtan, \
-                          self.lx, self.ly, self.lz, self.lperp, self.ltot, self.r, self.vgsr, self.rad, self.rad, \
-                          self.distFromCOM]
+        self.indexList = ['id', 'x', 'y', 'z', 'l', 'b', 'dist', 'vx', 'vy', 'vz', \
+                          'mass', 'vlos', 'msol', 'ra', 'dec', 'rv', 'pmra', 'pmdec',  'pmtot', 'vtan', \
+                          'lx', 'ly', 'lz', 'lperp', 'ltot', 'r', 'vgsr', 'rad', 'rad', \
+                          'distFromCOM']
         self.index = 0
 
     #---------------------------------------------------------------------------
@@ -188,14 +188,14 @@ class Data():
     #cuts the first n entries from every attribute in the data structure
     def cutFirstN(self, n):
         for key in self:
-            key = key[n:]
+            self[key] = self[key][n:]
         if flags.updateData:
             self.update()
 
     #cuts the last n entries from every attribute in the data structure
     def cutLastN(self, n):
         for key in self:
-            key = key[:len(self) - n]
+            self[key] = self[key][:len(self) - n]
         if flags.updateData:
             self.update()
 
@@ -239,8 +239,8 @@ class Data():
     #append a data object onto this one
     def appendData(self, d):
         #d: the data to append to this object
-        for key in self.__dict__.keys():
-            self[str(key)] = np.append(self[str(key)], d[str(key)])
+        for key, dkey in zip(self, d):
+            self[key] = np.append(self[key], d[dkey])
 
         if flags.updateData:
             self.update()
@@ -252,8 +252,8 @@ class Data():
         #id: if not None, uses finds the first item with matching id and appends that
         if id:
             n = np.where(d['id'] == id)[0]
-        for key in self.__dict__.keys():
-            self[str(key)] = np.append(self[str(key)], d[str(key)][n])
+        for key, dkey in zip(self, d):
+            self[key] = np.append(self[key], d[dkey][n])
 
         if flags.updateData:
             self.update()
@@ -269,10 +269,11 @@ class Data():
         f = open(f_name, 'w')
 
         #make the header
+        #TODO: Print out COM's
         if flags.verbose:
             print('Writing header...')
         header = ''
-        for key in self.array_dict:
+        for key in self:
             header += (key + ',')
         header += '\n'
         f.write(header)
@@ -281,14 +282,14 @@ class Data():
         i = 0
         if flags.verbose:
             print('Printing data...')
-        while i < len(self.id): #i avoided zip() here because it's messy to zip
+        while i < len(self): #i avoided zip() here because it's messy to zip
         #                        like a billion different arrays, although zip()
         #                        is "better programming"
             if flags.progressBars:
-                mwahpy_glob.progressBar(i, len(self.id))
+                mwahpy_glob.progressBar(i, len(self))
             line = ''
-            for key in array_dict:
-                line += (str(array_dict[key][i]) + ',')
+            for key in self:
+                line += (str(self[key][i]) + ',')
             line += '\n'
             f.write(line)
             i += 1
@@ -388,7 +389,7 @@ def subset(data, x, y=None, rect=False, center=None, radius=None, xbounds=None, 
             raise Exception('First value in <ybounds> was greater than the second value')
         else: #do rectangular cut
             i = 0
-            while i < len(data[x]):
+            while i < len(data):
                 if flags.progressBars:
                     mwahpy_glob.progressBar(i, len(data[x]))
                 #check if within bounds
@@ -443,7 +444,7 @@ def subset(data, x, y=None, rect=False, center=None, radius=None, xbounds=None, 
 #tests will fail. If a different file is used, these tests will also fail.
 
 #NOTE: test.out does not have correct COM information, since it is a
-#truncated version of a much larger MW@h output file. 
+#truncated version of a much larger MW@h output file.
 
 #to run tests, run this file like you would run a regular python script
 
@@ -479,10 +480,15 @@ class TestDataClass(unittest.TestCase):
         d = output_handler.readOutput('../test/test.out')
 
         for key, k in zip(d, d.indexList):
-            self.assertTrue(key[0] == k[0])
-            key[0] = 1
+            self.assertTrue(d[key][0] == d[k][0])
+            d[key][0] = 1
 
         self.assertTrue(d.x[0] == d['x'][0] == 1)
+
+        for key in d:
+            d[key] = np.append(d[key], 0)
+
+        self.assertTrue(d.x[-1] == d['x'][-1] == 0)
 
 class TestDataMethods(unittest.TestCase):
 
@@ -490,6 +496,7 @@ class TestDataMethods(unittest.TestCase):
         d = output_handler.readOutput('../test/test.out')
         d.update()
 
+        #these values for the COM's are hard coded, unfortunately. But they are correct.
         self.assertTrue(len(d.centerOfMass) == 3)
         self.assertTrue(round(abs(d.centerOfMass[0] - 0.7835947518080879) + abs(d.centerOfMass[1] - 0.2947546230649471) + abs(d.centerOfMass[2] + 0.1318053758650839), prec) == 0)
 
