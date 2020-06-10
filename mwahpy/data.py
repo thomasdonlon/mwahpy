@@ -181,7 +181,10 @@ class Data():
     def copy(self):
         out = Data()
         for key in self.__dict__.keys():
-            out[str(key)] = self[str(key)].copy()
+            if type(out[str(key)]) == type(np.array([])) or type(out[str(key)]) == type([]):
+                out[str(key)] = self[str(key)].copy()
+            else:
+                out[str(key)] = self[str(key)]
 
         return out
 
@@ -353,6 +356,9 @@ class Data():
 #TODO: Allow an arbitrary length array of axes and bounds, instead of this
 #   manually setting rectangular or not nonsense. Should make a range subset
 #   function as well as a rectangular one
+#TODO: Calculate the indices that are correct, then append all the points with
+#   those indices to each attribute. This appendPoint stuff takes way too long
+#   because numpy.append sucks 
 def subset(data, x, y=None, rect=False, center=None, radius=None, xbounds=None, ybounds=None):
     #data (Data): the data object being cut
     #x (str): the x-axis parameter
@@ -397,7 +403,7 @@ def subset(data, x, y=None, rect=False, center=None, radius=None, xbounds=None, 
                     data_out.appendPoint(data, i)
                 i+=1
             if flags.verbose:
-                print(str(len(data_out[x])) + ' objects found in bounds')
+                print('\n' + str(len(data_out)) + ' objects found in bounds')
             if flags.updateData:
                 data_out.update()
             return data_out
@@ -418,7 +424,7 @@ def subset(data, x, y=None, rect=False, center=None, radius=None, xbounds=None, 
                             data_out.appendPoint(data, i)
                         i+=1
                     if flags.verbose:
-                        print(str(len(data_out[x])) + ' objects found in bounds')
+                        print('\n' + str(len(data_out)) + ' objects found in bounds')
                     if flags.updateData:
                         data_out.update()
                     return data_out
@@ -431,7 +437,7 @@ def subset(data, x, y=None, rect=False, center=None, radius=None, xbounds=None, 
                         data_out.appendPoint(data, i)
                     i+=1
                 if flags.verbose:
-                    print('\n'+str(len(data_out[x])) + ' objects found in bounds')
+                    print('\n' + str(len(data_out)) + ' objects found in bounds')
                 if flags.updateData:
                     data_out.update()
                 return data_out
@@ -489,6 +495,24 @@ class TestDataClass(unittest.TestCase):
             d[key] = np.append(d[key], 0)
 
         self.assertTrue(d.x[-1] == d['x'][-1] == 0)
+
+    def testCopy(self):
+        d = output_handler.readOutput('../test/test.out')
+
+        d2 = d.copy()
+        d.x[0] = 0
+
+        self.assertTrue(d.x[0] != d2.x[0])
+
+    def testAppendPoint(self):
+        d = output_handler.readOutput('../test/test.out')
+
+        d2 = d.copy()
+
+        d2.appendPoint(d, 5)
+
+        self.assertTrue(d.x[5] == d2.x[-1])
+        self.assertTrue(len(d2) == len(d)+1)
 
 class TestDataMethods(unittest.TestCase):
 

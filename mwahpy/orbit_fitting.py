@@ -1,5 +1,5 @@
 '''
-This is a self-contained orbit fitting program.
+This is a self-contained orbit fitting routine.
 
 This orbit fitter is unique compared to other common orbit fitters in that it
 uses a galactocentric generalized plane coordinate system when fitting data
@@ -58,13 +58,14 @@ punishment = 1000 #multiplier for every degree that the lambda fitting function 
 
 class OrbitData():
     #all of these parameters can be np.arrays of floats
-    def __init__(self, l, b, d, vx, vy, vz, b_err, d_err, vx_err, vy_err, vz_err):
+    def __init__(self, l, b, d, vx, vy, vz, vgsr, b_err, d_err, vx_err, vy_err, vz_err, vgsr_err):
         self.l = l
         self.b = b
         self.d = d #heliocentric distance
         self.vx = vx
         self.vy = vy
         self.vz = vz
+        self.vgsr = vgsr
 
         self.b_err = b_err
         self.d_err = d_err
@@ -129,9 +130,9 @@ def getModelFromOrbit(data, o, normal, point):
     o_rev.integrate(ts, pot)
 
     #sign swap on vx because galpy is left-handed, and we are inputting data in a right-handed coordinate system
-    data_orbit = OrbitData(np.array(o.ll(ts)), np.array(o.bb(ts)), np.array(o.dist(ts)), np.array(o.vx(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o.vy(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o.vz(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]))
+    data_orbit = OrbitData(np.array(o.ll(ts)), np.array(o.bb(ts)), np.array(o.dist(ts)), np.array(o.vx(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o.vy(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o.vz(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o.vlos(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]))
     data_orbit = data_orbit.LamBet(normal, point)
-    data_orbit_rev = OrbitData(np.array(o_rev.ll(ts)), np.array(o_rev.bb(ts)), np.array(o_rev.dist(ts)), np.array(o_rev.vx(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o_rev.vy(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o_rev.vz(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array([]), np.array([]), np.array([]), np.array([]), np.array([]))
+    data_orbit_rev = OrbitData(np.array(o_rev.ll(ts)), np.array(o_rev.bb(ts)), np.array(o_rev.dist(ts)), np.array(o_rev.vx(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o_rev.vy(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o_rev.vz(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o.vlos(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]))
     data_orbit_rev = data_orbit_rev.LamBet(normal, point)
 
     #grab full lists so that we can select the closest points once we get a list
@@ -165,7 +166,13 @@ def getModelFromOrbit(data, o, normal, point):
     else:
         vz_model = np.zeros(len(B_model))
 
-    return B_model, D_model, vx_model, vy_model, vz_model, costs
+    if vgsr_flag:
+        vgsr = np.append(np.flip(data_orbit_rev.vlos), data_orbit.vlos)
+        vgsr_model = np.array([vgsr[p] for p in point_list]).flatten()
+    else:
+        vgsr_model = np.zeros(len(B_model))
+
+    return B_model, D_model, vx_model, vy_model, vz_model, vgsr_model, costs
 
 #chi_squared: data, galpy.Orbit() --> float
 #takes in the observed data and a test orbit and calculates the goodness-of-fit using a chi-squared method
@@ -178,7 +185,7 @@ def chiSquared(params, data=[], normal=(0, 0, 0), point=(1, 0, 0)):
     o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4] - 220, params[5]], uvw=True, lb=True, ro=8., vo=220.) #generate the orbit
     o.integrate(ts, pot) #integrate the orbit
 
-    B_model, d_model, vx_model, vy_model, vz_model, costs = getModelFromOrbit(data, o, normal, point) #get model data from orbit
+    B_model, d_model, vx_model, vy_model, vz_model, vgsr_model, costs = getModelFromOrbit(data, o, normal, point) #get model data from orbit
 
     x2_B = sum(((B_model - data.B)/data.B_err)**2)
     x2_d = sum(((d_model - data.d)/data.d_err)**2)
@@ -198,6 +205,11 @@ def chiSquared(params, data=[], normal=(0, 0, 0), point=(1, 0, 0)):
     else:
         x2_vz = 0
 
+    if vgsr_flag:
+        x2_vgsr = sum(((vgsr_model - data.vgsr)/data.vgsr_err)**2)
+    else:
+        x2_vgsr = 0
+
     #get normalization factor
     N = len(data.L) #number of data points
     n = 5 #number of parameters
@@ -205,10 +217,11 @@ def chiSquared(params, data=[], normal=(0, 0, 0), point=(1, 0, 0)):
     if eta <= 0:
         eta = 1 #if you use fewer data points than needed to constrain the problem, then this will still work but it won't be normalized correctly
 
-    x2 = (1/eta) * (x2_B + x2_d + x2_vx + x2_vy + x2_vz) + costs #Willett et al. 2009
+    x2 = (1/eta) * (x2_B + x2_d + x2_vx + x2_vy + x2_vz + x2_vgsr) + costs #Willett et al. 2009, give or take
 
     #there's a weird edge case where occasionally x2 is a short array of floats
     #this bit prevents scipy from throwing an error
+    #no idea what causes that
     if type(x2) == type(np.array([])):
         x2 = x2[0]
 
@@ -252,8 +265,8 @@ def optimize(data_opt, max_it, bounds, **kwargs):
 ================================================================================
 '''
 
-def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, \
-              vx_err=None, vy_err=None, vz_err=None, max_it=20, \
+def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
+              vx_err=None, vy_err=None, vz_err=None, vgsr_err=None, max_it=20, \
               bounds=[(0, 360), (-90, 90), (0, 100), (-1000, 1000), (-1000, 1000), (-1000, 1000)], \
               t_len=None, **kwargs):
 
@@ -268,6 +281,9 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, \
     if vz:
         global vz_flag
         vz_flag = 1
+    if vgsr:
+        global vgsr_flag
+        vgsr_flag = 1
 
     #update t_length if necessary
     if t_len:
@@ -281,7 +297,7 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, \
         print('Optimizing:')
         print('===================================')
 
-    data_opt = OrbitData(l, b, d, vx, vy, vz, b_err, d_err, vx_err, vy_err, vz_err)
+    data_opt = OrbitData(l, b, d, vx, vy, vz, vgsr, b_err, d_err, vx_err, vy_err, vz_err, vgsr_err)
 
     #optimization
     params, normal, point, x2 = optimize(data_opt, max_it, bounds, **kwargs)
