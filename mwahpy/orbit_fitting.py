@@ -5,8 +5,7 @@ This orbit fitter is unique compared to other common orbit fitters in that it
 uses a galactocentric generalized plane coordinate system when fitting data
 '''
 
-#TODO: Allow different coordinate systems input
-#TODO: Allow vlos/vgsr input for optimization
+#TODO: Allow fitting on b, ra, or dec instead of l
 
 import numpy as np
 import scipy as sc
@@ -73,6 +72,7 @@ class OrbitData():
         self.vx_err = vx_err
         self.vy_err = vy_err
         self.vz_err = vz_err
+        self.vgsr_err = vgsr_err
 
         self.x = self.d*np.cos(np.pi/180*self.l)*np.cos(np.pi/180*self.b) - 8
         self.y = self.d*np.sin(np.pi/180*self.l)*np.cos(np.pi/180*self.b)
@@ -182,7 +182,7 @@ def getModelFromOrbit(data, o):
         vz_model = np.zeros(len(B_model))
 
     if vgsr_flag:
-        vgsr = np.append(np.flip(data_orbit_rev.vlos), data_orbit.vlos)
+        vgsr = np.append(np.flip(data_orbit_rev.vgsr), data_orbit.vgsr)
         vgsr_model = np.array([vgsr[p] for p in point_list]).flatten()
     else:
         vgsr_model = np.zeros(len(B_model))
@@ -288,21 +288,21 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
 
     #construct data
     #set proper flags based on input data
-    if vx:
+    if type(vx) == type(np.array([])):
         global vx_flag
         vx_flag = 1
-    if vy:
+    if type(vy) == type(np.array([])):
         global vy_flag
         vy_flag = 1
-    if vz:
+    if type(vz) == type(np.array([])):
         global vz_flag
         vz_flag = 1
-    if vgsr:
+    if type(vgsr) == type(np.array([])):
         global vgsr_flag
         vgsr_flag = 1
 
     #update t_length if necessary
-    if t_len:
+    if t_len != None:
         global t_length
         t_length = t_len
         global ts
@@ -318,18 +318,20 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
     #optimization
     params, x2 = optimize(data_opt, max_it, bounds, **kwargs)
 
-    if flags.verbose:
-        print('===================================')
-        print('Params: l, b, d, vx, vy, vz')
-        print(params)
-        print()
-        print('Chi Squared:')
-        print(x2)
-        print('===================================')
+    print('===================================')
+    print('Params: l, b, d, vx, vy, vz')
+    print(params)
+    print()
+    print('Chi Squared:')
+    print(x2)
+    print('===================================')
 
     return params, x2
 
-def plotOrbitgal(l, b, d, params):
+#TODO: Expand this and plotOrbiticrs to allow other velocities
+#possibly make them the same function with a switch
+
+def plotOrbitgal(l, b, d, params, vgsr=None):
     o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4] - 220, params[5]], uvw=True, lb=True, ro=8., vo=220.) #generate the orbit
     o.integrate(ts, pot) #integrate the orbit
 
@@ -340,9 +342,13 @@ def plotOrbitgal(l, b, d, params):
     data_orbit, data_orbit_rev = getOrbitDataFromOrbit(o, o_rev)
 
     fig = plt.figure(figsize=(24, 6))
-    ax1 = fig.add_subplot(131)
-    ax2 = fig.add_subplot(132)
-    ax3 = fig.add_subplot(133)
+    nplots = 2
+    if vgsr != None:
+        nplots += 1
+    ax1 = fig.add_subplot(1, nplots, 1)
+    ax2 = fig.add_subplot(1, nplots, 2)
+    if vgsr != None:
+        ax3 = fig.add_subplot(1, nplots, 3)
 
     ax1.plot(data_orbit.l, data_orbit.b, c='b')
     ax1.plot(data_orbit_rev.l, data_orbit_rev.b, c='r')
@@ -361,17 +367,18 @@ def plotOrbitgal(l, b, d, params):
     ax2.set_xlabel('l')
     ax2.set_ylabel('d (helio)')
 
-    ax3.plot(data_orbit.l, data_orbit.vgsr, c='b')
-    ax3.plot(data_orbit_rev.l, data_orbit_rev.vgsr, c='r')
-    ax3.scatter(l, d, c='k')
+    if vgsr != None:
+        ax3.plot(data_orbit.l, data_orbit.vgsr, c='b')
+        ax3.plot(data_orbit_rev.l, data_orbit_rev.vgsr, c='r')
+        ax3.scatter(l, vgsr, c='k')
 
-    ax3.set_xlim(0, 360)
-    ax3.set_xlabel('l')
-    ax3.set_ylabel('vgsr (km/s)')
+        ax3.set_xlim(0, 360)
+        ax3.set_xlabel('l')
+        ax3.set_ylabel('vgsr (km/s)')
 
     plt.show()
 
-def plotOrbiticrs(l, b, d, params):
+def plotOrbiticrs(l, b, d, params, vgsr=None):
 
     s = SkyCoord(l, b, frame='galactic', unit=(u.deg, u.deg))
     s = s.transform_to('icrs')
@@ -388,9 +395,13 @@ def plotOrbiticrs(l, b, d, params):
     data_orbit, data_orbit_rev = getOrbitDataFromOrbit(o, o_rev)
 
     fig = plt.figure(figsize=(24, 6))
-    ax1 = fig.add_subplot(131)
-    ax2 = fig.add_subplot(132)
-    ax3 = fig.add_subplot(133)
+    nplots=2
+    if vgsr != None:
+        nplots += 1
+    ax1 = fig.add_subplot(1,nplots,1)
+    ax2 = fig.add_subplot(1,nplots,2)
+    if vgsr != None:
+        ax3 = fig.add_subplot(1,nplots,3)
 
     data_orbit.icrs()
     data_orbit_rev.icrs()
@@ -412,13 +423,14 @@ def plotOrbiticrs(l, b, d, params):
     ax2.set_xlabel('ra')
     ax2.set_ylabel('d (helio)')
 
-    ax3.plot(data_orbit.ra, data_orbit.vgsr, c='b')
-    ax3.plot(data_orbit_rev.ra, data_orbit_rev.vgsr, c='r')
-    ax3.scatter(ra, d, c='k')
+    if vgsr != None:
+        ax3.plot(data_orbit.ra, data_orbit.vgsr, c='b')
+        ax3.plot(data_orbit_rev.ra, data_orbit_rev.vgsr, c='r')
+        ax3.scatter(ra, d, c='k')
 
-    ax3.set_xlim(360, 0)
-    ax3.set_xlabel('ra')
-    ax3.set_ylabel('vgsr (km/s)')
+        ax3.set_xlim(360, 0)
+        ax3.set_xlabel('ra')
+        ax3.set_ylabel('vgsr (km/s)')
 
     plt.show()
 
