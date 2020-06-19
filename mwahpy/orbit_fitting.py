@@ -328,8 +328,33 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
 
     return params, x2
 
+'''
+================================================================================
+ PLOTTING
+================================================================================
+'''
+
+#TODO: Implement unwrap in a way that actually makes sense
+#splits every array in the list of arrays, a, every time that the position wraps
+#from 0 to 360 or vice versa in a[0]
+#therefore, a[0] should be the parameter you are trying to unwrap (longitude)
+#returns a list of lists of the unwrapped arrays
+def unwrap(a, threshold=10):
+    #t: difference in position needed to trigger a split
+    split = np.nonzero(np.abs(a[0][:-1] - a[0][1:]) > threshold)[0] + 1
+
+    out = []
+    for arr in a:
+        if len(split) > 0:
+            out.append(np.split(arr, split))
+        else:
+            out.append(np.array([arr])) #didn't find a place to split on
+
+    return out
+
 #TODO: Expand this and plotOrbiticrs to allow other velocities
 #possibly make them the same function with a switch
+#TODO: Split values so wrapping lines don't happen
 
 def plotOrbitgal(l, b, d, params, vgsr=None):
     o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4] - 220, params[5]], uvw=True, lb=True, ro=8., vo=220.) #generate the orbit
@@ -343,11 +368,11 @@ def plotOrbitgal(l, b, d, params, vgsr=None):
 
     fig = plt.figure(figsize=(24, 6))
     nplots = 2
-    if vgsr != None:
+    if type(vgsr) == type(np.array([])):
         nplots += 1
     ax1 = fig.add_subplot(1, nplots, 1)
     ax2 = fig.add_subplot(1, nplots, 2)
-    if vgsr != None:
+    if type(vgsr) == type(np.array([])):
         ax3 = fig.add_subplot(1, nplots, 3)
 
     ax1.plot(data_orbit.l, data_orbit.b, c='b')
@@ -367,7 +392,7 @@ def plotOrbitgal(l, b, d, params, vgsr=None):
     ax2.set_xlabel('l')
     ax2.set_ylabel('d (helio)')
 
-    if vgsr != None:
+    if type(vgsr) == type(np.array([])):
         ax3.plot(data_orbit.l, data_orbit.vgsr, c='b')
         ax3.plot(data_orbit_rev.l, data_orbit_rev.vgsr, c='r')
         ax3.scatter(l, vgsr, c='k')
@@ -396,18 +421,24 @@ def plotOrbiticrs(l, b, d, params, vgsr=None):
 
     fig = plt.figure(figsize=(24, 6))
     nplots=2
-    if vgsr != None:
+    if type(vgsr) == type(np.array([])):
         nplots += 1
     ax1 = fig.add_subplot(1,nplots,1)
     ax2 = fig.add_subplot(1,nplots,2)
-    if vgsr != None:
+    if type(vgsr) == type(np.array([])):
         ax3 = fig.add_subplot(1,nplots,3)
 
     data_orbit.icrs()
     data_orbit_rev.icrs()
+    #TODO: This will break if vgsr isn't used
+    #TODO: Unwrap should really be a orbit data method
+    o_unwrapped = unwrap([data_orbit.ra, data_orbit.dec, data_orbit.d, data_orbit.vgsr])
+    o_rev_unwrapped = unwrap([data_orbit_rev.ra, data_orbit_rev.dec, data_orbit_rev.d, data_orbit_rev.vgsr])
 
-    ax1.plot(data_orbit.ra, data_orbit.dec, c='b')
-    ax1.plot(data_orbit_rev.ra, data_orbit_rev.dec, c='r')
+    for o_ra, o_dec in zip(o_unwrapped[0], o_unwrapped[1]):
+        ax1.plot(o_ra, o_dec, c='b')
+    for o_ra, o_dec in zip(o_rev_unwrapped[0], o_rev_unwrapped[1]):
+        ax1.plot(o_ra, o_dec, c='r')
     ax1.scatter(ra, dec, c='k')
 
     ax1.set_xlim(360, 0)
@@ -415,17 +446,21 @@ def plotOrbiticrs(l, b, d, params, vgsr=None):
     ax1.set_xlabel('ra')
     ax1.set_ylabel('dec')
 
-    ax2.plot(data_orbit.ra, data_orbit.d, c='b')
-    ax2.plot(data_orbit_rev.ra, data_orbit_rev.d, c='r')
+    for o_ra, o_d in zip(o_unwrapped[0], o_unwrapped[2]):
+        ax2.plot(o_ra, o_d, c='b')
+    for o_ra, o_d in zip(o_rev_unwrapped[0], o_rev_unwrapped[2]):
+        ax2.plot(o_ra, o_d, c='r')
     ax2.scatter(ra, d, c='k')
 
     ax2.set_xlim(360, 0)
     ax2.set_xlabel('ra')
     ax2.set_ylabel('d (helio)')
 
-    if vgsr != None:
-        ax3.plot(data_orbit.ra, data_orbit.vgsr, c='b')
-        ax3.plot(data_orbit_rev.ra, data_orbit_rev.vgsr, c='r')
+    if type(vgsr) == type(np.array([])):
+        for o_ra, o_vgsr in zip(o_unwrapped[0], o_unwrapped[-1]):
+            ax1.plot(o_ra, o_vgsr, c='b')
+        for o_ra, o_vgsr in zip(o_rev_unwrapped[0], o_rev_unwrapped[-1]):
+            ax1.plot(o_ra, o_vgsr, c='r')
         ax3.scatter(ra, d, c='k')
 
         ax3.set_xlim(360, 0)

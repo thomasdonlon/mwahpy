@@ -198,7 +198,7 @@ class Data():
     #cuts the last n entries from every attribute in the data structure
     def cutLastN(self, n):
         for key in self:
-            self[key] = self[key][:len(self) - n]
+            self[key] = self[key][:n]
         if flags.updateData:
             self.update()
 
@@ -209,7 +209,7 @@ class Data():
         Data1 = self.copy()
         Data2 = self.copy()
 
-        Data1.cutLastN(len(Data1) - n)
+        Data1.cutLastN(len(self) - n)
         Data2.cutFirstN(n)
 
         if flags.updateData:
@@ -358,7 +358,7 @@ class Data():
 #   function as well as a rectangular one
 #TODO: Calculate the indices that are correct, then append all the points with
 #   those indices to each attribute. This appendPoint stuff takes way too long
-#   because numpy.append sucks 
+#   because numpy.append sucks
 def subset(data, x, y=None, rect=False, center=None, radius=None, xbounds=None, ybounds=None):
     #data (Data): the data object being cut
     #x (str): the x-axis parameter
@@ -513,6 +513,13 @@ class TestDataClass(unittest.TestCase):
 
         self.assertTrue(d.x[5] == d2.x[-1])
         self.assertTrue(len(d2) == len(d)+1)
+
+    def testSplit(self):
+        d = output_handler.readOutput('../test/test.out')
+
+        d1, d2 = d.split(5)
+        self.assertTrue(d1.x[0] == d.x[0])
+        self.assertTrue(d2.x[0] == d.x[5])
 
 class TestDataMethods(unittest.TestCase):
 
