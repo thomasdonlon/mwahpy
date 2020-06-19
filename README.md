@@ -43,9 +43,9 @@ FOR USERS:
 
 2. Insert import statements for the subpackages that you want to use in your .py files:
 
-> import mwahpy.{subpackage that you want to access}
+> import mwahpy.{mwahpy subpackage}
  
-> import mwahpy.{other subpackage}
+> import mwahpy.{other mwahpy subpackage}
  
 > ...
 
@@ -62,9 +62,9 @@ and is given after "USER-SITE")
 
 3. Insert import statements for the subpackages that you want to use:
 
-> import mwahpy.{subpackage that you want to access}
+> import mwahpy.{mwahpy subpackage}
  
-> import mwahpy.{other subpackage}
+> import mwahpy.{other mwahpy subpackage}
  
 > ...
 
@@ -81,9 +81,9 @@ and then import the relevant mwahpy .py files that you need to access
 
 > sys.path.insert(1, '.../mwahpy/mwahpy')
 
-> import {subpackage that you want to access}
+> import {mwahpy subpackage}
 
-> import {other subpackage}
+> import {other mwahpy subpackage}
 
 > ...
 
