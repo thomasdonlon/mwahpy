@@ -4,8 +4,8 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="mwahpy-donlot", # Replace with your own username
-    version="0.1.0",
+    name="mwahpy",
+    version="1.0.0",
     author="Tom Donlon",
     author_email="donlot@rpi.edu",
     description="A python package for easily parsing and processing data from milkyway@home",

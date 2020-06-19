@@ -10,8 +10,8 @@ mwahpy/orbit_fitting_gc.py
 mwahpy/output_handler.py
 mwahpy/plot.py
 mwahpy/pot.py
-mwahpy_donlot.egg-info/PKG-INFO
-mwahpy_donlot.egg-info/SOURCES.txt
-mwahpy_donlot.egg-info/dependency_links.txt
-mwahpy_donlot.egg-info/requires.txt
-mwahpy_donlot.egg-info/top_level.txt
+mwahpy.egg-info/PKG-INFO
+mwahpy.egg-info/SOURCES.txt
+mwahpy.egg-info/dependency_links.txt
+mwahpy.egg-info/requires.txt
+mwahpy.egg-info/top_level.txt
