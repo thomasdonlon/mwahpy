@@ -1,8 +1,8 @@
 Metadata-Version: 2.1
 Name: mwahpy-donlot
-Version: 0.0.1
+Version: 0.1.0
 Summary: A python package for easily parsing and processing data from milkyway@home
-Home-page: https://github.com/pypa/sampleproject
+Home-page: https://github.com/thomasdonlon/mwahpy
 Author: Tom Donlon
 Author-email: donlot@rpi.edu
 License: UNKNOWN

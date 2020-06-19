@@ -9,10 +9,11 @@ as well as write data out in a variety of formats
 
 import numpy as np
 import random
-from plotting import Data
+from data import Data
+import sys
 
 import flags
-import mwahpy_global as mg
+import mwahpy_glob
 
 #===============================================================================
 # FUNCTIONS
@@ -28,8 +29,8 @@ def removeHeader(f):
     comass = []
     comom = []
 
-    #first 4 lines are junk
-    for i in range(0, 4):
+    #first 3 lines are junk
+    for i in range(0, 3):
         f.readline()
 
     #next line has COM info
@@ -51,7 +52,9 @@ def readOutput(f, subsample=1.0):
     #   push it to github
 
     if flags.progressBars:
-        flen = mg.fileLen(f)
+        flen = mwahpy_glob.fileLen(f)
+    if flags.verbose:
+        print('\nReading in data from ' + str(f) + '...')
 
     f = open(f, 'r')
 
@@ -62,8 +65,6 @@ def readOutput(f, subsample=1.0):
     #indexed this way to avoid the 'ignore' column
     array_dict = {1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[], 9:[], 10:[], 11:[], 12:[]}
 
-    if flags.verbose:
-        print('Reading in data...')
     #place all the data from the file into the dictionary
     if flags.progressBars:
         j = 0
@@ -77,9 +78,16 @@ def readOutput(f, subsample=1.0):
                 i += 1
             if flags.progressBars:
                 j += 1
-                mg.progressBar(j, flen)
+                mwahpy_glob.progressBar(j, flen)
 
     #return the data class using the array dictionary we built
     if flags.verbose:
-        print(str(len(array_dict[1])) + ' objects read in')
-    return Data(array_dict[1], array_dict[2], array_dict[3], array_dict[4], array_dict[5], array_dict[6], array_dict[7], array_dict[8], array_dict[9], array_dict[10], array_dict[11], array_dict[12], centerOfMass=comass, centerOfMomentum=comom)
+        print('\n'+ str(len(array_dict[1])) + ' objects read in')
+        sys.stdout.write('\rConverting data...')
+    d = Data(id_val=array_dict[1], x=array_dict[2], y=array_dict[3], z=array_dict[4], l=array_dict[5], b=array_dict[6], r=array_dict[7], vx=array_dict[8], vy=array_dict[9], vz=array_dict[10], mass=array_dict[11], vlos=array_dict[12], centerOfMass=comass, centerOfMomentum=comom)
+    if flags.verbose:
+        sys.stdout.write('done\n')
+
+    f.close()
+
+    return d

@@ -35,7 +35,21 @@ welcome, just send a pull request to the mwahpy github repository.
 INSTALLATION
 ========================================
 
-NOT TESTED AND NOT GUARANTEED TO WORK
+FOR USERS:
+
+1. Open your terminal, and run
+
+> python3 -m pip install --index-url https://pypi.org/simple/ --no-deps mwahpy-donlot
+
+2. Insert import statements for the subpackages that you want to use in your .py files:
+
+> import mwahpy.<subpackage that you want to access>
+> import mwahpy.<other subpackage>
+> ...
+
+3. Do science
+
+FOR DEVELOPERS:
 
 1. Download the mwahpy github repository
 
@@ -44,19 +58,29 @@ NOT TESTED AND NOT GUARANTEED TO WORK
 and is given after "USER-SITE")
 (also see https://stackoverflow.com/questions/122327/how-do-i-find-the-location-of-my-python-site-packages-directory)
 
-3. Insert "import mwahpy" in your code
+3. Insert import statements for the subpackages that you want to use:
+
+> import mwahpy.<subpackage that you want to access>
+> import mwahpy.<other subpackage>
+> ...
+
+in your code
 
 4. Do science
 
-Alternatively, if you don't want to dig around in your python directory then
-you can always place the files from the repository in whatever directory you
-are using for your python code that will use mwahpy, and then import it as you
-would any other file. This may get gross though, as I expect that the package
-will expand into several dependency files over time.
+Alternatively,
 
-I plan on eventually figuring out how to make it installable with pip, but
-that's not a huge concern at the moment, as this is not meant to be a
-widely used package, and is oriented mainly at a specific group.
+1. Download the mwahpy github repository
+
+2. At the beginning of your .py file, put the path to the /mwahpy/mwahpy directory,
+and then import the relevant mwahpy .py files that you need to access
+
+> sys.path.insert(1, '.../mwahpy/mwahpy')
+> import output_handler
+> import coords
+> ...
+
+3. Do science
 
 CONTENTS
 ========================================
@@ -67,11 +91,11 @@ A non-exhaustive list of contents of the package is given below:
  - easy manipulation of data after reading in
  - A variety of coordinate transformations for typical coordinate systems used in Galactic astronomy
  - easy visualization of the imported data through plotting functionality
- 
+
 TODO
 ========================================
 
  - Finish refactoring coords.py
- - Unit testing of coordinate transformations
- - Refactor/combine orbit fitting scripts into this package as mwahpy.orbit_fitting subpackage
+ - Finish unit testing of coordinate transformations
+ - Refactor and polish orbit_fitting_gc.py
  - Write API

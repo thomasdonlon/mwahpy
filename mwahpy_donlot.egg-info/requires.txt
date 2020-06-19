@@ -1,0 +1,8 @@
+numpy
+galpy
+matplotlib
+random
+astropy
+scipy
+math
+unittest
