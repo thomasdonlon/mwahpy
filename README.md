@@ -44,7 +44,9 @@ FOR USERS:
 2. Insert import statements for the subpackages that you want to use in your .py files:
 
 > import mwahpy.<subpackage that you want to access>
+ 
 > import mwahpy.<other subpackage>
+ 
 > ...
 
 3. Do science
@@ -61,7 +63,9 @@ and is given after "USER-SITE")
 3. Insert import statements for the subpackages that you want to use:
 
 > import mwahpy.<subpackage that you want to access>
+ 
 > import mwahpy.<other subpackage>
+ 
 > ...
 
 in your code
