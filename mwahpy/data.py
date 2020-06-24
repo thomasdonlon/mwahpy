@@ -193,7 +193,6 @@ class Data():
         return out
 
     #---------------------------------------------------------------------------
-    #TODO: Bring energy here too instead of a flag
 
     def calcrvpm(self):
         #the biggest source of overhead in this class is co.getrvpm
