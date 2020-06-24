@@ -11,6 +11,7 @@ imported data from N-body output files.
 # IMPORTS
 #===============================================================================
 
+#external imports
 import numpy as np
 import coords as co
 import astropy
@@ -18,12 +19,15 @@ from astropy.coordinates import SkyCoord
 import astropy.units as u
 import random
 import galpy
+import galpy.potential
 import unittest
 import os
 
+#mwahpy imports
 import mwahpy_glob
 import flags
 import output_handler
+import pot
 
 #===============================================================================
 # DATA CLASS
@@ -32,8 +36,7 @@ import output_handler
 #AttrDict is used as a helper class in Data to allow referencing attributes
 #as dict keys and vice-versa.
 #this is probably a bad way to implement this but it works, and it's better than
-#making Data inherit from dict, which was the other solution I was able to
-#strum up
+#making Data inherit from dict, which was the other solution I was able to strum up
 class AttrDict(dict):
     def __init__(self, *args, **kwargs):
         super(AttrDict, self).__init__(*args, **kwargs)
@@ -88,10 +91,6 @@ class Data():
         c_trans = c.transform_to('icrs')
         self.ra = c_trans.ra.degree
         self.dec = c_trans.dec.degree
-        self.rv, self.pmra, self.pmdec = co.getrvpm(self.ra, self.dec, self.dist, self.vx, self.vy, self.vz)
-        self.pmtot = (self.pmra**2 + self.pmdec**2)**0.5
-        #4.848e-6 is arcsec->rad, 3.086e16 is kpc->km, and 3.156e7 is sidereal yr -> seconds
-        self.vtan = 4.74*self.dist*self.pmtot #eq. to self.r*np.tan(self.pmtot*4.848e-6) * 3.086e16 / 3.156e7
 
         #angular momentum information
         self.lx = self.y * self.vz - self.z * self.vy
@@ -102,6 +101,7 @@ class Data():
 
         #galactocentric information
         self.r = (self.x**2 + self.y**2 + self.z**2)**0.5
+        self.R = (self.x**2 + self.y**2)**0.5
         self.vgsr = self.vlos + 10.1*np.cos(self.b*np.pi/180)*np.cos(self.l*np.pi/180) + 224*np.cos(self.b*np.pi/180)*np.sin(self.l*np.pi/180) + 6.7*np.sin(self.b*np.pi/180)
         self.rad = (self.x*self.vx + self.y*self.vy + self.z*self.vz)/self.r
         self.rot = self.lz/(self.x**2 + self.y**2)**0.5
@@ -110,36 +110,27 @@ class Data():
         self.distFromCOM = ((self.x - self.centerOfMass[0])**2 + (self.y - self.centerOfMass[1])**2 + (self.z - self.centerOfMass[2])**2)**0.5
 
         #-----------------------------------------------------------------------
-        if flags.calcEnergy:
-            #get the energy info
-            #calculating the energy of every particle can generate some overhead,
-            #so I've quarantined it with a flag.
-
-            #in a logarithmic halo, the magnitude of the potential doesn;t impact the result,
-            #just the difference in potentials. So, you can specify a potential offset
-            #to keep bound objects' total energy negative.
-            PE = galpy.potential.evaluatePotentials(mwahpy_glob.pot, (self.x**2 + self.y**2)**0.5 * u.kpc, self.z*u.kpc, ro=8., vo=220.) - pot_offset
-            KE = 0.5*(self.vx**2 + self.vy**2 + self.vz**2)
-
-            #set attributes
-            self.PE = PE
-            self.KE = KE
-            self.energy = PE + KE
-
-            #allow iteration over these attributes
-            self.indexList = self.indexList + ['PE', 'KE', 'energy']
-
-        #-----------------------------------------------------------------------
         # HOUSEKEEPING
         #-----------------------------------------------------------------------
 
         #this has to be manually updated any time a new iterable quantity is added
         #to the Data class. This allows us to control what values are iterated over.
         self.indexList = ['id', 'x', 'y', 'z', 'l', 'b', 'dist', 'vx', 'vy', 'vz', \
-                          'mass', 'vlos', 'msol', 'ra', 'dec', 'rv', 'pmra', 'pmdec',  'pmtot', 'vtan', \
-                          'lx', 'ly', 'lz', 'lperp', 'ltot', 'r', 'vgsr', 'rad', 'rad', \
+                          'mass', 'vlos', 'msol', 'ra', 'dec', \
+                          'lx', 'ly', 'lz', 'lperp', 'ltot', 'r', 'R', 'vgsr', 'rad', 'rot', \
                           'distFromCOM']
         self.index = 0
+
+        #these should initially be set to false. If the user tries to get a value
+        #that isn't yet calculated, then the getter calculates it. There's a
+        #gigantic overhead on the rv/pm calculation and a pretty big overhead on
+        #the energy calculation, so we avoid it until the user asks for those values.
+        self.have_rvpm = False
+        self.have_energy = False
+
+    #---------------------------------------------------------------------------
+    # METHODS
+    #---------------------------------------------------------------------------
 
     #---------------------------------------------------------------------------
     # ITERATOR CONTROL
@@ -159,8 +150,21 @@ class Data():
 
     #---------------------------------------------------------------------------
     # These allow for the behavior we want from the class attributes, i.e. self.id == self['id']
+    #__getattr__ and __getitem__ have qualifiers to make sure that loading rv/pm and energy
+    #related values works as intended
+
+    def __getattr__(self, i):
+        if (not(self.have_rvpm) and i in ['rv', 'pmra', 'pmdec',  'pmtot', 'vtan']):
+            self.calcrvpm()
+        if (not(self.have_energy) and i in ['PE', 'KE', 'energy']):
+            self.calcEnergy()
+        return self.__dict__[i]
 
     def __getitem__(self, i):
+        if (not(self.have_rvpm) and i in ['rv', 'pmra', 'pmdec',  'pmtot', 'vtan']):
+            self.calcrvpm()
+        if (not(self.have_energy) and i in ['PE', 'KE', 'energy']):
+            self.calcEnergy()
         return self.__dict__[i]
 
     def __setitem__(self, i, val):
@@ -188,6 +192,45 @@ class Data():
 
         return out
 
+    #---------------------------------------------------------------------------
+    #TODO: Bring energy here too instead of a flag
+
+    def calcrvpm(self):
+        #the biggest source of overhead in this class is co.getrvpm
+        #so, don't run it unless you have to.
+
+        self.have_rvpm = True #make sure the getter doesn't try to run this again
+
+        self.rv, self.pmra, self.pmdec = co.getrvpm(self.ra, self.dec, self.dist, self.vx, self.vy, self.vz)
+        self.pmtot = (self.pmra**2 + self.pmdec**2)**0.5
+        #4.848e-6 is arcsec->rad, 3.086e16 is kpc->km, and 3.156e7 is sidereal yr -> seconds
+        self.vtan = 4.74*self.dist*self.pmtot #eq. to self.r*np.tan(self.pmtot*4.848e-6) * 3.086e16 / 3.156e7
+
+        self.indexList = self.indexList + ['rv', 'pmra', 'pmdec',  'pmtot', 'vtan']
+
+
+    def calcEnergy(self):
+        #calculating the energy of every particle can generate some overhead,
+        #so I've quarantined it with a flag.
+
+        self.have_energy = True #make sure the getter doesn't try to run this again
+
+        #in a logarithmic halo, the magnitude of the potential doesn't impact the result,
+        #just the difference in potentials. So, you can specify a potential offset
+        #to keep bound objects' total energy negative.
+        PE = galpy.potential.evaluatePotentials(pot.pot, (self.x**2 + self.y**2)**0.5 * u.kpc, self.z*u.kpc, ro=8., vo=220.) + pot.energy_offset
+        KE = 0.5*(self.vx**2 + self.vy**2 + self.vz**2)
+
+        #set attributes
+        self.PE = PE
+        self.KE = KE
+        self.energy = PE + KE
+
+        #allow iteration over these attributes
+        self.indexList = self.indexList + ['PE', 'KE', 'energy']
+
+    #---------------------------------------------------------------------------
+
     #cuts the first n entries from every attribute in the data structure
     def cutFirstN(self, n):
         for key in self:
@@ -199,6 +242,14 @@ class Data():
     def cutLastN(self, n):
         for key in self:
             self[key] = self[key][:n]
+        if flags.updateData:
+            self.update()
+
+    #cut the data to only include the values at the given indices
+    def take(self, indices):
+        #indices: the indices you want to take, must be array-like
+        for key in self:
+            self[key] = np.take(self[key], indices)
         if flags.updateData:
             self.update()
 
@@ -249,6 +300,7 @@ class Data():
             self.update()
 
     #append the nth item of another data object onto this one
+    #WARNING: Extremely time intensive if used repeatedly, np.append is not a speedy function
     def appendPoint(self, d, n=0, id=None):
         #d: the data object with the item being appended
         #n: the index of the item in d to be appended
@@ -341,106 +393,64 @@ class Data():
         if flags.updateData:
             self.update()
 
+    #make an n-dimensional rectangular cut on the data
+    #TODO: make an inverted method, i.e. cut out things within the bounds
+    def subsetRect(self, axes, bounds):
+        #axes ([str, ...]): the parameters/values that you are cutting on. Input as a list of strings
+        #   The strings must be in self.indexList
+        #bounds ([(float, float), ...]): The boundary conditions that you are cutting on
+        #   given as a list of tuples, each with two floats.
+        #   If you wish to only declare a minimum or maximum, then leave the other value as None
+        #
+        #Both axes and bounds can be a single input of their respective type
+        #
+        #This is substantially faster than the previous subset function, which performed like 30
+        #np.appends for every index that fit the criteria in each axis.
+
+        if type(axes) != type([]): #make the input compatible if it is only 1 axis
+            axes = [axes]
+            bounds = [bounds]
+
+        if len(axes) != len(bounds): #need the same number of axes and bounds
+            raise Exception('Number of axes is ' + str(len(axes)) + ', but number of bounds is ' + str(len(bounds)))
+
+        #make the first cut, gives us some place to start on for the indices
+        if bounds[0][0] > bounds[0][1]: #make sure the bounds are input correctly
+            raise Exception('First value in bound was larger than second value')
+
+        indices = np.intersect1d(np.where(self[axes[0]] > bounds[0][0]), np.where(self[axes[0]] < bounds[0][1]))
+
+        for a, b in zip(axes[1:], bounds[1:]): #already performed first cut
+            if b[0] > b[1]: #make sure the bounds are input correctly
+                raise Exception('First value in bound was larger than second value')
+
+            #slowly wittle down the number of indices that fit the criteria
+            indices = np.intersect1d(indices, np.intersect1d(np.where(d[a] > b[0]), np.where(d[a] < b[1])))
+
+        #cut the sample down to the indices that work
+        self.take(indices)
+
+    #make a circular cut of the data in 2 dimensions
+    def subsetCirc(self, ax, zy, rad, center):
+        #ax, ay (str): the axes to cut on
+        #rad (float): The radius of the circular cut
+        #center (tuple(float, float)): The center around which to make the circular cut
+        #
+        #This is substantially faster than the previous subset function, which performed like 30
+        #np.appends for every index that fit the criteria in each axis.
+
+        #get the indices that lie within the cut
+        dist = ((self[ax] - center[0])**2 + (self[ay] - center[1])**2)**0.5
+        indices = np.where(dist < rad)[0]
+
+        #cut the sample down to the indices that work
+        self.take(indices)
+
 #===============================================================================
 # FUNCTIONS INVOLVING DATA CLASSES
 #===============================================================================
-#TODO: Split a Data class based on when id loops back to 0 (meaning that you used
-#   manual body input as well as generating a dwarf, or multiple manual body inputs)
 
-#subset: data object -> data object
-#takes in a data object and cuts it according to the specified parameters
-#USAGE:
-#   You MUST specify values for radius and center, or set rect=True
-#   if rect=True, y, xbounds, and ybounds must be specified
-#   if rect=False and y is given, then do 2D radial cut
-#TODO: Allow an arbitrary length array of axes and bounds, instead of this
-#   manually setting rectangular or not nonsense. Should make a range subset
-#   function as well as a rectangular one
-#TODO: Calculate the indices that are correct, then append all the points with
-#   those indices to each attribute. This appendPoint stuff takes way too long
-#   because numpy.append sucks
-def subset(data, x, y=None, rect=False, center=None, radius=None, xbounds=None, ybounds=None):
-    #data (Data): the data object being cut
-    #x (str): the x-axis parameter
-    #y (str): the y-axis parameter
-    #   any Data array_dict value can be used for x and y, e.g. "ra", "dec", "x", "vx", etc.
-    #rect (bool): if True, do a 2D rectangular subset cut instead
-    #----------------------
-    #1D cut:
-    #----------------------
-    #   center (float):
-    #   radius (float): data points under <radius> away from <center> on the <x> axis
-    #                   are added to a new Data object
-    #----------------------
-    #2D cut: (rect=False)
-    #----------------------
-    #   center (tuple(float, float)):
-    #   radius (float): data points under <radius> away from <center> on both axes
-    #                   are added to a new Data object
-    #----------------------
-    #2D cut: (rect=True)
-    #----------------------
-    #   xbounds (tuple(float, float)): x range of allowed subsection
-    #   ybounds (tuple(float, float)): y range of allowed subsection
-    #   if xbounds[0] !< xbounds[1] etc, then the routine will throw an exception
 
-    data_out = Data()
-
-    if rect: #Rectangular 2D cut
-        if not(y) or not(xbounds) or not(ybounds): #check for necessary inputs
-            raise Exception('Must provide <y>, <xbounds>, and <ybounds> if <rect>==True')
-        elif (xbounds[0] >= xbounds[1]):
-            raise Exception('First value in <xbounds> was greater than the second value')
-        elif (ybounds[0] >= ybounds[1]):
-            raise Exception('First value in <ybounds> was greater than the second value')
-        else: #do rectangular cut
-            i = 0
-            while i < len(data):
-                if flags.progressBars:
-                    mwahpy_glob.progressBar(i, len(data[x]))
-                #check if within bounds
-                if xbounds[0] < data[x][i] < xbounds[1] and ybounds[0] < data[y][i] < ybounds[1]:
-                    data_out.appendPoint(data, i)
-                i+=1
-            if flags.verbose:
-                print('\n' + str(len(data_out)) + ' objects found in bounds')
-            if flags.updateData:
-                data_out.update()
-            return data_out
-
-    else: #Not rectangular cut
-        if radius==None or center==None: #radius and/or center weren't provided
-            raise Exception('Must provide <center> and <radius> for a non-rectangular cut')
-        else:
-            if y: #do 2D cut
-                if not(type(center) is tuple): #make sure center is a tuple
-                    raise Exception('Must provide tuple for <center> if <y> is provided')
-                else:
-                    i = 0
-                    while i < len(data[x]):
-                        if flags.progressBars:
-                            mwahpy_glob.progressBar(i, len(data[x]))
-                        if radius >= ((array_dict[x][i] - center[0])**2 + (array_dict[y][i] - center[1])**2)**0.5:
-                            data_out.appendPoint(data, i)
-                        i+=1
-                    if flags.verbose:
-                        print('\n' + str(len(data_out)) + ' objects found in bounds')
-                    if flags.updateData:
-                        data_out.update()
-                    return data_out
-            else: #do 1D cut
-                i = 0
-                while i < len(data[x]):
-                    if flags.progressBars:
-                        mwahpy_glob.progressBar(i, len(data[x]))
-                    if radius >= abs(data[x][i] - center):
-                        data_out.appendPoint(data, i)
-                    i+=1
-                if flags.verbose:
-                    print('\n' + str(len(data_out)) + ' objects found in bounds')
-                if flags.updateData:
-                    data_out.update()
-                return data_out
 
 #===============================================================================
 # UNIT TESTING
@@ -520,6 +530,25 @@ class TestDataClass(unittest.TestCase):
         d1, d2 = d.split(5)
         self.assertTrue(d1.x[0] == d.x[0])
         self.assertTrue(d2.x[0] == d.x[5])
+
+    def testSubsetRect(self):
+        d = output_handler.readOutput('../test/test.out')
+        dc = d.copy()
+
+        dc.subsetRect('x', (-1,1))
+
+        self.assertTrue(len(dc) == 7)
+
+    def testCalcs(self): #this just makes sure that the values that
+        #are not initially calculated on instantiation then run when the user
+        #tries to get those values
+
+        d = output_handler.readOutput('../test/test.out')
+
+        print(len(d.rv))
+
+        self.assertTrue(len(d.rv) == len(d))
+        self.assertTrue(len(d.energy) == len(d))
 
 class TestDataMethods(unittest.TestCase):
 
