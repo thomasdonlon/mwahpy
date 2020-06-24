@@ -217,7 +217,7 @@ class Data():
         #in a logarithmic halo, the magnitude of the potential doesn't impact the result,
         #just the difference in potentials. So, you can specify a potential offset
         #to keep bound objects' total energy negative.
-        PE = galpy.potential.evaluatePotentials(pot.pot, (self.x**2 + self.y**2)**0.5 * u.kpc, self.z*u.kpc, ro=8., vo=220.) + pot.energy_offset
+        PE = galpy.potential.evaluatePotentials(pot.pot, self.R * u.kpc, self.z*u.kpc, ro=8., vo=220.) + pot.energy_offset
         KE = 0.5*(self.vx**2 + self.vy**2 + self.vz**2)
 
         #set attributes
