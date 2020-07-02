@@ -91,3 +91,25 @@ def readOutput(f, subsample=1.0):
     f.close()
 
     return d
+
+#parses a data class object and outputs a file that can be read into a
+#MilkyWay@home N-body simulation as the 'manual bodies' parameter
+def makeNbodyInput(d, f):
+    #d (data): the data object that will be printed out
+    #f (str): the path of the file that will be printed to
+    if flags.verbose:
+        print('Writing data as N-body input to '+f+'...')
+
+    f = open(f, 'w')
+    f.write('#ignore\tid\tx\ty\tz\tvx\tvy\tvz\tm')
+
+    i = 0
+    while i < len(d):
+        f.write('\n1\t'+str(int(d.id[i]))+'\t'+str(d.x[i])+'\t'+str(d.y[i])+'\t'+str(d.z[i])+'\t'+\
+                str(d.vx[i])+'\t'+str(d.vy[i])+'\t'+str(d.vz[i])+'\t'+str(d.mass[i]))
+        if flags.progressBars:
+            mwahpy_glob.progressBar(i, len(d))
+        i += 1
+
+    if flags.verbose:
+        print('\ndone')

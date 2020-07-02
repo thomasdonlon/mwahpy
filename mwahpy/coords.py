@@ -331,6 +331,8 @@ def getvxvyvz(dist, rv, ra, dec, pmra, pmde):
 
 #-------------------------------------------------------------------------------
 
+#TODO: Make function accept input of not array
+#TODO: Do the linear algebra to avoid a inv calcualtion, since that's huge time waste
 #solar reflex motion will be already removed if UVW are galactocentric
 #inputs must be arrays, even if just of length 1
 def getrvpm(ra, dec, dist, U, V, W):

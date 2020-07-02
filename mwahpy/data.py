@@ -207,7 +207,6 @@ class Data():
 
         self.indexList = self.indexList + ['rv', 'pmra', 'pmdec',  'pmtot', 'vtan']
 
-
     def calcEnergy(self):
         #calculating the energy of every particle can generate some overhead,
         #so I've quarantined it with a flag.
