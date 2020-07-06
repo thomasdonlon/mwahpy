@@ -238,8 +238,9 @@ class Data():
 
     #cuts the last n entries from every attribute in the data structure
     def cutLastN(self, n):
+        l = len(self) #length changes during this, so have to save it
         for key in self:
-            self[key] = self[key][:n]
+            self[key] = self[key][:l-n]
         if flags.updateData:
             self.update()
 
@@ -250,6 +251,10 @@ class Data():
             self[key] = np.take(self[key], indices)
         if flags.updateData:
             self.update()
+
+    #resets the IDs of the data instance
+    def resetIds(self):
+        self.id = np.arange(len(self))
 
     #splits the Data into two new Data structures,
     #the first has the data points up to entry n and
@@ -272,7 +277,7 @@ class Data():
     def splitAtIdWrap(self):
 
         outlist = []
-        indices = np.where(self.id==0)[0] #1D list of arrays,
+        indices = np.where(self.id==0)[0] #1D list of arrays
 
         Data2 = self.copy()
         i = 1
@@ -508,9 +513,11 @@ class TestDataClass(unittest.TestCase):
         d = output_handler.readOutput('../test/test.out')
 
         d2 = d.copy()
+        test = d.x[0]
         d.x[0] = 0
 
         self.assertTrue(d.x[0] != d2.x[0])
+        self.assertTrue(d2.x[0] == test)
 
     def testAppendPoint(self):
         d = output_handler.readOutput('../test/test.out')
