@@ -107,6 +107,10 @@ class Data():
         self.rot = self.lz/(self.x**2 + self.y**2)**0.5
 
         #relative information
+
+        #this shouldn't have *too* much overhead, but it could be added to the
+        #   things that aren't computed until they're called
+        #   If that's the case, adding 'xFromCOM' etc. is probably also a good idea
         self.distFromCOM = ((self.x - self.centerOfMass[0])**2 + (self.y - self.centerOfMass[1])**2 + (self.z - self.centerOfMass[2])**2)**0.5
 
         #-----------------------------------------------------------------------
@@ -396,6 +400,11 @@ class Data():
         if flags.updateData:
             self.update()
 
+    #TODO: subsets should return the same instance
+    #   the user should copy the data instance themselves if they want
+    #   that functionality. This way, we aren't wasting time copying the
+    #   object every time you subset it
+
     #make an n-dimensional rectangular cut on the data
     #TODO: make an inverted method, i.e. cut out things within the bounds
     def subsetRect(self, axes, bounds):
@@ -407,10 +416,15 @@ class Data():
         #
         #Both axes and bounds can be a single input of their respective type
         #
+        #Both axes and bounds can be given as a tuple of tuples, instead of a list
+        #
         #This is substantially faster than the previous subset function, which performed like 30
         #np.appends for every index that fit the criteria in each axis.
 
-        if type(axes) != type([]): #make the input compatible if it is only 1 axis
+        d = self.copy() #return a new array instead of altering the old one
+        #probably slows things down a little but you should only have to make cuts once anyways
+
+        if type(axes) not in [type([]), type((1,1))]: #make the input compatible if it is only 1 axis
             axes = [axes]
             bounds = [bounds]
 
@@ -421,7 +435,7 @@ class Data():
         if bounds[0][0] > bounds[0][1]: #make sure the bounds are input correctly
             raise Exception('First value in bound was larger than second value')
 
-        indices = np.intersect1d(np.where(self[axes[0]] > bounds[0][0]), np.where(self[axes[0]] < bounds[0][1]))
+        indices = np.intersect1d(np.where(d[axes[0]] > bounds[0][0]), np.where(d[axes[0]] < bounds[0][1]))
 
         for a, b in zip(axes[1:], bounds[1:]): #already performed first cut
             if b[0] > b[1]: #make sure the bounds are input correctly
@@ -431,7 +445,10 @@ class Data():
             indices = np.intersect1d(indices, np.intersect1d(np.where(d[a] > b[0]), np.where(d[a] < b[1])))
 
         #cut the sample down to the indices that work
-        self.take(indices)
+        d.take(indices)
+        d.update()
+
+        return d
 
     #make a circular cut of the data in 2 dimensions
     def subsetCirc(self, ax, zy, rad, center):
@@ -442,12 +459,50 @@ class Data():
         #This is substantially faster than the previous subset function, which performed like 30
         #np.appends for every index that fit the criteria in each axis.
 
+        d = self.copy() #return a new array instead of altering the old one
+        #probably slows things down a little but you should only have to make cuts once anyways
+
         #get the indices that lie within the cut
-        dist = ((self[ax] - center[0])**2 + (self[ay] - center[1])**2)**0.5
+        dist = ((d[ax] - center[0])**2 + (d[ay] - center[1])**2)**0.5
         indices = np.where(dist < rad)[0]
 
         #cut the sample down to the indices that work
+        d.take(indices)
+        d.update()
+
+        return d
+
+    #cut the data instance to n random stars from the data instance
+    #uses the reservoir algorithm for single-pass random sampling
+    def randSample(self, n):
+        #n: the number of stars to sample
+
+        reservoir = self.id[:n]
+        for i in self.id[n:]:
+            r = random.randint(0,len(self))
+            if r <= n:
+                reservoir[r] = self.id[r]
+
+        self.take(reservoir)
+        self.update()
+
+    #cut the data instance to every nth star from the data instance
+    def subsample(self, n):
+        #n: take the star every n rows (n should be integer >= 1)
+
+        i = 0
+        j = 1
+        indices = []
+        while i < len(self):
+            if j == n:
+                indices.append(i)
+                j = 1
+            else:
+                j += 1
+
         self.take(indices)
+        self.update()
+
 
 #===============================================================================
 # FUNCTIONS INVOLVING DATA CLASSES

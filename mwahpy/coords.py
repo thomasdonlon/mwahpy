@@ -411,6 +411,23 @@ def getUVWerrors(dist, ra, dec, pmra, pmdec, err_pmra, err_pmdec, err_rv, err_di
 
     return err_u, err_v, err_w
 
+def rvToVgsr(l, b, rv):
+    #TODO: Allow ra, dec as inputs
+
+    use_array = True
+    if type(l) != type(np.array([])):
+        use_array = False
+        l = np.array([l])
+        b = np.array([b])
+        rv = np.array([rv])
+
+    vgsr = rv + 10.1*np.cos(l)*np.cos(b) + 224*np.sin(l)*np.cos(b) + 6.7*np.sin(b)
+
+    if not use_array:
+        vgsr = vgsr[0]
+
+    return vgsr
+
 #=====================================
 #MISC TOOLS
 #=====================================

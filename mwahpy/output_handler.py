@@ -8,7 +8,6 @@ as well as write data out in a variety of formats
 #===============================================================================
 
 import numpy as np
-import random
 from data import Data
 import sys
 
@@ -44,12 +43,8 @@ def removeHeader(f):
     return comass, comom
 
 #parses a milkyway ".out" file and returns a Data class structure
-def readOutput(f, subsample=1.0):
+def readOutput(f):
     #f (str): the path of the milkyway ".out" file
-    #subsample (float): the percentage [0.0, 1.0] of the data to use
-    #   This is done randomly: for more specific subsampling, use the built-in
-    #   cutFirstN etc. in the Data class, or build your own and
-    #   push it to github
 
     if flags.progressBars:
         flen = mwahpy_glob.fileLen(f)
@@ -69,16 +64,14 @@ def readOutput(f, subsample=1.0):
     if flags.progressBars:
         j = 0
     for line in f:
-        m = random.random()
-        if m <= subsample:
-            line = line.strip().split(',')
-            i = 1
-            while i < len(line):
-                array_dict[i].append(float(line[i]))
-                i += 1
-            if flags.progressBars:
-                j += 1
-                mwahpy_glob.progressBar(j, flen)
+        line = line.strip().split(',')
+        i = 1
+        while i < len(line):
+            array_dict[i].append(float(line[i]))
+            i += 1
+        if flags.progressBars:
+            j += 1
+            mwahpy_glob.progressBar(j, flen)
 
     #return the data class using the array dictionary we built
     if flags.verbose:
@@ -104,8 +97,14 @@ def makeNbodyInput(d, f):
     f.write('#ignore\tid\tx\ty\tz\tvx\tvy\tvz\tm')
 
     i = 0
+
+    #recenter on center of mass for ease of inserting a dwarf
+    xnew = d.x - d.centerOfMass[0]
+    ynew = d.y - d.centerOfMass[1]
+    znew = d.z - d.centerOfMass[2]
+
     while i < len(d):
-        f.write('\n1\t'+str(int(d.id[i]))+'\t'+str(d.x[i])+'\t'+str(d.y[i])+'\t'+str(d.z[i])+'\t'+\
+        f.write('\n1\t'+str(int(d.id[i]))+'\t'+str(xnew[i])+'\t'+str(ynew[i])+'\t'+str(znew[i])+'\t'+\
                 str(d.vx[i])+'\t'+str(d.vy[i])+'\t'+str(d.vz[i])+'\t'+str(d.mass[i]))
         if flags.progressBars:
             mwahpy_glob.progressBar(i, len(d))
