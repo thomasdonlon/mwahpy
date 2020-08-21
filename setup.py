@@ -26,7 +26,7 @@ setuptools.setup(
         "random",
         "astropy",
         "scipy",
-        "math",
-        "unittest"
+        "unittest",
+        "pathlib"
         ],
 )

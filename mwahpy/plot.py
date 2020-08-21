@@ -15,20 +15,18 @@ e.g. consider that below each function, I've added
 
 import numpy as np
 import matplotlib.pyplot as plt
-from data import Data
-import data
 
 #===============================================================================
 # FUNCTIONS
 #===============================================================================
 
-#generates a scatter plot of your Data object
-def scatter(d, x, y, show=False, s=5.0, color='k', marker='o', **kwargs):
-    #d: the Data object to plot
+#generates a scatter plot of your Timestep object
+def scatter(t, x, y, show=False, s=5.0, color='k', marker='o', **kwargs):
+    #t: the Timestep object to plot
     #x: the x-axis parameter
     #y: the y-axis parameter
 
-    plt.scatter(d[x], d[y], s=s, c=color, marker=marker, **kwargs)
+    plt.scatter(t[x], t[y], s=s, c=color, marker=marker, **kwargs)
 
     if show:
         plt.xlabel(x)
@@ -37,8 +35,8 @@ def scatter(d, x, y, show=False, s=5.0, color='k', marker='o', **kwargs):
 
 #sticks a big fat red dot wherever the specific star(s) is, given an id(s)
 #if vx and vy are specified, an arrow is drawn
-def traceParticle(d, id, x, y, vx=None, vy=None, vscale=0.02, show=False, s=50., color='r', marker='o', **kwargs):
-    #d (Data): the Data object that your particle is plotted over
+def traceParticle(t, id, x, y, vx=None, vy=None, vscale=0.02, show=False, s=50., color='r', marker='o', **kwargs):
+    #t (Timestep): the Timestep object that your particle is plotted over
     #id (int, can be array-like): the (list of) id(s) for your particle(s)
     #x (str): the x-axis parameter
     #y (str): the y-axis parameter
@@ -58,27 +56,27 @@ def traceParticle(d, id, x, y, vx=None, vy=None, vscale=0.02, show=False, s=50.,
     #gotta be a 1-line way to do this with numpy, but I couldn't figure it out
     n = []
     for i in id:
-        n.append(d['id'].index(i))
+        n.append(t['id'].index(i))
 
     #plot the particles
     for i in n:
-        plt.scatter(d[x][i], d[y][i], s=s, c=color, marker=marker, **kwargs)
+        plt.scatter(t[x][i], t[y][i], s=s, c=color, marker=marker, **kwargs)
         if vx and vy:
             #TODO: figure out how to pass kwargs to the arrow and scatter separately
-            plt.arrow(d[x][i], d[y][i], d[vx][i]*vscale, d[vy][i]*vscale, color=color, head_width=1)
+            plt.arrow(t[x][i], t[y][i], t[vx][i]*vscale, t[vy][i]*vscale, color=color, head_width=1)
 
     if show:
         plt.xlabel(x)
         plt.ylabel(y)
         plt.show()
 
-#plots a histogram of the Data
+#plots a histogram of the Timestep
 #see np.hist for usage
-def hist(d, x, show=False, *args, **kwargs):
-    #d (Data): the data object being plotted
+def hist(t, x, show=False, *args, **kwargs):
+    #t (Timestep): the Timestep object being plotted
     #x (str): the axis parameter
 
-    h = plt.hist(d[x], range=range, bins=bins, *args, **kwargs)
+    h = plt.hist(t[x], range=range, bins=bins, *args, **kwargs)
 
     if show:
         plt.xlabel(x)
@@ -86,12 +84,12 @@ def hist(d, x, show=False, *args, **kwargs):
 
     return h
 
-def hist2d(d, x, y, show=False, *args, **kwargs):
-    #d (Data): the data object being plotted
+def hist2d(t, x, y, show=False, *args, **kwargs):
+    #t (Timestep): the Timestep object being plotted
     #x (str): the x-axis parameter
     #y (str): the y-axis parameter
 
-    h = plt.hist2d(d[x], d[y], *args, **kwargs)
+    h = plt.hist2d(t[x], t[y], *args, **kwargs)
 
     if show:
         plt.xlabel(x)

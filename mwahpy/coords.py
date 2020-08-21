@@ -1,7 +1,6 @@
 import numpy as np
 from numpy import linalg
 import scipy as sc
-import math as ma
 import unittest
 
 #TODO: Make sure all transformations have inverse transformations
@@ -420,6 +419,9 @@ def rvToVgsr(l, b, rv):
         l = np.array([l])
         b = np.array([b])
         rv = np.array([rv])
+
+    l = l * np.pi/180
+    b = b * np.pi/180
 
     vgsr = rv + 10.1*np.cos(l)*np.cos(b) + 224*np.sin(l)*np.cos(b) + 6.7*np.sin(b)
 
