@@ -26,6 +26,7 @@
 \begin{document}
 
 \newcommand{\mwahpy}[0]{\textit{mwahpy }}
+\newcommand{\msol}{$M_\odot$}
 
 \begin{titlepage}
    \begin{center}
@@ -38,7 +39,7 @@
             
        \vspace{1.5cm}
 
-       \textbf{Tom Donlon}
+       \large\textbf{Tom Donlon}
             
        \vspace{0.8cm}
             
@@ -203,7 +204,7 @@ array([  7.894394  , 235.8965911 , 128.90974589])
 Note that if you call \verb!t.printParticle! again (this time using the optional \verb!dec! argument to shorten the output), it now shows more data for the particle! \\
 
 \begin{codelisting}{Printing data for a single particle}
->>>t.printParticle(1, dec=2)
+>>> t.printParticle(1, dec=2)
 Printing data for Particle 1:
 (id:1, x:50, y:15, z:2, vx:183, vy:50, vz:69, mass:1, msol:222288.47, 
 l:0.29, b:0.04, ra:266.54, dec:-28.67, dist:59.94, lx:935, ly:3084, 
@@ -414,6 +415,36 @@ array([ 4.53813066, -0.59395581, -1.41000385, -0.00613003,  0.11393187,
 array([ 4.53813066, -0.59395581, -1.41000385, -0.00613003,  3.57179938])
 \end{codelisting}
 
+Note that actions like just replacing a single \verb!x! value in a \verb!Timestep! does not update the rest of the calculated values in the \verb!Timestep!. That \verb!Timestep! will need to be updated manually using \verb!Timestep.update()!. This method will update all values associated with the \verb!Timestep! in order to keep them in sync with the provided values. 
+
+\begin{warning}
+Note that if the \verb!autoUpdate! flag is turned on (it is on by default), \mwahpy functions will automatically keep the provided and calculated values in sync. However, if you manually update the provided values after the calculated values have been computed, you will need to run \verb!Timestep.update()!. 
+\end{warning}
+
+\begin{codelisting}{Updating a Timestep}
+>>> t = oh.readOutput('../test/test.out')
+
+Reading in data from ../test/test.out...
+[-------------->     ] 73%
+10 objects read in
+Converting data...done
+>>> t.x
+array([ 4.53813066, -0.59395581, -1.41000385, -0.00613003,  0.11393187,
+        0.38487162,  0.35803147,  0.3565866 ,  0.52268562,  3.57179938])
+>>> t.distFromCOM
+Calculating basic values...
+array([4.53771154, 1.20665236, 2.01267674, 0.48791978, 0.51046082,
+       0.99322694, 0.39540509, 0.34974823, 0.85795412, 3.73818636])
+>>> t.x[0] = 0
+>>> t.distFromCOM
+array([4.53771154, 1.20665236, 2.01267674, 0.48791978, 0.51046082,
+       0.99322694, 0.39540509, 0.34974823, 0.85795412, 3.73818636])
+>>> t.update()
+>>> t.distFromCOM
+array([0.80324921, 1.29094239, 2.05506687, 0.36725208, 0.51176956,
+       0.99371407, 0.34057982, 0.29000981, 0.81102414, 3.37390626])
+\end{codelisting}
+
 You should now have a fundamental undertsanding of how to use the \verb!Timestep! class. The rest of the methods that were not covered in this section can be found in Section \ref{sec:doc_timestep}. Continue reading for information about handling entire simulations with multiple timesteps and plotting timesteps and simulations. 
 
 \subsection{The \textit{Nbody} Class}
@@ -544,13 +575,15 @@ array([ 4.53813066, -0.59395581, -1.41000385, -0.00613003,  0.11393187,
 
 Text
 
-\section{Auxiliary Packages}
+\section{Auxiliary Subpackages}
 
-Text
+The \mwahpy package comes with a few auxiliary subpackages with additional content that the typical user might find useful. While the \verb!mwahpy.orbit_fitting! and the \verb!mwahpy.orbit_fitting_gc! subpackages have been used in academic contexts, the packages have not yet been refactored for general use. After the packages have been made consistent with the rest of the \mwahpy code standards, then documentation for those subpackages will be released. 
 
 \subsection{Coordinate Transformations}
 
-Text
+The coordinate transformation package \verb!mwahpy.coords! is made up of many first and second-order transformations for position, velocity, and other values. A complete list of the routines and functions provided in this package is given in Section \ref{sec:doc_coords}. 
+
+This subpackage contains most of the coordinate transformations that a typical person will need to do Galactic astronomy, excluding some on-sky transformations (such as R.A., Dec. to $l$, $b$) that are better accessed through the \verb!astropy! python package. 
 
 \subsection{Orbit Fitting}
 
@@ -558,25 +591,122 @@ The subpackages \verb!mwahpy.orbit_fitting! and \verb!mwahpy.orbit_fitting_gc! a
 
 \section{Flags \& Settings}
 
-Text
-
 \subsection{\textit{flags}}
 
-Text
+The flags and settings for \mwahpy can be found in \verb!flags.py!. Currently, there are only a few options, but more may be added in the future. 
+
+\begin{itemize}
+
+\item \verb!mwahpy.flags.verbose! (default value = 1)
+
+This flag dictates how much is printed out into the terminal when \mwahpy code is running. If turned on, functions are much noisier, and will update you on their current activity. If this is turned off, the overall functionality of \mwahpy will remain unchanged, but the terminal will be less informative. 
+
+\item \verb!mwahpy.flags.progressBars! (default value = 1)
+
+If this flag is turned on, \mwahpy will use progress bars when performing certain actions (such as reading in files) in order to avoid long wait times without updating the terminal. If turned off, \mwahpy functionality will not be changed; however, be aware that you may occasionally experience long periods of time where your terminal is silent.
+
+\item \verb!mwahpy.flags.autoUpdate! (default value = 1)
+
+This flag determines whether or not to automatically update an entire \verb!Timestep! whenever the provided values for that \verb!Timestep! change \textbf{due to a \mwahpy method or function}. Having this flag turned on will keep things like the center of mass and momentum accurate even after changing the constituent data, and will keep all of the calculated values in sync with the provided values throughout \mwahpy functions. 
+
+If you are frequently updating certain values in a \verb!Timestep!, this flag can occasionally cause performance issues (if this flag is causing performance issues, that's probably a sign that there's a better way to do what you are trying to do). It is strongly recommended that this flag is only turned off if the user understands what updating means, how to update the data manually, and what data needs to be updated. 
+
+\end{itemize}
 
 \subsection{\textit{mwahpy\_glob}}
 
-Text
+Constants and functions that are universally accessed in \mwahpy are stored in \verb!mwahpy_glob.py!. 
+
+\begin{itemize}
+
+\item \verb!mwahpy.mwahpy_glob.G!
+
+Newton's gravitational constant is provided in \verb!astropy! units of m$^3$/kg s$^2$.
+
+\item \verb!mwahpy.mwahpy_glob.structToSol!
+
+This is the conversion factor between MilkyWay@home structural masses and solar masses. Equal to 222,288.47 solar masses/structure unit.
+
+\item \verb!mwahpy.mwahpy_glob.kmsToKpcgyr!
+
+The conversion factor from km/s to kpc/Gyr. Roughly equal to unity (1.023).
+
+\item \verb!mwahpy.mwahpy_glob.kpcgyrToKms!
+
+The conversion factor from kpc/Gyr to km/s. Roughly equal to unity (0.978).
+
+
+\item \verb!mwahpy.mwahpy_glob.progressBar(value, endvalue, bar_length=20)!
+
+\verb!value! (int): the value that is being iterated
+
+\verb!endvalue! (int): the value at which the loop terminates 
+
+\verb!bar_length! (int): How many characters long the progress bar is in the terminal output
+
+Adapted from \url{https://stackoverflow.com/questions/6169217/replace-console-output-in-python}. This function can be placed inside a loop and will output a nice progress bar in the terminal, provided you know the end value that the loop should terminate on. 
+
+\item \verb!mwahpy.mwahpy_glob.fileLen(f)!
+
+\verb!f! (str): the filename (path)
+
+Given a file, this function will determine the number of lines in that file. Useful for implementing \verb!mwahpy.mwahpy_glob.progressBar()! while reading in files. 
+
+\end{itemize} 
 
 \subsection{\textit{pot}}
 
-Text
+Constants and functions related to the Milky Way's gravitational potential are found in \verb!mwahpy.pot.py!. The default potential that is used in \mwahpy is the Orphan Stream Fit \#5 Potential from Newberg et al. (2010). This potential is very similar to Law et al. (2005). 
+
+\begin{itemize}
+
+\item \verb!mwahpy.pot.m_bulge!
+
+The mass of the bulge in \verb!astropy! solar masses. Equal to 3.4e10 \msol
+
+\item \verb!mwahpy.pot.m_disk!
+
+The mass of the disk in \verb!astropy! solar masses. Equal to 1.0e11 \msol
+
+\item \verb!mwahpy.pot.v_halo!
+
+The Milky Way halo dispersion in \verb!astropy! km/s. Equal to 74.61 km/s.
+
+\item \verb!mwahpy.pot.pot_bulge!
+
+The gravitational potential of the Milky Way due to the bulge. Given as a \verb!galpy potential! object. 
+
+\item \verb!mwahpy.pot.pot_disk!
+
+The gravitational potential of the Milky Way due to the disk. Given as a \verb!galpy potential! object. 
+
+\item \verb!mwahpy.pot.pot_halo!
+
+The gravitational potential of the Milky Way due to the halo. Given as a \verb!galpy potential! object. 
+
+\item \verb!mwahpy.pot.energy_offset!
+
+Due to the logarithmic halo potential term in our gravitational potential for the Milky Way, the potential does not disappear as one travels infinitely far from the center of the potential. A side effect of this type of halo potential is that it is not clear what structures are bound or unbound to the potential, as the zero-point of the energy is not representative of the escape velocity. This adjusts the calculated potential energy so that it is consistent with Donlon et al. (2019), and so that clearly bound structures will not have positive energy values. The default value is -60000 km$^2$/s$^2$. 
+
+\item \verb!plotPotential(potential, Rrange=[0.01,10.])!
+  
+\verb!potential! (\verb!galpy potential! object): the potential that you wish to graph 
+
+\verb!Rrange! (list of floats): the Galactocentric cylindrical radius of the points that you wish to evaluate the potential at
+
+This method will generate a figure with the rotation curve of the potential in the plane of the Milky Way. 
+
+\end{itemize}
 
 \section{Functions \& Methods}
 
 Text
 
 \subsection{\textit{timestep}} \label{sec:doc_timestep}
+
+Text
+
+\subsection{\textit{nbody}}
 
 Text
 
@@ -588,7 +718,7 @@ Text
 
 Text
 
-\subsection{\textit{coords}}
+\subsection{\textit{coords}} \label{sec:doc_coords}
 
 Text
 

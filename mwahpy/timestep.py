@@ -162,7 +162,8 @@ class Timestep():
     def update(self):
         self.centerOfMass = [np.sum(self.x*self.mass/sum(self.mass)), np.sum(self.y*self.mass/sum(self.mass)), np.sum(self.z*self.mass/sum(self.mass))]
         self.centerOfMomentum = [np.sum(self.vx*self.mass/sum(self.mass)), np.sum(self.vy*self.mass/sum(self.mass)), np.sum(self.vz*self.mass/sum(self.mass))]
-        self.distFromCOM = ((self.x - self.centerOfMass[0])**2 + (self.y - self.centerOfMass[1])**2 + (self.z - self.centerOfMass[2])**2)**0.5
+        if self.have_basic:
+            self.distFromCOM = ((self.x - self.centerOfMass[0])**2 + (self.y - self.centerOfMass[1])**2 + (self.z - self.centerOfMass[2])**2)**0.5
 
     #creates a deep copy of the Timestep object
     #this can't be done by iterating over the object, since comass etc. have to be copied as well
@@ -249,17 +250,20 @@ class Timestep():
 
         self.have_rvpm = True #make sure the getter doesn't try to run this again
 
-    def calcEnergy(self):
+    def calcEnergy(self, potential=None):
         #calculating the energy of every particle can generate some overhead,
         #so I've quarantined it with a flag.
 
         if flags.verbose:
             print('Calculating energy values...')
 
+        if potential == None:
+            potential = pot.pot
+
         #in a logarithmic halo, the magnitude of the potential doesn't impact the result,
         #just the difference in potentials. So, you can specify a potential offset
         #to keep bound objects' total energy negative.
-        PE = galpy.potential.evaluatePotentials(pot.pot, self.R * u.kpc, self.z*u.kpc, ro=8., vo=220.) + pot.energy_offset
+        PE = galpy.potential.evaluatePotentials(potential, self.R * u.kpc, self.z*u.kpc, ro=8., vo=220.) + pot.energy_offset
         KE = 0.5*(self.vx**2 + self.vy**2 + self.vz**2)
 
         #set attributes
@@ -338,7 +342,7 @@ class Timestep():
 
         Timestep2 = self.copy()
         i = 1
-        while i < len(indices): #pseudo recursive
+        while i < len(indices): #pseudo-recursive
             Timestep1, Timestep2 = Timestep2.split(indices[i] - indices[i-1])
             outlist.append(Timestep1)
             i += 1
@@ -391,10 +395,13 @@ class Timestep():
     # PLOTTING
     #---------------------------------------------------------------------------
     #NOTE: the actual plotting routines should be implemented in plot.py
-    #this is just to allow you to access the routine as timestep.scatter()
+    #this is just to allow you to access the routines as timestep.<method>()
 
     def scatter(self, x, y, **kwargs):
         plot.scatter(self, x, y, **kwargs)
+
+    def hist2d(self, x, y, **kwargs):
+        plot.hist2d(self, x, y, **kwargs)
 
     #---------------------------------------------------------------------------
     # MISCELLANEOUS

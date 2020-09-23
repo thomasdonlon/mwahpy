@@ -40,7 +40,7 @@ energy_offset = -60000 #adjusts the energy to be consistent with Donlon et al. 2
 # FUNCTIONS
 #===============================================================================
 
-def plotPotential(Rrange=[0.01,10.]):
+def plotPotential(potential, Rrange=[0.01,10.]):
     fig = plt.figure(figsize=(12,8))
-    pot.plotRotcurve(Rrange=Rrange, overplot=True)
+    potential.plotRotcurve(Rrange=Rrange, overplot=True)
     plt.show()
