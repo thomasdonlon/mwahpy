@@ -4,5 +4,5 @@ matplotlib
 random
 astropy
 scipy
-math
 unittest
+pathlib

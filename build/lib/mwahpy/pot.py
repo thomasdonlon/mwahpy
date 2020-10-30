@@ -33,11 +33,14 @@ pot_halo = LogarithmicHaloPotential(amp=2*v_halo**2, q=1., core=12.0*u.kpc, ro=8
 #this potential is from Newberg et al. 2010, Orphan Stream Model 5. It's basically Law 2005
 pot = [pot_bulge, pot_disk, pot_halo]
 
+energy_offset = -60000 #adjusts the energy to be consistent with Donlon et al. 2019
+
+
 #===============================================================================
 # FUNCTIONS
 #===============================================================================
 
-def plotPotential(Rrange=[0.01,10.]):
+def plotPotential(potential, Rrange=[0.01,10.]):
     fig = plt.figure(figsize=(12,8))
-    pot.plotRotcurve(Rrange=Rrange, overplot=True)
+    potential.plotRotcurve(Rrange=Rrange, overplot=True)
     plt.show()

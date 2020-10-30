@@ -14,9 +14,12 @@ import astropy.units as u
 # CONSTANTS
 #===============================================================================
 
-G = 6.67e-11*u.m**3/(u.kg*u.s**2)
+G = 6.674e-11*u.m**3/(u.kg*u.s**2)
 
 structToSol = 222288.47 #this many solar masses make up one structural nass unit (the output of mwah)
+
+kmsToKpcgyr = 1.023 #1 km/s is 1.023 kpc/Gyr
+kpcgyrToKms = 0.978 #1 kpc/Gyr is 0.978 km/s
 
 #===============================================================================
 # FUNCTIONS
@@ -30,7 +33,7 @@ def progressBar(value, endvalue, bar_length=20):
     arrow = '-' * int(round(percent * bar_length)-1) + '>'
     spaces = ' ' * (bar_length - len(arrow))
 
-    sys.stdout.write("\rPercent: [{0}] {1}%".format(arrow + spaces, int(round(percent * 100))))
+    sys.stdout.write("\r[{0}] {1}%".format(arrow + spaces, int(round(percent * 100))))
     sys.stdout.flush()
 
 #get length of a file (in lines), given the filename

@@ -1,7 +1,6 @@
 import numpy as np
 from numpy import linalg
 import scipy as sc
-import math as ma
 import unittest
 
 #TODO: Make sure all transformations have inverse transformations
@@ -331,6 +330,8 @@ def getvxvyvz(dist, rv, ra, dec, pmra, pmde):
 
 #-------------------------------------------------------------------------------
 
+#TODO: Make function accept input of not array
+#TODO: Do the linear algebra to avoid a inv calcualtion, since that's huge time waste
 #solar reflex motion will be already removed if UVW are galactocentric
 #inputs must be arrays, even if just of length 1
 def getrvpm(ra, dec, dist, U, V, W):
@@ -408,6 +409,26 @@ def getUVWerrors(dist, ra, dec, pmra, pmdec, err_pmra, err_pmdec, err_rv, err_di
     err_w = (uvw_var[2][0])**0.5
 
     return err_u, err_v, err_w
+
+def rvToVgsr(l, b, rv):
+    #TODO: Allow ra, dec as inputs
+
+    use_array = True
+    if type(l) != type(np.array([])):
+        use_array = False
+        l = np.array([l])
+        b = np.array([b])
+        rv = np.array([rv])
+
+    l = l * np.pi/180
+    b = b * np.pi/180
+
+    vgsr = rv + 10.1*np.cos(l)*np.cos(b) + 224*np.sin(l)*np.cos(b) + 6.7*np.sin(b)
+
+    if not use_array:
+        vgsr = vgsr[0]
+
+    return vgsr
 
 #=====================================
 #MISC TOOLS
