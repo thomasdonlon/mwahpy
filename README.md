@@ -39,14 +39,14 @@ FOR USERS:
 
 1. Open your terminal, and run
 
-> python3 -m pip install --index-url https://pypi.org/simple/ --no-deps mwahpy-donlot
+> python3 -m pip install mwahpy
 
 2. Insert import statements for the subpackages that you want to use in your .py files:
 
 > import mwahpy.{mwahpy subpackage}
- 
+
 > import mwahpy.{other mwahpy subpackage}
- 
+
 > ...
 
 3. Do science
@@ -63,9 +63,9 @@ and is given after "USER-SITE")
 3. Insert import statements for the subpackages that you want to use:
 
 > import mwahpy.{mwahpy subpackage}
- 
+
 > import mwahpy.{other mwahpy subpackage}
- 
+
 > ...
 
 in your code

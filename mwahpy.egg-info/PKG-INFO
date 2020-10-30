@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: mwahpy
-Version: 1.0.0
+Version: 1.2.0
 Summary: A python package for easily parsing and processing data from milkyway@home
 Home-page: https://github.com/thomasdonlon/mwahpy
 Author: Tom Donlon
@@ -47,14 +47,14 @@ Description:  MILKYWAY@HOME PYTHON PACKAGE (MWAHPY)
         
         1. Open your terminal, and run
         
-        > python3 -m pip install --index-url https://pypi.org/simple/ --no-deps mwahpy-donlot
+        > python3 -m pip install mwahpy
         
         2. Insert import statements for the subpackages that you want to use in your .py files:
         
         > import mwahpy.{mwahpy subpackage}
-         
+        
         > import mwahpy.{other mwahpy subpackage}
-         
+        
         > ...
         
         3. Do science
@@ -71,9 +71,9 @@ Description:  MILKYWAY@HOME PYTHON PACKAGE (MWAHPY)
         3. Insert import statements for the subpackages that you want to use:
         
         > import mwahpy.{mwahpy subpackage}
-         
+        
         > import mwahpy.{other mwahpy subpackage}
-         
+        
         > ...
         
         in your code
