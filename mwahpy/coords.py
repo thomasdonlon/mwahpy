@@ -720,7 +720,7 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
         origin2 *= np.pi/180
 
     '''
-    This was an attempt at a 3D euler angle method for sky_to_pole, but it's bugged.
+    This was an attempt at a 3D euler angle method for sky_to_pole, but it's buggy.
     I ended up moving to the simplified vector arithmetic version that is implemented below.
     This method, if debugged, would probably avoid the singularities at the poles that
     sky_to_pole runs into currently.

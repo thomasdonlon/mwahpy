@@ -3,6 +3,10 @@ This file is a place to store constants and other information
 that is widely used throughout mwahpy.
 '''
 
+#TODO: Get more accurate solar velocity and position of Sun from GC
+#TODO: Make more tests and put them all in a single test.py file
+#TODO: Ensure all imports are actually used (and necessary) for each file
+
 #===============================================================================
 # IMPORTS
 #===============================================================================

@@ -3,9 +3,8 @@ The contents of this file are focused on the Timestep class, which is used for s
 imported data from N-body output files.
 '''
 
-#TODO: split functions should fix id values? Maybe not, depends on what the behavior is supposed to do
-#   this could probably be added into update
 #TODO: UNIT TESTS
+#TODO: Create sort function that sorts based on id (not really importamt)
 
 #===============================================================================
 # IMPORTS
@@ -26,10 +25,6 @@ import flags
 import plot
 import pot
 
-#TODO: make a Nbody class that reads in from a folder full of timesteps, and acts
-#   as a collection of Timestep instances. Each Timestep instance is one of the timesteps,
-#   and can be called as that timestep.
-
 #===============================================================================
 # TIMESTEP CLASS
 #===============================================================================
@@ -39,13 +34,13 @@ import pot
 #this is probably a bad way to implement this but it works, and it's better than
 #making Timestep inherit from dict, which was the other solution I was able to strum up
 class AttrDict(dict):
-    def __init__(self, *args, **kwargs):
-        super(AttrDict, self).__init__(*args, **kwargs)
+    def __init__(self):
+        super(AttrDict, self).__init__()
         self.__dict__ = self
 
 class Timestep():
 
-    def __init__(self, id_val=[], x=[], y=[], z=[], vx=[], vy=[], vz=[], mass=[], centerOfMass=[0, 0, 0], centerOfMomentum=[0, 0, 0], pot_offset=0, time=None, nbody=None, *args, **kwargs):
+    def __init__(self, id_val=[], x=[], y=[], z=[], vx=[], vy=[], vz=[], mass=[], centerOfMass=[0, 0, 0], centerOfMomentum=[0, 0, 0], potential=None, time=None, nbody=None):
         #all this is typically specified by the readOutput function in output_handler
         #readOutput is the preferred way to input data to this data structure
         #but if you're really feeling adventurous you can always do it yourself
@@ -94,6 +89,10 @@ class Timestep():
         #if the Timestep is part of a Nbody object, it saves that information here
         self.nbody = nbody
 
+        #just in case the user wants to specify a different potential than the
+        #mwahpy default, this is included
+        self.potential = potential
+
         #this has to be manually updated any time a new iterable quantity is added
         #to the Timestep class. This allows us to control what values are iterated over.
         self.indexList = ['id', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'mass']
@@ -107,6 +106,16 @@ class Timestep():
         self.have_basic = False
         self.have_rvpm = False
         self.have_energy = False
+
+        #these flags should also initially be set to false. If the position or
+        #velocity of one or more particles is changed at any point, the
+        #corresponding flag should be swapped. This tells update() how much it
+        #needs to update instead of running the whole routine every time, which
+        #would be very time consuming.
+        #these flags allow all calculated attributes to be updated whenever
+        #changes are made, and at a reasonable speed.
+        self.changed_pos = False
+        self.changed_vel = False
 
     #---------------------------------------------------------------------------
     # METHODS
@@ -148,22 +157,50 @@ class Timestep():
         if (not(self.have_rvpm) and i in ['rv', 'pmra', 'pmdec',  'pmtot', 'vtan']):
             self.calcrvpm()
         if (not(self.have_energy) and i in ['PE', 'KE', 'energy']):
-            self.calcEnergy()
+            self.calcEnergy(potential=self.potential)
         return self.__dict__[i]
 
     def __setitem__(self, i, val):
         self.__dict__[i] = val
 
+        #set the flags that say we need to update the corresponding attributes
+        #based on what was changed
+        if i in ['x', 'y', 'z']:
+            self.changed_pos = True
+        elif i in ['vx', 'vy', 'vz']:
+            self.changed_vel = True
+
     #---------------------------------------------------------------------------
+    #a few routines that are important for the functionality of Timestep, but
+    #don't really fit in elsewhere
 
     def __len__(self):
         return len(self.id)
 
-    def update(self):
-        self.centerOfMass = [np.sum(self.x*self.mass/sum(self.mass)), np.sum(self.y*self.mass/sum(self.mass)), np.sum(self.z*self.mass/sum(self.mass))]
-        self.centerOfMomentum = [np.sum(self.vx*self.mass/sum(self.mass)), np.sum(self.vy*self.mass/sum(self.mass)), np.sum(self.vz*self.mass/sum(self.mass))]
-        if self.have_basic:
-            self.distFromCOM = ((self.x - self.centerOfMass[0])**2 + (self.y - self.centerOfMass[1])**2 + (self.z - self.centerOfMass[2])**2)**0.5
+    def update(self, force=False):
+        #only update the necessary attributes based on what changed
+        #if force==True, then force updating everything
+        if force:
+            self.changed_pos = True
+            self.changed_vel = True
+
+        if self.changed_pos:
+            self.centerOfMass = [np.sum(self.x*self.mass/sum(self.mass)), np.sum(self.y*self.mass/sum(self.mass)), np.sum(self.z*self.mass/sum(self.mass))]
+        if self.changed_vel:
+            self.centerOfMomentum = [np.sum(self.vx*self.mass/sum(self.mass)), np.sum(self.vy*self.mass/sum(self.mass)), np.sum(self.vz*self.mass/sum(self.mass))]
+
+        if self.changed_pos or self.changed_vel:
+            if self.have_basic:
+                self.calcBasic()
+            if self.have_rvpm:
+                self.calcrvpm()
+            if self.have_energy:
+                self.calcEnergy(potential=self.potential)
+
+        #the positions and velocities have not changed since updating
+        #(since we just updated)
+        changed_pos = False
+        changed_vel = False
 
     #creates a deep copy of the Timestep object
     #this can't be done by iterating over the object, since comass etc. have to be copied as well
@@ -221,7 +258,6 @@ class Timestep():
         #velocity information
         self.vgsr = ((self.x+8)*self.vx + self.y*self.vy + self.x*self.vz)/self.dist
         self.vlos = self.vgsr - 10.1*np.cos(self.b*np.pi/180)*np.cos(self.l*np.pi/180) - 224*np.cos(self.b*np.pi/180)*np.sin(self.l*np.pi/180) - 6.7*np.sin(self.b*np.pi/180)
-        #TODO: make sure that the vlos that is given from MW@h isn't already actually vgsr
         self.rad = (self.x*self.vx + self.y*self.vy + self.z*self.vz)/self.r
         self.rot = self.lz/(self.x**2 + self.y**2)**0.5
 
@@ -240,13 +276,14 @@ class Timestep():
         if flags.verbose:
             print('Calculating proper motion values...')
 
-        self.rv, self.pmra, self.pmdec = co.getrvpm(self.ra, self.dec, self.dist, self.vx, self.vy, self.vz)
+        self.pmra, self.pmdec = co.getrvpm(self.ra, self.dec, self.dist, self.vx, self.vy, self.vz)[1:]
+        #already get rv from vlos, don't need to save it as something else
         self.pmtot = (self.pmra**2 + self.pmdec**2)**0.5
         #4.848e-6 is arcsec->rad, 3.086e16 is kpc->km, and 3.156e7 is sidereal yr -> seconds
         self.vtan = 4.74*self.dist*self.pmtot #eq. to self.r*np.tan(self.pmtot*4.848e-6) * 3.086e16 / 3.156e7
 
         if not(self.have_rvpm): #only run if first time running method, not if updating
-            self.indexList = self.indexList + ['rv', 'pmra', 'pmdec',  'pmtot', 'vtan']
+            self.indexList = self.indexList + ['pmra', 'pmdec',  'pmtot', 'vtan']
 
         self.have_rvpm = True #make sure the getter doesn't try to run this again
 
@@ -276,17 +313,6 @@ class Timestep():
             self.indexList = self.indexList + ['PE', 'KE', 'energy']
 
         self.have_energy = True #make sure the getter doesn't try to run this again
-
-    #running this function will update all values in the class that are
-    #   1: not provided upon initialization
-    #   2: have been calculated already (as per the 'self.have_' attributes)
-    def updateValues(self):
-        if self.have_basic:
-            self.calcBasic()
-        if self.have_rvpm:
-            self.calcrvpm()
-        if self.have_energy:
-            self.calcEnergy()
 
     #---------------------------------------------------------------------------
 
@@ -335,6 +361,7 @@ class Timestep():
 
     #splits the Timestep into a list of new Timestep structures,
     #where the Timestep is split every time ID wraps back to zero
+    #TODO: the dwarf id start at 1, not 0
     def splitAtIdWrap(self):
 
         outlist = []
@@ -365,14 +392,32 @@ class Timestep():
 
     #append the nth item of another Timestep object onto this one
     #WARNING: Extremely time intensive if used repeatedly, np.append is not a speedy function
+    #   you should always try to append a timestep instead if possible
     def appendPoint(self, t, n=0, id=None):
         #t: the Timestep object with the item being appended
-        #n: the index of the item in t to be appended
-        #id: if not None, uses finds the first item with matching id and appends that
+        #n (optional): the index of the item in t to be appended
+        #id (optional): if not None, uses finds the first item with matching id and appends that
         if id:
             n = np.where(t['id'] == id)[0]
         for key, tkey in zip(self, t):
             self[key] = np.append(self[key], t[tkey][n])
+
+        if flags.autoUpdate:
+            self.update()
+
+    #centers the timestep so that the COMs are now both zero vectors
+    #this can be useful if running live simulations, which can pick up nonzero
+    #   overall velocities when they relax from unstable virial equilibrium ICs
+    def recenter(self):
+        #center the positions of the particles
+        self.x = self.x - self.centerOfMass[0]
+        self.y = self.y - self.centerOfMass[1]
+        self.z = self.z - self.centerOfMass[2]
+
+        #center the velocities of the particles
+        self.vx = self.vx - self.centerOfMomentum[0]
+        self.vy = self.vy - self.centerOfMomentum[1]
+        self.vz = self.vz - self.centerOfMomentum[2]
 
         if flags.autoUpdate:
             self.update()
@@ -382,7 +427,8 @@ class Timestep():
     #---------------------------------------------------------------------------
 
     def printParticle(self, n, dec=8):
-        #n (int): the id of the particle that you want the information for
+        #n (int): the location of the particle that you want the information for
+        #TODO: allow for using the id to find the particle
         print('Printing data for Particle '+str(n)+':')
 
         outstr = '('
@@ -407,9 +453,7 @@ class Timestep():
     # MISCELLANEOUS
     #---------------------------------------------------------------------------
 
-    #NOTE: Does not correctly adjust all parameters
-    #TODO: Fix this function
-    #might be better to rotate x, y, vx, vy and then re-initialize the Timestep object
+    #TODO: make rotation about arbitrary axis (not important)
     def rotateAroundZAxis(self, theta, rad=False): #rotates counter-clockwise
         #rad: True if theta is in radians
 
@@ -436,20 +480,8 @@ class Timestep():
         self.vx = new_vxvy[0]
         self.vy = new_vxvy[1]
 
-        #update angular momenta
-        self.lx = self.y * self.vz - self.z * self.vy
-        self.ly = self.x * self.vz - self.z * self.vx
-        self.lz = self.x * self.vy - self.y * self.vx
-
-        #TODO: update other parameters that will be impacted by this (vlos, pm's)
-
         if flags.autoUpdate:
             self.update()
-
-    #TODO: subsets should return the same instance
-    #   the user should copy the Timestep instance themselves if they want
-    #   that functionality. This way, we aren't wasting time copying the
-    #   object every time you subset it
 
     #make an n-dimensional rectangular cut on the data
     #TODO: make an inverted method, i.e. cut out things within the bounds
@@ -540,132 +572,3 @@ class Timestep():
 #===============================================================================
 # FUNCTIONS INVOLVING TIMESTEP CLASSES
 #===============================================================================
-
-
-
-#===============================================================================
-# UNIT TESTING
-#===============================================================================
-#Most of the tests in this file read in the test.out MW@h output file that is
-#packaged along with the developer version of mwahpy. Without this file, these
-#tests will fail. If a different file is used, these tests will also fail.
-
-#TODO: Complete tests for all functions in class
-
-#NOTE: test.out does not have correct COM information, since it is a
-#truncated version of a much larger MW@h output file.
-
-#to run tests, run this file like you would run a regular python script
-
-#to add more tests,
-# 1) Find a test class that fits the description of the test you want to add,
-#    then add that test to the class as a function beginning with "test", OR
-# 2) Create a new class beginning with "test" and composed of just (unittest.TestCase)
-#    and then add new functions that begin with "test" to that class.
-#    This should be used if new tests do not fit the descriptions of other
-#    test classes
-
-#after changing this file, it should be run in order to make sure all tests pass
-#if tests don't pass, congratulations you broke something
-#please fix it
-
-prec = 8 #number of digits to round to when comparing floats
-#WARNING: Tests may (but are not expected to) fail at high levels of prec
-
-class TestTimestepClass(unittest.TestCase):
-
-    import output_handler
-
-    def testTimestepInitialize(self):
-        t = Timestep() #check default initialization
-        t = output_handler.readOutput('../test/test.out') #check loading from a file
-
-    def testTimestepDict(self):
-        t = output_handler.readOutput('../test/test.out')
-        self.assertTrue(t.x[0] == t['x'][0])
-
-        t.x[0] = 1
-        self.assertTrue(t['x'][0] == 1)
-
-    def testTimestepIter(self):
-        t = output_handler.readOutput('../test/test.out')
-
-        for key, k in zip(t, t.indexList):
-            self.assertTrue(t[key][0] == t[k][0])
-            t[key][0] = 1
-
-        self.assertTrue(t.x[0] == t['x'][0] == 1)
-
-        for key in t:
-            t[key] = np.append(t[key], 0)
-
-        self.assertTrue(t.x[-1] == t['x'][-1] == 0)
-
-    def testCopy(self):
-        t = output_handler.readOutput('../test/test.out')
-
-        t2 = t.copy()
-        test = t.x[0]
-        t.x[0] = 0
-
-        self.assertTrue(t.x[0] != t2.x[0])
-        self.assertTrue(t2.x[0] == test)
-
-    def testAppendPoint(self):
-        t = output_handler.readOutput('../test/test.out')
-
-        t2 = t.copy()
-
-        t2.appendPoint(t, 5)
-
-        self.assertTrue(t.x[5] == t2.x[-1])
-        self.assertTrue(len(t2) == len(t)+1)
-
-    def testSplit(self):
-        t = output_handler.readOutput('../test/test.out')
-
-        t1, t2 = t.split(5)
-        self.assertTrue(t1.x[0] == t.x[0])
-        self.assertTrue(t2.x[0] == t.x[5])
-
-    def testSubsetRect(self):
-        t = output_handler.readOutput('../test/test.out')
-        tc = t.copy()
-
-        tc.subsetRect(('x',), ((-1,1),))
-
-        self.assertTrue(len(tc) == 7)
-
-    def testCalcs(self): #this just makes sure that the values that
-        #are not initially calculated on instantiation then run when the user
-        #tries to get those values
-
-        t = output_handler.readOutput('../test/test.out')
-
-        print(len(t.rv))
-
-        self.assertTrue(len(t.rv) == len(t))
-        self.assertTrue(len(t.energy) == len(t))
-
-class TestTimestepMethods(unittest.TestCase):
-
-    def testUpdate(self):
-        t = output_handler.readOutput('../test/test.out')
-        t.update()
-
-        #these values for the COM's are hard coded, unfortunately. But they are correct.
-        self.assertTrue(len(t.centerOfMass) == 3)
-        self.assertTrue(round(abs(t.centerOfMass[0] - 0.7835947518080879) + abs(t.centerOfMass[1] - 0.2947546230649471) + abs(t.centerOfMass[2] + 0.1318053758650839), prec) == 0)
-
-        self.assertTrue(len(t.centerOfMomentum) == 3)
-        self.assertTrue(round(abs(t.centerOfMomentum[0] - 6.001115213580641) + abs(t.centerOfMomentum[1] + 65.29652414026405) + abs(t.centerOfMomentum[2] + 26.462554427407223), prec) == 0)
-
-        self.assertTrue(len(t.distFromCOM) == len(t))
-        self.assertTrue(round(abs(t.distFromCOM[0] - ((t.centerOfMass[0] - t.x[0])**2 + (t.centerOfMass[1] - t.y[0])**2 + (t.centerOfMass[2] - t.z[0])**2)**0.5), prec) == 0)
-
-#===============================================================================
-# RUNTIME
-#===============================================================================
-
-if __name__ == '__main__':
-    unittest.main()

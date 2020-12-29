@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2020.4.11)  22 SEP 2020 11:05
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2020.4.11)  29 DEC 2020 14:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1087,8 +1087,8 @@ LaTeX Font Info:    Font shape `OT1/zi4/m/n' will be
 (Font)              scaled to size 7.0pt on input line 64.
 LaTeX Font Info:    Font shape `OT1/zi4/m/n' will be
 (Font)              scaled to size 5.0pt on input line 64.
- [2]
-Underfull \hbox (badness 10000) in paragraph at lines 103--104
+ [2] [3]
+Underfull \hbox (badness 10000) in paragraph at lines 109--110
 
  []
 
@@ -1097,14 +1097,6 @@ Underfull \hbox (badness 10000) in paragraph at lines 103--104
 (/usr/share/texlive/texmf-dist/tex/latex/listings/lstlang1.sty
 File: lstlang1.sty 2015/06/04 1.6 listings language file
 ) (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 109--110
-
- []
-
-[3]
-\openout4 = `doc.listing'.
-
- (./doc.listing)
 Underfull \hbox (badness 10000) in paragraph at lines 115--116
 
  []
@@ -1119,7 +1111,21 @@ Underfull \hbox (badness 10000) in paragraph at lines 121--122
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 129--130
+Underfull \hbox (badness 10000) in paragraph at lines 127--128
+
+ []
+
+\openout4 = `doc.listing'.
+
+(./doc.listing)
+Underfull \hbox (badness 10000) in paragraph at lines 135--136
+
+ []
+
+\openout4 = `doc.listing'.
+
+(./doc.listing) [4]
+Underfull \hbox (badness 10000) in paragraph at lines 145--146
 
  []
 
@@ -1131,47 +1137,47 @@ LaTeX Font Info:    Font shape `OT1/zi4/bx/n' in size <10> not available
 LaTeX Font Info:    Font shape `OT1/zi4/b/n' will be
 (Font)              scaled to size 10.0pt on input line 1.
 )
-Underfull \hbox (badness 10000) in paragraph at lines 139--140
-
- []
-
-\openout4 = `doc.listing'.
-
-(./doc.listing) [4]
-Underfull \hbox (badness 10000) in paragraph at lines 165--166
+Underfull \hbox (badness 10000) in paragraph at lines 155--156
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing) [5]
-Underfull \hbox (badness 10000) in paragraph at lines 185--186
+Underfull \hbox (badness 10000) in paragraph at lines 183--184
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 197--198
-
- []
-
-\openout4 = `doc.listing'.
-
-(./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 204--205
+Underfull \hbox (badness 10000) in paragraph at lines 203--204
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing) [6]
+Underfull \hbox (badness 10000) in paragraph at lines 215--216
 
-LaTeX Warning: Reference `sec:intricacies' on page 7 undefined on input line 21
-5.
+ []
+
+\openout4 = `doc.listing'.
+
+(./doc.listing)
+Underfull \hbox (badness 10000) in paragraph at lines 222--223
+
+ []
+
+\openout4 = `doc.listing'.
+
+(./doc.listing)
+
+LaTeX Warning: Reference `sec:intricacies' on page 7 undefined on input line 23
+3.
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 217--218
+Underfull \hbox (badness 10000) in paragraph at lines 235--236
 
  []
 
@@ -1184,170 +1190,211 @@ LaTeX Font Warning: Font shape `OT1/zi4/m/it' undefined
 
 LaTeX Font Info:    Font shape `OT1/zi4/m/it' will be
 (Font)              scaled to size 10.0pt on input line 1.
-)
-Underfull \hbox (badness 10000) in paragraph at lines 235--236
+) [7]
+Underfull \hbox (badness 10000) in paragraph at lines 253--254
 
  []
 
 \openout4 = `doc.listing'.
 
-(./doc.listing) [7]
-LaTeX Font Info:    Try loading font information for TS1+zi4 on input line 253.
+(./doc.listing)
+LaTeX Font Info:    Try loading font information for TS1+zi4 on input line 271.
 
-
-(/usr/share/texlive/texmf-dist/tex/latex/inconsolata/ts1zi4.fd
+ (/usr/share/texlive/texmf-dist/tex/latex/inconsolata/ts1zi4.fd
 File: ts1zi4.fd 2018/01/14 TS1/zi4 (Inconsolata)
 )
 LaTeX Font Info:    Font shape `TS1/zi4/m/n' will be
-(Font)              scaled to size 10.0pt on input line 253.
+(Font)              scaled to size 10.0pt on input line 271.
 
-Underfull \hbox (badness 10000) in paragraph at lines 257--258
-
- []
-
-\openout4 = `doc.listing'.
-
-(./doc.listing) [8]
 Underfull \hbox (badness 10000) in paragraph at lines 275--276
 
  []
 
 \openout4 = `doc.listing'.
 
-(./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 284--285
+(./doc.listing) [8]
+Underfull \hbox (badness 10000) in paragraph at lines 293--294
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 298--299
-
- []
-
-\openout4 = `doc.listing'.
-
-(./doc.listing) [9]
-Underfull \hbox (badness 10000) in paragraph at lines 315--316
+Underfull \hbox (badness 10000) in paragraph at lines 302--303
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 328--329
+Underfull \hbox (badness 10000) in paragraph at lines 316--317
+
+ []
+
+[9]
+\openout4 = `doc.listing'.
+
+ (./doc.listing)
+Underfull \hbox (badness 10000) in paragraph at lines 333--334
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 338--339
-
- []
-
-\openout4 = `doc.listing'.
-
-(./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 351--352
+Underfull \hbox (badness 10000) in paragraph at lines 346--347
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing) [10]
-Underfull \hbox (badness 10000) in paragraph at lines 366--367
+Underfull \hbox (badness 10000) in paragraph at lines 356--357
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 393--394
+Underfull \hbox (badness 10000) in paragraph at lines 369--370
+
+ []
+
+\openout4 = `doc.listing'.
+
+(./doc.listing)
+Underfull \hbox (badness 10000) in paragraph at lines 384--385
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing) [11]
-Underfull \hbox (badness 10000) in paragraph at lines 404--405
+Underfull \hbox (badness 10000) in paragraph at lines 411--412
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
+Underfull \hbox (badness 10000) in paragraph at lines 422--423
+
+ []
+
 \openout4 = `doc.listing'.
 
- (./doc.listing) [12]
-Underfull \hbox (badness 10000) in paragraph at lines 452--453
+(./doc.listing) [12]
+\openout4 = `doc.listing'.
+
+ (./doc.listing)
+Underfull \hbox (badness 10000) in paragraph at lines 470--471
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 459--460
+Underfull \hbox (badness 10000) in paragraph at lines 477--478
 
  []
 
+[13]
 \openout4 = `doc.listing'.
 
-(./doc.listing) [13]
-Underfull \hbox (badness 10000) in paragraph at lines 474--475
-
- []
-
-\openout4 = `doc.listing'.
-
-(./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 483--484
+ (./doc.listing)
+Underfull \hbox (badness 10000) in paragraph at lines 492--493
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 495--496
+Underfull \hbox (badness 10000) in paragraph at lines 501--502
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Package mdframed Info: Not enough space on this page on input line 506.
- [14]
-Package mdframed Info: Not enough space on this page on input line 506.
+Underfull \hbox (badness 10000) in paragraph at lines 513--514
 
-Underfull \hbox (badness 10000) in paragraph at lines 510--511
+ []
+
+\openout4 = `doc.listing'.
+
+(./doc.listing) [14]
+Package mdframed Info: Not enough space on this page on input line 524.
+
+Underfull \hbox (badness 10000) in paragraph at lines 528--529
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing) [15]
-Underfull \hbox (badness 10000) in paragraph at lines 548--549
+Underfull \hbox (badness 10000) in paragraph at lines 566--567
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 560--561
+Underfull \hbox (badness 10000) in paragraph at lines 578--579
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing) [16] [17]
-Overfull \hbox (2.27293pt too wide) in paragraph at lines 647--648
+Overfull \hbox (2.27293pt too wide) in paragraph at lines 679--680
 []\OT1/cmr/m/n/10 Adapted from $\OT1/zi4/m/it/10 https : / / stackoverflow . co
 m / questions / 6169217 / replace-[]console-[]output-[]in-[]python$\OT1/cmr/m/n
 /10 .
  []
 
-[18] [19] (./doc.aux)
+[18] [19] [20]
+Overfull \hbox (3.52379pt too wide) in paragraph at lines 797--798
+[][][]\OT1/zi4/m/it/10 Timestep(id_val=[], x=[], y=[], z=[], vx = [], vy = [], 
+vz = [], mass=[], centerOfMass=[0, 0, 0], 
+ []
+
+[21] [22] [23] [24]
+Overfull \hbox (30.29181pt too wide) in paragraph at lines 1018--1019
+\OT1/cmr/m/n/10 with [][]\OT1/zi4/m/it/10 numpy []\OT1/cmr/m/n/10 ar-rays. One 
+should al-ways try to use com-bi-na-tions of cuts and [][]\OT1/zi4/m/it/10 mwah
+py.timestep.appendTimestep()
+ []
+
+[25]
+Overfull \hbox (42.5408pt too wide) in paragraph at lines 1078--1079
+[]\OT1/cmr/m/n/10 Creates and op-tion-ally shows a 2D his-togram plot of the pa
+r-ti-cle data in the [][]\OT1/zi4/m/it/10 Timestep[]\OT1/cmr/m/n/10 . See [][]\
+OT1/zi4/m/it/10 mwahpy.plot.hist2d()
+ []
+
+[26]
+Overfull \hbox (18.79181pt too wide) in paragraph at lines 1176--1177
+[]\OT1/cmr/m/n/10 Creates and op-tion-ally shows a scat-ter plot of the par-ti-
+cle data in the [][]\OT1/zi4/m/it/10 Timestep[]\OT1/cmr/m/n/10 . See [][]\OT1/z
+i4/m/it/10 mwahpy.plot.scatter()
+ []
+
+[27]
+Overfull \hbox (6.45425pt too wide) in paragraph at lines 1216--1217
+[]\OT1/cmr/m/n/10 WARNING: Un-der some con-di-tions, Milky-Way@home can be-gin 
+in-dex-ing par-ti-cles in a Milky-Way@home
+ []
+
+
+Overfull \hbox (21.09988pt too wide) in paragraph at lines 1252--1253
+\OT1/cmr/m/n/10 mo-tion, a cut in line-of-sight ve-loc-ity, and a cut in dis-ta
+nce, you would write [][]\OT1/zi4/m/it/10 [\TS1/zi4/m/n/10 '\OT1/zi4/m/it/10 pm
+ra\TS1/zi4/m/n/10 '\OT1/zi4/m/it/10 , \TS1/zi4/m/n/10 '\OT1/zi4/m/it/10 vlos\TS
+1/zi4/m/n/10 '\OT1/zi4/m/it/10 , \TS1/zi4/m/n/10 '\OT1/zi4/m/it/10 dist\TS1/zi4
+/m/n/10 '\OT1/zi4/m/it/10 ][]\OT1/cmr/m/n/10 .
+ []
+
+[28] [29] (./doc.aux)
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
@@ -1356,10 +1403,10 @@ LaTeX Warning: There were undefined references.
 
  ) 
 Here is how much of TeX's memory you used:
- 28840 strings out of 492982
- 601325 string characters out of 6134896
- 718700 words of memory out of 5000000
- 31931 multiletter control sequences out of 15000+600000
+ 28850 strings out of 492982
+ 601449 string characters out of 6134896
+ 721760 words of memory out of 5000000
+ 31939 multiletter control sequences out of 15000+600000
  536069 words of font info for 42 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  63i,6n,101p,10486b,1368s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -1371,17 +1418,19 @@ t/fonts/type1/public/inconsolata/Inconsolata-zi4r.pfb></usr/share/texlive/texmf
 -dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb></usr/share/texlive/texmf-dist/
 fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/share/texlive/texmf-dist/fonts/
 type1/public/amsfonts/cm/cmbxti10.pfb></usr/share/texlive/texmf-dist/fonts/type
-1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/publ
-ic/amsfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsf
-onts/cm/cmr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm
-/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.
-pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></u
-sr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/sha
-re/texmf/fonts/type1/public/cm-super/sfrm1000.pfb>
-Output written on doc.pdf (20 pages, 237671 bytes).
+1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fonts/type1/publ
+ic/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/ams
+fonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/c
+m/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12
+.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></u
+sr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/sha
+re/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texl
+ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/share/texmf/font
+s/type1/public/cm-super/sfrm1000.pfb>
+Output written on doc.pdf (30 pages, 279516 bytes).
 PDF statistics:
- 166 PDF objects out of 1000 (max. 8388607)
- 105 compressed objects within 2 object streams
+ 205 PDF objects out of 1000 (max. 8388607)
+ 132 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
  157 words of extra memory for PDF output out of 10000 (max. 10000000)
 

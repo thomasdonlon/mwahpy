@@ -98,9 +98,15 @@ The following functionality is provided in \textit{mwahpy}:
 
 The proper syntax, usage, and details of each of the above capabilities will be outlined in the following sections. 
 
+\subsection{Citing \textit{mwahpy}}
+
+If \mwahpy or any of its related code is used in a publication or project, I simply ask that you state that \mwahpy was used in your work and provide the link for the \mwahpy github repository located at \verb!https://github.com/thomasdonlon/mwahpy!. There is currently no publication that should be cited for this package. In the future, the requirements for proper citation may change, so please check again before final publication. Thank you for using \textit{mwahpy}!
+
+\newpage
+
 \section{Installing \mwahpy}
 
-For a typical user, installing \mwahpy is as simple as installing any other python package. For linux machines, go to your terminal and type \\
+Installing \mwahpy is as simple as installing any other python package. For linux machines, go to your terminal and type \\
 
 \begin{codelisting}{Installing \mwahpy}
 >>> pip3 install mwahpy
@@ -126,6 +132,16 @@ or \\
 
 Any of these lines of code will install \mwahpy on your machine, as well as install all of the prerequisite packages needed for \mwahpy to work. 
 
+If you use Anaconda as a package manager (as is becoming more and more common these days), it is recommended that you still use \verb!pip! to install \mwahpy as is shown above. Hoewever, this can have a couple disadvantages: For starters, the Conda package manager will not manage \textit{mwahpy}. However, \mwahpy will still be managed by the Anaconda environment. Additionally, you can run into some problems if your default installation of python is different than your Anaconda installation of python (a more common problem than it should be). \textbf{If your default python installation is different than your Anaconda installation, I strongly suggest that you go through and fix your python configuration, as you will almost certainly run into other problems eventually.} However, if you don't want to do that (or have your python installation purposefully configured that way for some reason), you can use \\
+
+\begin{codelisting}{Installing \mwahpy}
+>>> conda skeleton pypi mwahpy
+>>> conda build mwahpy
+>>> conda install --use-local mwahpy
+\end{codelisting}
+
+This will install \mwahpy and avoid issues with a misconfigured Anaconda/python installation. Additionally, if \mwahpy is installed this way, the Conda package manager will be responsible for managing \mwahpy instead of \verb!pip!. \textbf{Be aware that this method may not automatically update \mwahpy when a new vrsion of the package is released.} 
+
 In order to use \mwahpy after it is installed, simply import the subpackages as you would any other other package in your python script. For example, the following lines are all syntactically acceptable imports: \\
 
 \begin{codelisting}{Importing \mwahpy}
@@ -148,7 +164,9 @@ In this case, you would replace the path with the path to your \textbf{init.py} 
 
 If you then wish to add, remove, or change code in your distribution of \textit{mwahpy}, that can be done easily in the folder where you cloned \textit{mwahpy}. Any changes that you feel are beneficial to the package should be sent as a pull request to the master branch. 
 
-\section{Core Functionality}
+\newpage
+
+\section{Core Functionality} \label{sec:core_functionality}
 
 \begin{warning}
 MilkyWay@home uses a right-handed Galactic Cartesian coordinate system. This is defined as positive X being in the direction of the Sun towards the Galactic center, positive Y being in the direction of the disk spin at the location of the Sun, and positive Z being in the direction of the right-handed cross product X$\times$Y (often called the ``Galactic north''). In our coordinate system, the Sun is located at the position (X,Y,Z) = (-8,0,0). 
@@ -575,6 +593,8 @@ array([ 4.53813066, -0.59395581, -1.41000385, -0.00613003,  0.11393187,
 
 Text
 
+\newpage
+
 \section{Auxiliary Subpackages}
 
 The \mwahpy package comes with a few auxiliary subpackages with additional content that the typical user might find useful. While the \verb!mwahpy.orbit_fitting! and the \verb!mwahpy.orbit_fitting_gc! subpackages have been used in academic contexts, the packages have not yet been refactored for general use. After the packages have been made consistent with the rest of the \mwahpy code standards, then documentation for those subpackages will be released. 
@@ -583,11 +603,13 @@ The \mwahpy package comes with a few auxiliary subpackages with additional conte
 
 The coordinate transformation package \verb!mwahpy.coords! is made up of many first and second-order transformations for position, velocity, and other values. A complete list of the routines and functions provided in this package is given in Section \ref{sec:doc_coords}. 
 
-This subpackage contains most of the coordinate transformations that a typical person will need to do Galactic astronomy, excluding some on-sky transformations (such as R.A., Dec. to $l$, $b$) that are better accessed through the \verb!astropy! python package. 
+This subpackage contains most of the coordinate transformations that a typical person will need to do Galactic astronomy, excluding some common transformations (such as R.A., Dec. to $l$, $b$) that are implemented in the \verb!astropy! python package. 
 
 \subsection{Orbit Fitting}
 
 The subpackages \verb!mwahpy.orbit_fitting! and \verb!mwahpy.orbit_fitting_gc! are both still under development. Once the code has been refactored and brought to an acceptable level of quality, the documentation for these subpackages will be provided. 
+
+\newpage
 
 \section{Flags \& Settings}
 
@@ -597,19 +619,19 @@ The flags and settings for \mwahpy can be found in \verb!flags.py!. Currently, t
 
 \begin{itemize}
 
-\item \verb!mwahpy.flags.verbose! (default value = 1)
-
-This flag dictates how much is printed out into the terminal when \mwahpy code is running. If turned on, functions are much noisier, and will update you on their current activity. If this is turned off, the overall functionality of \mwahpy will remain unchanged, but the terminal will be less informative. 
-
-\item \verb!mwahpy.flags.progressBars! (default value = 1)
-
-If this flag is turned on, \mwahpy will use progress bars when performing certain actions (such as reading in files) in order to avoid long wait times without updating the terminal. If turned off, \mwahpy functionality will not be changed; however, be aware that you may occasionally experience long periods of time where your terminal is silent.
-
 \item \verb!mwahpy.flags.autoUpdate! (default value = 1)
 
 This flag determines whether or not to automatically update an entire \verb!Timestep! whenever the provided values for that \verb!Timestep! change \textbf{due to a \mwahpy method or function}. Having this flag turned on will keep things like the center of mass and momentum accurate even after changing the constituent data, and will keep all of the calculated values in sync with the provided values throughout \mwahpy functions. 
 
 If you are frequently updating certain values in a \verb!Timestep!, this flag can occasionally cause performance issues (if this flag is causing performance issues, that's probably a sign that there's a better way to do what you are trying to do). It is strongly recommended that this flag is only turned off if the user understands what updating means, how to update the data manually, and what data needs to be updated. 
+
+\item \verb!mwahpy.flags.progressBars! (default value = 1)
+
+If this flag is turned on, \mwahpy will use progress bars when performing certain actions (such as reading in files) in order to avoid long wait times without updating the terminal. If turned off, \mwahpy functionality will not be changed; however, be aware that you may occasionally experience long periods of time where your terminal is silent.
+
+\item \verb!mwahpy.flags.verbose! (default value = 1)
+
+This flag dictates how much is printed out into the terminal when \mwahpy code is running. If turned on, functions are much noisier, and will update you on their current activity. If this is turned off, the overall functionality of \mwahpy will remain unchanged, but the terminal will be less informative. 
 
 \end{itemize}
 
@@ -619,13 +641,28 @@ Constants and functions that are universally accessed in \mwahpy are stored in \
 
 \begin{itemize}
 
+\item \verb!mwahpy.mwahpy_glob.fileLen(f)!
+
+Given a file, this function will determine the number of lines in that file. Useful for implementing \verb!mwahpy.mwahpy_glob.progressBar()! while reading in files. 
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!f! (str) : The filename (should be a path).
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize} 
+
+\item len (int) : The number of lines in the file. 
+
+\end{itemize}
+
+
+
+
 \item \verb!mwahpy.mwahpy_glob.G!
 
 Newton's gravitational constant is provided in \verb!astropy! units of m$^3$/kg s$^2$.
-
-\item \verb!mwahpy.mwahpy_glob.structToSol!
-
-This is the conversion factor between MilkyWay@home structural masses and solar masses. Equal to 222,288.47 solar masses/structure unit.
 
 \item \verb!mwahpy.mwahpy_glob.kmsToKpcgyr!
 
@@ -636,21 +673,28 @@ The conversion factor from km/s to kpc/Gyr. Roughly equal to unity (1.023).
 The conversion factor from kpc/Gyr to km/s. Roughly equal to unity (0.978).
 
 
+
 \item \verb!mwahpy.mwahpy_glob.progressBar(value, endvalue, bar_length=20)!
-
-\verb!value! (int): the value that is being iterated
-
-\verb!endvalue! (int): the value at which the loop terminates 
-
-\verb!bar_length! (int): How many characters long the progress bar is in the terminal output
 
 Adapted from \url{https://stackoverflow.com/questions/6169217/replace-console-output-in-python}. This function can be placed inside a loop and will output a nice progress bar in the terminal, provided you know the end value that the loop should terminate on. 
 
-\item \verb!mwahpy.mwahpy_glob.fileLen(f)!
+\textit{Parameters}: \begin{itemize}
 
-\verb!f! (str): the filename (path)
+\item \verb!value! (int) : The value that is being iterated.
 
-Given a file, this function will determine the number of lines in that file. Useful for implementing \verb!mwahpy.mwahpy_glob.progressBar()! while reading in files. 
+\item \verb!endvalue! (int) : The value at which the loop terminates .
+
+\item \verb!bar_length! (int) : How many characters long the progress bar is in the terminal output.
+
+\end{itemize}
+
+\textit{Returns}:
+
+
+
+\item \verb!mwahpy.mwahpy_glob.structToSol!
+
+This is the conversion factor between MilkyWay@home structural masses and solar masses. Equal to 222,288.47 solar masses/structure unit.
 
 \end{itemize} 
 
@@ -659,6 +703,10 @@ Given a file, this function will determine the number of lines in that file. Use
 Constants and functions related to the Milky Way's gravitational potential are found in \verb!mwahpy.pot.py!. The default potential that is used in \mwahpy is the Orphan Stream Fit \#5 Potential from Newberg et al. (2010). This potential is very similar to Law et al. (2005). 
 
 \begin{itemize}
+
+\item \verb!mwahpy.pot.energy_offset!
+
+Due to the logarithmic halo potential term in our gravitational potential for the Milky Way, the potential does not disappear as one travels infinitely far from the center of the potential. A side effect of this type of halo potential is that it is not clear what structures are bound or unbound to the potential, as the zero-point of the energy is not representative of the escape velocity. This adjusts the calculated potential energy so that it is consistent with Donlon et al. (2019), and so that clearly bound structures will not have positive energy values. The default value is -60000 km$^2$/s$^2$. 
 
 \item \verb!mwahpy.pot.m_bulge!
 
@@ -672,6 +720,24 @@ The mass of the disk in \verb!astropy! solar masses. Equal to 1.0e11 \msol
 
 The Milky Way halo dispersion in \verb!astropy! km/s. Equal to 74.61 km/s.
 
+\item \verb!mwahpy.pot.plotPotential(potential, Rrange=[0.01,10.])!
+
+This method will generate and show a figure with the rotation curve of the potential in the plane of the Milky Way. 
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!potential! (\verb!galpy potential! object) : the potential that you wish to graph 
+
+\item \verb!Rrange! (list of floats) : the Galactocentric cylindrical radius of the points at which you want to evaluate the potential
+
+\end{itemize}
+
+\textit{Returns}: 
+
+\item \verb!mwahpy.pot.pot!
+
+The total gravitational potential of the Milky Way. Given as a \verb!galpy potential! object. 
+
 \item \verb!mwahpy.pot.pot_bulge!
 
 The gravitational potential of the Milky Way due to the bulge. Given as a \verb!galpy potential! object. 
@@ -684,41 +750,19 @@ The gravitational potential of the Milky Way due to the disk. Given as a \verb!g
 
 The gravitational potential of the Milky Way due to the halo. Given as a \verb!galpy potential! object. 
 
-\item \verb!mwahpy.pot.energy_offset!
-
-Due to the logarithmic halo potential term in our gravitational potential for the Milky Way, the potential does not disappear as one travels infinitely far from the center of the potential. A side effect of this type of halo potential is that it is not clear what structures are bound or unbound to the potential, as the zero-point of the energy is not representative of the escape velocity. This adjusts the calculated potential energy so that it is consistent with Donlon et al. (2019), and so that clearly bound structures will not have positive energy values. The default value is -60000 km$^2$/s$^2$. 
-
-\item \verb!plotPotential(potential, Rrange=[0.01,10.])!
-  
-\verb!potential! (\verb!galpy potential! object): the potential that you wish to graph 
-
-\verb!Rrange! (list of floats): the Galactocentric cylindrical radius of the points that you wish to evaluate the potential at
-
-This method will generate a figure with the rotation curve of the potential in the plane of the Milky Way. 
-
 \end{itemize}
+
+\newpage
 
 \section{Functions \& Methods}
 
-Text
+Below is a complete list of functions and methods implemented in the files of \mwahpy that perform actual routines. Note that only the functions and methods that are meant for the typical end user are provided in detail here, and therefore some helper functions/methods that are present in the code are not gone over in this document. For a tutorial of using the main parts of \textit{mwahpy}, one should look at Section \ref{sec:core_functionality}. 
 
-\subsection{\textit{timestep}} \label{sec:doc_timestep}
+\subsection{\textit{coords}} \label{sec:doc_coords}
 
 Text
 
 \subsection{\textit{nbody}}
-
-Text
-
-\subsection{\textit{output\_handler}}
-
-Text
-
-\subsection{\textit{plot}}
-
-Text
-
-\subsection{\textit{coords}} \label{sec:doc_coords}
 
 Text
 
@@ -729,5 +773,542 @@ The subpackage \verb!mwahpy.orbit_fitting! is still under development. Once the 
 \subsection{\textit{orbit\_fitting\_gc}}
 
 The subpackage \verb!mwahpy.orbit_fitting_gc! is still under development. Once the code has been refactored and brought to an acceptable level of quality, the documentation for this subpackage will be provided.  
+
+\subsection{\textit{output\_handler}}
+
+Text
+
+\subsection{\textit{plot}}
+
+Text
+
+\subsection{\textit{timestep}} \label{sec:doc_timestep}
+
+These functions and methods are all related to the \verb!timestep! class, and are located in the \verb!mwahpy/timestep.py! file. These functions and methods make up the main core of \mwahpy functionality, and rely on a lot of the other code in the package.
+
+Additionally, a partial list of the many attributes of the \verb!timestep! class are given below, and what they store is described in detail. Note that many attributes will return empty lists, empty arrays, \verb!None!, or 0 initially if accessed without actually reading in or supplying data. 
+
+There are several other flags, functions, and attributes that are implemented in the \verb!timestep.py! file that are not detailed below. These are not meant to be accessed by end users, and are explained by comments in the code.
+
+\subsubsection{Initialization}
+
+An instance of the \verb!Timestep! class is initialized by 
+
+\verb!Timestep(id_val=[], x=[], y=[], z=[], vx = [], vy = [], vz = [], mass=[], centerOfMass=[0, 0, 0],! \\ \verb!            centerOfMomentum=[0, 0, 0], potential=None, time=None, nbody=None)!.
+
+Note that all of the provided values between \verb!id_val! and \verb!mass! must be arrays of the same length, or else there will be errors. 
+
+\begin{itemize}
+
+\item \verb!id_val! (list of ints, optional) : The id values of each particle (in order).
+
+\item \verb!x! (list of floats, optional) : The Galactocentric $X$ positions of each particle in units of kpc (in order).
+
+\item \verb!y! (list of floats, optional) : The Galactocentric $Y$ positions of each particle in units of kpc (in order).
+
+\item \verb!z! (list of floats, optional) : The Galactocentric $Z$ positions of each particle in units of kpc (in order).
+
+\item \verb!vx! (list of floats, optional) : The Galactic standard of rest velocities of each particle in the $X$ direction in units of km/s (in order).
+
+\item \verb!vy! (list of floats, optional) : The Galactic standard of rest velocities of each particle in the $Y$ direction in units of km/s (in order).
+
+\item \verb!vz! (list of floats, optional) : The Galactic standard of rest velocities of each particle in the $Z$ direction in units of km/s (in order).
+
+\item \verb!mass! (list of floats, optional) : The masses of each particle in units of MilkyWay@home structure masses (in order).
+
+\item \verb!centerOfMass! (list of floats, optional) : The 3D location of the center of mass of the system (all particles in the \verb!Timestep! instance) in units of kpc. The first element of the list is the Galactocentric X position of the center of mass, while the second and third elements are the Y and Z positions, respectively.
+
+\item \verb!mwahpy.timestep.centerOfMomentum! (list of floats, optional) : The 3D location of the center of momentum of the system (all particles in the \verb!Timestep! instance) in units of km/s. The first element of the list is the Galactocentric vx position of the center of mass, while the second and third elements are the vy and vz positions, respectively.
+
+\item \verb!mwahpy.timestep.potential! (\verb!galpy! potential object or list of \verb!galpy! potential objects, optional) : Can be \verb!None!. If not \verb!None!, the energy of each particle will be calculated with this potential instead of the default \mwahpy potential. 
+
+\item \verb!time! (float, optional) : The time in Gyr after the beginning of the simulation. 
+
+\item \verb!nbody! (\verb!Nbody! object, optional) : The parent \verb!Nbody! instance for this \verb!Timestep!.
+
+\end{itemize}
+
+\subsubsection{Attributes}
+
+\begin{itemize}
+
+\item \verb!mwahpy.timestep.b!
+
+(\verb!numpy! array of floats) : The Galactic latitude of each particle in degrees, in order. Calculated value.
+
+\item \verb!mwahpy.timestep.centerOfMass!
+
+(list of floats) : The 3D location of the center of mass of the system (all particles in the \verb!Timestep! instance) in units of kpc. The first element of the list is the Galactocentric X position of the center of mass, while the second and third elements are the Y and Z positions, respectively.
+
+\item \verb!mwahpy.timestep.centerOfMomentum!
+
+(list of floats) : The 3D location of the center of momentum of the system (all particles in the \verb!Timestep! instance) in units of km/s. The first element of the list is the Galactocentric vx position of the center of mass, while the second and third elements are the vy and vz positions, respectively.
+
+\item \verb!mwahpy.timestep.dec!
+
+(\verb!numpy! array of floats) : The declination of each particle in degrees, in order. Calculated value. Computed using \verb!astropy!.
+
+\item \verb!mwahpy.timestep.dist!
+
+(\verb!numpy! array of floats) : The heliocentric spherical radius of each particle in units of kpc, in order. Equal to $\sqrt{(X + 8)^2 + Y^2 + Z^2}.$ Calculated value.
+
+\item \verb!mwahpy.timestep.distFromCOM!
+
+(\verb!numpy! array of floats) : The distance of each particle from the center of mass of the \verb!Timestep! instance, in order. Calculated value.
+
+\item \verb!mwahpy.timestep.energy!
+
+(\verb!numpy! array of floats) : The total energy per unit mass of each particle based on the specified potential in units of km$^2$/s$^2$ (in order). If no potential is specified, this is calculated using the default \mwahpy potential. Calculated value as part of \verb!calcEnergy()!.
+
+\item \verb!mwahpy.timestep.id!
+
+(\verb!numpy! array of ints) : The id of each particle (in order). 
+
+\item \verb!mwahpy.timestep.indexList!
+
+(list of strs) : A list of values that are currently calculated for the \verb!Timestep!. This is automatically updated as new values are calculated. Examples of list members are 'x', 'mass', 'vlos', etc. This is used by \mwahpy to determine what values need to be calculated and/or iterated over, and therefore it is strongly recommended to not alter this attribute manually.
+
+\item \verb!mwahpy.timestep.KE!
+
+(\verb!numpy! array of floats) : The kinetic energy per unit mass of each particle in units of km$^2$/s$^2$ (in order). Calculated value as part of \verb!calcEnergy()!. 
+
+\item \verb!mwahpy.timestep.l!
+
+(\verb!numpy! array of floats) : The Galactic longitude of each particle in degrees, in order. Calculated value.
+
+\item \verb!mwahpy.timestep.lperp!
+
+(\verb!numpy! array of floats) : The magnitude of the projection of the angular momentum of each particle onto the $X-Y$ plane, in order. Has units of kpc$\cdot$km/s. Equal to $\sqrt{L_x^2 + L_y^2}.$ Calculated value.
+
+\item \verb!mwahpy.timestep.ltot!
+
+(\verb!numpy! array of floats) : The magnitude of the total angular momentum of each particle in units of kpc$\cdot$km/s, in order. Calculated value.
+
+\item \verb!mwahpy.timestep.lx!
+
+(\verb!numpy! array of floats) : The $X$ component of the angular momentum of each particle about the origin in units of kpc$\cdot$km/s, in order. Calculated value.
+
+\item \verb!mwahpy.timestep.ly!
+
+(\verb!numpy! array of floats) : The $Y$ component of the angular momentum of each particle about the origin in units of kpc$\cdot$km/s, in order. Calculated value.
+
+\item \verb!mwahpy.timestep.lz!
+
+(\verb!numpy! array of floats) : The $Z$ component of the angular momentum of each particle about the origin in units of kpc$\cdot$km/s, in order. Calculated value.
+
+\item \verb!mwahpy.timestep.mass!
+
+(\verb!numpy! array of floats) : The mass of each particle in units of MilkyWay@home structure masses (in order). 
+
+\item \verb!mwahpy.timestep.msol!
+
+(\verb!numpy! array of floats) : The mass of each particle in units of solar masses (in order). Calculated value.
+
+\item \verb!mwahpy.timestep.nbody!
+
+(\verb!nbody! object) : If the \verb!Timestep! instance is part of an \verb!nbody! instance, i.e. if you read in the \verb!Timestep! with \verb!mwahpy.output_handler.readFolder!, then that information is saved here. 
+
+\item \verb!mwahpy.timestep.PE!
+
+(\verb!numpy! array of floats) : The potential energy per unit mass of each particle based on the specified potential in units of km$^2$/s$^2$ (in order). If no potential is specified, this is calculated using the default \mwahpy potential. Calculated value as part of \verb!calcEnergy()!.
+
+\item \verb!mwahpy.timestep.pmdec!
+
+(\verb!numpy! array of floats) : The proper motion of each particle in the direction of declination in units of mas/yr (in order). Calculated value as part of \verb!calcrvpm()!.
+
+\item \verb!mwahpy.timestep.pmra!
+
+(\verb!numpy! array of floats) : The proper motion of each particle in the direction of right ascension in units of mas/yr (in order). Multiplied by $\cos\delta.$ Calculated value as part of \verb!calcrvpm()!.
+
+\item \verb!mwahpy.timestep.pmtot!
+
+(\verb!numpy! array of floats) : The magnitude of the total proper motion of each particle in units of mas/yr (in order). Calculated value as part of \verb!calcrvpm()!.
+
+\item \verb!mwahpy.timestep.potential!
+
+(\verb!galpy! potential object or list of \verb!galpy! potential objects) : If not \verb!None!, the energy of each particle will be calculated with this potential. If \verb!None!, the \mwahpy default potential will be used to calculate the particle energies. 
+
+\item \verb!mwahpy.timestep.r!
+
+(\verb!numpy! array of floats) : The Galactocentric spherical radius of each particle in units of kpc, in order. Equal to $\sqrt{X^2 + Y^2 + Z^2}.$ Calculated value.
+
+\item \verb!mwahpy.timestep.R!
+
+(\verb!numpy! array of floats) : The Galactocentric cylindrical radius of each particle in units of kpc, in order. Equal to $\sqrt{X^2 + Y^2}.$ Calculated value.
+
+\item \verb!mwahpy.timestep.ra!
+
+(\verb!numpy! array of floats) : The right ascension of each particle in degrees, in order. Calculated value. Computed using \verb!astropy!.
+
+\item \verb!mwahpy.timestep.rad!
+
+(\verb!numpy! array of floats) : The magnitude of the Galactic standard of rest line-of-sight velocity of each particle as seen from the origin. Has units of km/s. Calculated value.
+
+\item \verb!mwahpy.timestep.rot!
+
+(\verb!numpy! array of floats) : The magnitude of the Galactic standard of rest rotational velocity (projected onto the $X-Y$ plane) of each particle as seen from the origin. Has units of km/s. Calculated value.
+
+\item \verb!mwahpy.timestep.time!
+
+(float) : The time in Gyr for this \verb!Timestep! instance. This will only be initialized if the \verb!Timestep! was read in as part of \verb!mwahpy.output_handler.readFolder()! or if manually specified. Otherwise, will return \verb!None! by default.
+
+\item \verb!mwahpy.timestep.vgsr!
+
+(\verb!numpy! array of floats) : The line-of-sight velocity of each particle in the Galactic standard of rest in units of km/s, in order.
+
+\item \verb!mwahpy.timestep.vlos!
+
+(\verb!numpy! array of floats) : The heliocentric line-of-sight velocity of each particle in units of km/s, in order.
+
+\item \verb!mwahpy.timestep.vtan!
+
+(\verb!numpy! array of floats) : The heliocentric, Galactic standard of rest tangential velocity of each particle in units of km/s (in order). Calculated value as part of \verb!calcrvpm()!.
+
+\item \verb!mwahpy.timestep.vx!
+
+(\verb!numpy! array of floats) : The Galactic standard of rest velocity in the $X$ direction of each particle in units of km/s (in order). 
+
+\item \verb!mwahpy.timestep.vy!
+
+(\verb!numpy! array of floats) : The Galactic standard of rest velocity in the $Y$ direction of each particle in units of km/s (in order). 
+
+\item \verb!mwahpy.timestep.vz!
+
+(\verb!numpy! array of floats) : The Galactic standard of rest velocity in the $Z$ direction of each particle in units of km/s (in order).  
+
+\item \verb!mwahpy.timestep.x!
+
+(\verb!numpy! array of floats) : The Galactocentric $X$ position of each particle in units of kpc (in order). 
+
+\item \verb!mwahpy.timestep.y!
+
+(\verb!numpy! array of floats) : The Galactocentric $Y$ position of each particle in units of kpc (in order). 
+
+\item \verb!mwahpy.timestep.z!
+
+(\verb!numpy! array of floats) : The Galactocentric $Z$ position of each particle in units of kpc (in order). 
+
+
+\end{itemize}
+
+\subsubsection{Functions \& Methods}
+
+\begin{itemize}
+
+
+
+\item \verb!mwahpy.timestep.appendTimestep(t)!
+
+Combines two \verb!Timestep! objects by appending the particles from the provided \verb!Timestep! onto this \verb!Timestep!.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!t! (\verb!Timestep! object) : The \verb!Timestep! object that you wish to combine with this one.
+
+\end{itemize}
+
+\textit{Returns}:
+
+
+
+\item \verb!mwahpy.timestep.appendPoint(t, n=0, id=None)!
+
+Adds a specific particle from the provided \verb!Timestep! to this \verb!Timestep!. What particle you wish to append can be specified by the \verb!id! of the particle, or what position it is located at in the specified \verb!Timestep! object.
+
+WARNING: This function is extremely time intensive if used repeatedly due to the overhead associated with \verb!numpy! arrays. One should always try to use combinations of cuts and \verb!mwahpy.timestep.appendTimestep()! to append multiple particles whenever possible.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!t! (\verb!Timestep! object) : The \verb!Timestep! object containing the particle that you wish to add to this \verb!Timestep!.
+
+\item \verb!n! (int, optional) : The location of the particle in \verb!t! that you wish to add to this \verb!Timestep!. Ignored if \verb!id! is not \verb!None!.
+
+\item \verb!id! (int, optional) : If not \verb!None!, this function locates the particle with \verb!id! equal to this value and adds it to this \verb!Timestep!.
+
+\end{itemize}
+
+\textit{Returns}:
+
+
+
+\item \verb!mwahpy.timestep.copy()!
+
+Creates a deep copy of the \verb!Timestep! instance. No arrays or lists in the copy are aliased to the original respective objects. Will not assign the corresponding ``pointer'' in a parent \verb!Nbody! instance to the new copy. 
+
+\textit{Parameters}: 
+
+\textit{Returns}: \begin{itemize} 
+
+\item \verb!out! (Timestep) : A deep copy of the \verb!Timestep! instance.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.timestep.cutFirstN(n)!
+
+Removes the first $n$ particles from the \verb!Timestep! instance, based on the particle order. 
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!n! (int) : The number of particles to remove from the front of the \verb!Timestep!.
+
+\end{itemize}
+
+\textit{Returns}: 
+
+
+
+\item \verb!mwahpy.timestep.cutLastN(n)!
+
+Removes the last $n$ particles from the \verb!Timestep! instance, based on the particle order. 
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!n! (int) : The number of particles to remove from the back of the \verb!Timestep!.
+
+\end{itemize}
+
+\textit{Returns}: 
+
+
+
+\item \verb!mwahpy.timestep.hist2d(x, y, **kwargs)!
+
+Creates and optionally shows a 2D histogram plot of the particle data in the \verb!Timestep!. See \verb!mwahpy.plot.hist2d()! for a more in-depth explanation of the plotting routine.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!x! (str) : The values that you want to plot on the horizontal axis. For example, if you want to plot \verb!vlos! on the horizontal axis, you would input \verb!'vlos'!.
+
+\item \verb!y! (str) : The values that you want to plot on the vertical axis (see \verb!x! above).
+
+\item \verb!**kwargs! (optional) : Keyword arguments that you want to pass to \verb!mwahpy.plot.hist2d()! or \verb!matplotlib.pyplot.hist2d!. See the documentation for those functions for more information about what keyword arguments are supported.
+
+\end{itemize}
+
+\textit{Returns}: 
+
+
+
+\item \verb!mwahpy.timestep.len()!
+
+Returns the length of the timestep's values arrays. This is only calculated from the \verb!timestep.id! array, so if that is out of sync with the other arrays for some reason this will not return an accurate value.
+
+\textit{Parameters}: 
+
+\textit{Returns}: \begin{itemize} 
+
+\item \verb!len! (int) : The length of the timestep's values arrays.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.timestep.printParticle(n, dec=8)!
+
+Prints information about all values corresponding to a single particle in the console. 
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!n! (int) : The location of the particle in this \verb!Timestep! that you want to print the information for. 
+
+\item \verb!dec! (int, optional) : The number of digits after the decimal point to display for each value. 
+
+\end{itemize}
+
+\textit{Returns}: 
+
+
+
+\item \verb!mwahpy.timestep.randSample(n)!
+
+Randomly samples the \verb!Timestep! down to exactly $n$ particles selected at random from the \verb!Timestep!. Uses the reservoir theorem to sample the data.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!n! (int) : The number of particles to include in the random sample.
+
+\end{itemize}
+
+\textit{Returns}: 
+
+
+
+\item \verb!mwahpy.timestep.recenter()!
+
+Shifts the positions and velocities of each particle by the same amount in order to make the center of mass and center of momentum both be located at the origin. This function does not change any physics, it just changes the frame in which the \verb!Timestep! resides.
+
+\textit{Parameters}: 
+
+\textit{Returns}: 
+
+
+
+\item \verb!mwahpy.timestep.resetIds()!
+
+Relabels the \verb!id! of each particle, in order, starting from 0 and incrementing by 1 each particle. Retains the current order of the particles. 
+
+\textit{Parameters}: 
+
+\textit{Returns}: 
+
+
+
+\item \verb!mwahpy.timestep.rotateAroundZAxis(theta, rad=False)!
+
+Rotates the particles in the \verb!Timestep! counter-clockwise around the $Z$ axis by some angle \verb!theta!.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!theta! (float) : The angle to rotate the particles around the $Z$ axis. Default unit is in degrees (see \verb!rad!).
+
+\item \verb!rad! (bool, optional) : Whether or not \verb!theta! is in radians.
+
+\end{itemize}
+
+\textit{Returns}: 
+
+
+
+\item \verb!mwahpy.timestep.scatter(x, y, **kwargs)!
+
+Creates and optionally shows a scatter plot of the particle data in the \verb!Timestep!. See \verb!mwahpy.plot.scatter()! for a more in-depth explanation of the plotting routine.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!x! (str) : The values that you want to plot on the horizontal axis. For example, if you want to plot \verb!vlos! on the horizontal axis, you would input \verb!'vlos'!.
+
+\item \verb!y! (str) : The values that you want to plot on the vertical axis (see \verb!x! above).
+
+\item \verb!**kwargs! (optional) : Keyword arguments that you want to pass to \verb!mwahpy.plot.scatter()! or \verb!matplotlib.pyplot.scatter!. See the documentation for those functions for more information about what keyword arguments are supported.
+
+\end{itemize}
+
+\textit{Returns}: 
+
+
+
+\item \verb!mwahpy.timestep.split(n)!
+
+Splits the \verb!Timestep! into two new \verb!Timestep! instances at the $n$th particle. The first output \verb!Timestep! will contain the first $n$ objects of the original \verb!Timestep!, and the second output \verb!Timestep! will contain the rest of the particles. Does not alter the original \verb!Timestep!. 
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!n! (int) : The location at which to split the \verb!Timestep!. 
+
+\end{itemize}
+
+\textit{Returns}:  \begin{itemize}
+
+\item \verb!Timestep1! (\verb!Timestep! object) : A \verb!Timestep! instance containing the first $n$ particles from the original \verb!Timestep!.
+
+\item \verb!Timestep2! (\verb!Timestep! object) : A \verb!Timestep! instance containing the rest of the particles from the original \verb!Timestep! that are not included in \verb!Timestep1!.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.timestep.splitAtIdWrap()!
+
+Splits the \verb!Timestep! at each location where the \verb!id! wraps back to 0. This is useful for simulations with multiple components. See \verb!mwahpy.timestep.split()! for more information about splitting \verb!Timestep! objects. The original \verb!Timestep! object is not altered.
+
+WARNING: Under some conditions, MilkyWay@home can begin indexing particles in a MilkyWay@home generated dwarf (or dwarf component[s]) starting with 1, instead of 0. In this case, the particles will have to be manually split. This is a known bug in MilkyWay@home.
+
+\textit{Parameters}:
+
+\textit{Returns}:  \begin{itemize}
+
+\item \verb!outlist! (list of \verb!Timestep! objects) : A list containing a new \verb!Timestep! instance made up of each component in the original \verb!Timestep! object (in this case a component is defined by the particles in between two \verb!id!s that are 0 in a \verb!Timestep!). Each particle from the original \verb!Timestep! belongs to exactly 1 component.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.timestep.subsample(n, offset=0)!
+
+Uniformly samples the \verb!Timestep! by taking every $n$th particle starting from the \verb!offset!.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!n! (int) : The number of particles to skip between each sample particle.
+
+\item \verb!offset! (int, optional) : The number of particles to initially skip.
+
+\end{itemize}
+
+\textit{Returns}: 
+
+
+
+\item \verb!mwahpy.timestep.subsetRect(axes, bounds)!
+
+Takes a multidimensional rectangular cut on the \verb!Timestep!. The number of cuts made and their extents are defined by \verb!axes! and \verb!bounds!. For each axis specified in \verb!axes!, all particles with values outside the respective \verb!bounds! are removed from the \verb!Timestep!. Axes may be reused (if, for example, one wanted to remove all particles within some rectangular boundary instead of all particles outside it).
+
+If you wish to only declare a minimum or maximum value for your data, then set the other bound as \verb!None! (see \verb!bounds!).
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!axes! (list of strs) : Each axis that will be cut on. For example, if you want to make a cut in proper motion, a cut in line-of-sight velocity, and a cut in distance, you would write \verb!['pmra', 'vlos', 'dist']!. Order does not matter, but the order of the boundaries in \verb!bounds! and the axes in \verb!axes! must be the same.
+
+\item \verb!bounds! (list of tuples of floats) : The boundaries for each cut. For the example above in \verb!axes!, if you wanted to include particles only with proper motions between -2 mas/yr and 2 mas/yr, line-of-sight velocity above 0 km/s, and distance less than 10 kpc, you would write \verb![(-2, 2), (0, None), (None, 10)]!. The order of the boundaries must be the same as the order of the axes specified in \verb!axes!.
+
+\end{itemize}
+
+\textit{Returns}: 
+
+
+
+\item \verb!mwahpy.timestep.subsetCirc(axes, rads, centers)!
+
+Takes a multidimensional ``circular'' cut on the \verb!Timestep!. The number of cuts made and their extents are defined by \verb!axes!, \verb!rads!, and \verb!centers!. For each axis specified in \verb!axes!, all particles with values outside the specified region are removed from the \verb!Timestep!. Axes may be reused.
+
+For example, if one wanted all particles with position within 2 kpc of the point ($X$, $Y$) = (10, 15) kpc, one could make \verb!axes! equal to \verb!['x', 'y']!, make \verb!rads! equal to \verb![2, 2]!, and make centers equal to \verb![10, 15]!.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!axes! (list of strs) : Each axis that will be cut on. Order does not matter, but the order of the boundaries in \verb!rads! and \verb!centers! and the order of the axes given in \verb!axes! must be the same.
+
+\item \verb!rads! (list of floats) : The radii of each cut. The order of the radii must be the same as the order of the axes specified in \verb!axes!.
+
+\item \verb!centers! (list of floats) : The centers of each cut. The order of the centers must be the same as the order of the axes specified in \verb!axes!.
+
+\end{itemize}
+
+\textit{Returns}: 
+
+
+
+\item \verb!mwahpy.timestep.take(indices)!
+
+Cuts the \verb!Timestep! to only include the particles with the specified values of \verb!id!.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!indices! (list of ints) : The list of \verb!id!s. Only particles with \verb!id! equal to a value in this list will be in the cut \verb!Timestep!.
+
+\end{itemize}
+
+\textit{Returns}: 
+
+
+
+\item \verb!mwahpy.timestep.update(force=False)!
+
+Updates the \verb!centerOfMass! and \verb!centerOfMomentum! attributes of the \verb!Timestep! instance based on the current positions and velocities of all particles in the \verb!Timestep!. Also updates all calculated values. Can be time intensive depending on how much needs to be updated, and whether the positions/velocities of the particles were actually changed (this is tracked in the \verb!Timestep! implementation, and items are only updated if necessary).
+
+If \verb!force! is set to \verb!True!, then a complete update of all attributes of the \verb!Timestep! will happen even if no positions or velocities have changed since the last update or initialization of the \verb!Timestep!.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!force! (bool, optional) : If true, force a complete update of the \verb!Timestep! regardless of what has changed since the last update.
+
+\end{itemize}
+
+\textit{Returns}:
+
+
+
+\end{itemize}
 
 \end{document}
