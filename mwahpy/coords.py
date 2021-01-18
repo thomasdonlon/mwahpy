@@ -16,7 +16,10 @@ import unittest
 #These functions aren't meant to be accessed by outside files or by end users,
 #and as such they are not well documented, named, or tested
 
-def wrapLong(long):
+def wrapLong(long, rad=False):
+
+    if rad:
+        long = long * 180/np.pi
 
     use_array = True
     if type(long) != type(np.array([])):
@@ -29,12 +32,16 @@ def wrapLong(long):
         elif long[i] > 360:
             long[i] -= 360
 
+    if rad:
+        long = long * np.pi/180
+
     if not use_array:
         long = long[0]
 
     return long
 
 #rotate the given data around the provided axis
+#TODO: Allow array-like input
 def rotAroundArbAxis(x, y, z, ux, uy, uz, theta):
     #TODO: Allow radians or degrees
     #x, y, z: 3D cartesian coordinates of the data
@@ -288,6 +295,7 @@ def gal_to_cyl(l, b, r):
 # Returns: Galactic vx, vy, vz velocities [km/s]
 # NOTE: pmRA = d/dt(RA) * cos(DEC)
 # Arguments should be numpy arrays for most efficient usage
+# Adapted from code written by Alan Pearl 
 def getUVW(dist, rv, ra, dec, pmra, pmde):
 
     # Conversion from Equatorial (J2000) Cartesian to Galactic Cartesian

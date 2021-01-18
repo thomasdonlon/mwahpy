@@ -32,7 +32,7 @@
    \begin{center}
        \vspace*{5cm}
 
-       \huge\textbf{MilkyWay@home Python Package Documentation \\ (\textit{mwahpy} v1.0.0)}
+       \huge\textbf{MilkyWay@home Python Package Documentation \\ (\textit{mwahpy} v1.2.0)}
 
        \vspace{0.5cm}
         
@@ -680,11 +680,11 @@ Adapted from \url{https://stackoverflow.com/questions/6169217/replace-console-ou
 
 \textit{Parameters}: \begin{itemize}
 
-\item \verb!value! (int) : The value that is being iterated.
+\item \verb!value! (int) : The value that is being iterated. Does not need to be increased by 1 each time -- can be any amount. 
 
 \item \verb!endvalue! (int) : The value at which the loop terminates .
 
-\item \verb!bar_length! (int) : How many characters long the progress bar is in the terminal output.
+\item \verb!bar_length! (int, optional) : How many characters long the progress bar is in the terminal output.
 
 \end{itemize}
 
@@ -706,15 +706,15 @@ Constants and functions related to the Milky Way's gravitational potential are f
 
 \item \verb!mwahpy.pot.energy_offset!
 
-Due to the logarithmic halo potential term in our gravitational potential for the Milky Way, the potential does not disappear as one travels infinitely far from the center of the potential. A side effect of this type of halo potential is that it is not clear what structures are bound or unbound to the potential, as the zero-point of the energy is not representative of the escape velocity. This adjusts the calculated potential energy so that it is consistent with Donlon et al. (2019), and so that clearly bound structures will not have positive energy values. The default value is -60000 km$^2$/s$^2$. 
+Due to the logarithmic halo potential term in our gravitational potential for the Milky Way, the potential does not disappear as one travels infinitely far from the center of the potential. A side effect of this type of halo potential is that it is not clear what structures are bound or unbound to the potential, as the zero-point of the energy is not representative of the escape velocity. This adjusts the calculated potential energy so that it is consistent with Donlon et al. (2019), and so that clearly bound structures will not have positive energy values. The default value is -60,000 km$^2$/s$^2$. Changing this value does not change the physics of the system, it just changes the energy of a particle at infinity. 
 
 \item \verb!mwahpy.pot.m_bulge!
 
-The mass of the bulge in \verb!astropy! solar masses. Equal to 3.4e10 \msol
+The mass of the bulge in solar mass \verb!astropy! units. Equal to 3.4$\times10^{10}$ \msol
 
 \item \verb!mwahpy.pot.m_disk!
 
-The mass of the disk in \verb!astropy! solar masses. Equal to 1.0e11 \msol
+The mass of the disk in solar mass \verb!astropy! units. Equal to 1.0$\times10^{11}$ \msol
 
 \item \verb!mwahpy.pot.v_halo!
 
@@ -760,7 +760,280 @@ Below is a complete list of functions and methods implemented in the files of \m
 
 \subsection{\textit{coords}} \label{sec:doc_coords}
 
-Text
+\begin{itemize}
+
+
+
+\item \verb!mwahpy.coords.cart_to_cyl(x, y, z)!
+
+Takes in Cartesian coordinates and returns cylindrical coordinates. Supports array-like inputs.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!x! (float or array-like floats) : The Cartesian $X$ coordinate(s) of the data.
+
+\item \verb!y! (float or array-like floats) : The Cartesian $Y$ coordinate(s) of the data.
+
+\item \verb!z! (float or array-like floats) : The Cartesian $Z$ coordinate(s) of the data.
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize}
+
+\item \verb!R! (float or array-like floats) : The cylindrical radius coordinate(s) of the data.
+
+\item \verb!z! (float or array-like floats) : The Cartesian $Z$ coordinate(s) of the data.
+
+\item \verb!phi! (float or array-like floats) : The azimuthal angle(s) of the data, in degrees.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.coords.cart_to_gal(x, y, z, left_handed=False)!
+
+Takes in Galactocentric Cartesian coordinates and returns Galactic coordinates. Supports array-like inputs. Uses a right-handed system by default.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!x! (float or array-like floats) : The Galactocentric Cartesian $X$ coordinate(s) of the data.
+
+\item \verb!y! (float or array-like floats) : The Galactocentric Cartesian $Y$ coordinate(s) of the data.
+
+\item \verb!z! (float or array-like floats) : The Galactocentric Cartesian $Z$ coordinate(s) of the data.
+
+\item \verb!left_handed! (bool, optional) : If \verb!True!, a left-handed Galactocentric Cartesian system is used.
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize}
+
+\item \verb!l! (float or array-like floats) : The Galactic longitude coordinate(s) of the data, in degrees.
+
+\item \verb!b! (float or array-like floats) : The Galactic latitude coordinate(s) of the data, in degrees.
+
+\item \verb!r! (float or array-like floats) : The heliocentric distance(s) of the data in whatever units of distance the inputs were in.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.coords.cart_to_sph(x, y, z)!
+
+Takes in Cartesian coordinates and returns spherical coordinates. Supports array-like inputs.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!x! (float or array-like floats) : The Cartesian $X$ coordinate(s) of the data.
+
+\item \verb!y! (float or array-like floats) : The Cartesian $Y$ coordinate(s) of the data.
+
+\item \verb!z! (float or array-like floats) : The Cartesian $Z$ coordinate(s) of the data.
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize}
+
+\item \verb!phi! (float or array-like floats) : The azimuthal angle(s) of the data, in degrees.
+
+\item \verb!theta! (float or array-like floats) : The polar angle(s) of the data, in degrees.
+
+\item \verb!r! (float or array-like floats) : The spherical radius coordinate(s) of the data.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.coords.cyl_to_cart(R, z, phi)!
+
+Takes in cylindrical coordinates and returns Cartesian coordinates. Supports array-like inputs.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!R! (float or array-like floats) : The cylindrical radius coordinate(s) of the data.
+
+\item \verb!z! (float or array-like floats) : The Cartesian $Z$ coordinate(s) of the data.
+
+\item \verb!phi! (float or array-like floats) : The azimuthal angle(s) of the data, in degrees.
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize}
+
+\item \verb!x! (float or array-like floats) : The Cartesian $X$ coordinate(s) of the data.
+
+\item \verb!y! (float or array-like floats) : The Cartesian $Y$ coordinate(s) of the data.
+
+\item \verb!z! (float or array-like floats) : The Cartesian $Z$ coordinate(s) of the data.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.coords.cyl_to_gal(R, z, phi)!
+
+Takes in Galactocentric cylindrical coordinates and returns Galactic coordinates. Supports array-like inputs.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!R! (float or array-like floats) : The cylindrical radius coordinate(s) of the data.
+
+\item \verb!z! (float or array-like floats) : The Cartesian $Z$ coordinate(s) of the data.
+
+\item \verb!phi! (float or array-like floats) : The azimuthal angle(s) of the data, in degrees.
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize}
+
+\item \verb!l! (float or array-like floats) : The Galactic longitude coordinate(s) of the data, in degrees.
+
+\item \verb!b! (float or array-like floats) : The Galactic latitude coordinate(s) of the data, in degrees.
+
+\item \verb!r! (float or array-like floats) : The heliocentric distance(s) of the data in whatever units of distance the inputs were in.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.coords.gal_to_cart(l, b, r, left_handed=False, rad=False)!
+
+Takes in Galactic coordinates and returns Galactocentric Cartesian coordinates. Supports array-like inputs. Uses a right-handed system by default.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!l! (float or array-like floats) : The Galactic longitude coordinate(s) of the data, in degrees by default.
+
+\item \verb!b! (float or array-like floats) : The Galactic latitude coordinate(s) of the data, in degrees by default.
+
+\item \verb!r! (float or array-like floats) : The heliocentric distance(s) of the data.
+
+\item \verb!left_handed! (bool, optional) : If \verb!True!, a left-handed Galactocentric Cartesian system is used.
+
+\item \verb!rad! (bool, optional) : If \verb!True!, input is given in radians. Otherwise, input should be in degrees.
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize}
+
+\item \verb!x! (float or array-like floats) : The Galactocentric Cartesian $X$ coordinate(s) of the data. In whatever units of distance the input was in.
+
+\item \verb!y! (float or array-like floats) : The Galactocentric Cartesian $Y$ coordinate(s) of the data. In whatever units of distance the input was in.
+
+\item \verb!z! (float or array-like floats) : The Galactocentric Cartesian $Z$ coordinate(s) of the data. In whatever units of distance the input was in.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.coords.gal_to_cyl(l, b, r)!
+
+Takes in Galactic coordinates and returns Galactocentric cylindrical coordinates. Supports array-like inputs.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!l! (float or array-like floats) : The Galactic longitude coordinate(s) of the data, in degrees.
+
+\item \verb!b! (float or array-like floats) : The Galactic latitude coordinate(s) of the data, in degrees.
+
+\item \verb!r! (float or array-like floats) : The heliocentric distance(s) of the data.
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize}
+
+\item \verb!R! (float or array-like floats) : The cylindrical radius coordinate(s) of the data, in whatever units the input distance was in.
+
+\item \verb!z! (float or array-like floats) : The Cartesian $Z$ coordinate(s) of the data, in whatever unit the input distance was in.
+
+\item \verb!phi! (float or array-like floats) : The azimuthal angle(s) of the data, in degrees.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.coords.rotAroundArbAxis(x, y, z, ux, uy, uz, theta)!
+
+Rotates a given point $(x,y,z)$ about a given axis determined by  $\hat{u} = \langle u_x, u_y, u_z \rangle$ by a given angle \verb!theta!. The axis must pass through the origin, and points in the direction of $\hat{u}$. The data is rotated in a counterclockwise direction if viewed so that $\hat{u}$ is pointing towards you (out of the ``page''). This function is not guaranteed to work for array-like values of \verb!x!, \verb!y!, \verb!z!. To rotate systems into a frame determined by a pole and a longitudinal origin, see \verb!mwahpy.coords.sky_to_pole()!, which does support array-like inputs.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!x! (float) : The $X$ coordinate of the data.
+
+\item \verb!y! (float) : The $Y$ coordinate of the data.
+
+\item \verb!z! (float) : The $Z$ coordinate of the data.
+
+\item \verb!ux! (float) : The $X$ component of the axis vector $\hat{u}$. The components of $\hat{u}$ do not need to be normalized prior to input.
+
+\item \verb!uy! (float) : The $Y$ component of the axis vector $\hat{u}$. The components of $\hat{u}$ do not need to be normalized prior to input.
+
+\item \verb!uz! (float) : The $Z$ component of the axis vector $\hat{u}$. The components of $\hat{u}$ do not need to be normalized prior to input.
+
+\item \verb!theta! (float) : The angle in radians that the data is rotated around the axis. 
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize}
+
+\item \verb!x! (float) : The new rotated $X$ coordinate of the data.
+
+\item \verb!y! (float) : The new rotated $Y$ coordinate of the data.
+
+\item \verb!z! (float) : The new rotated $Z$ coordinate of the data.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.coords.spher_to_cart(phi, theta, r)!
+
+Takes in spherical coordinates and returns Cartesian coordinates. Supports array-like inputs.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!phi! (float or array-like floats) : The azimuthal angle(s) of the data, in degrees.
+
+\item \verb!theta! (float or array-like floats) : The polar angle(s) of the data, in degrees.
+
+\item \verb!r! (float or array-like floats) : The spherical radius coordinate(s) of the data.
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize}
+
+\item \verb!x! (float or array-like floats) : The Cartesian $X$ coordinate(s) of the data.
+
+\item \verb!y! (float or array-like floats) : The Cartesian $Y$ coordinate(s) of the data.
+
+\item \verb!z! (float or array-like floats) : The Cartesian $Z$ coordinate(s) of the data.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.coords.wrapLong(long, rad=False)!
+
+Takes in a longitude or array-like collection of longitudes and returns it in the interval $[0, 360]$. If \verb!rad! is set to \verb!True!, then the longitude is instead returned in the interval $[0, 2\pi]$. 
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!long! (float or array-like floats) : The value(s) that will be cast into the interval. Should be in degrees by default, unless \verb!rad! is set as \verb!True!.
+
+\item \verb!rad! (bool, optional) : If \verb!True!, the input should be in radians and the output will be in radians. Otherwise, input should be in degrees and output will be in degrees.
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize}
+
+\item \verb!long! (float or array-like floats) : The value(s) that were passed in, cast into the interval $[0,360]$ (or the equivalent in radians).
+
+\end{itemize}
+
+
+
+
+\end{itemize}
 
 \subsection{\textit{nbody}}
 
@@ -1150,22 +1423,6 @@ Shifts the positions and velocities of each particle by the same amount in order
 Relabels the \verb!id! of each particle, in order, starting from 0 and incrementing by 1 each particle. Retains the current order of the particles. 
 
 \textit{Parameters}: 
-
-\textit{Returns}: 
-
-
-
-\item \verb!mwahpy.timestep.rotateAroundZAxis(theta, rad=False)!
-
-Rotates the particles in the \verb!Timestep! counter-clockwise around the $Z$ axis by some angle \verb!theta!.
-
-\textit{Parameters}: \begin{itemize}
-
-\item \verb!theta! (float) : The angle to rotate the particles around the $Z$ axis. Default unit is in degrees (see \verb!rad!).
-
-\item \verb!rad! (bool, optional) : Whether or not \verb!theta! is in radians.
-
-\end{itemize}
 
 \textit{Returns}: 
 

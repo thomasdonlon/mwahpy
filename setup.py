@@ -5,10 +5,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="mwahpy",
-    version="1.2.0",
+    version="1.2.1",
     author="Tom Donlon",
     author_email="donlot@rpi.edu",
-    description="A python package for easily parsing and processing data from milkyway@home",
+    description="A python package for easily parsing and processing data from MilkyWay@home",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/thomasdonlon/mwahpy",

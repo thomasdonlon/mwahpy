@@ -260,6 +260,7 @@ class Timestep():
         self.vlos = self.vgsr - 10.1*np.cos(self.b*np.pi/180)*np.cos(self.l*np.pi/180) - 224*np.cos(self.b*np.pi/180)*np.sin(self.l*np.pi/180) - 6.7*np.sin(self.b*np.pi/180)
         self.rad = (self.x*self.vx + self.y*self.vy + self.z*self.vz)/self.r
         self.rot = self.lz/(self.x**2 + self.y**2)**0.5
+        self.vR = self.rad = (self.x*self.vx + self.y*self.vy)/self.R
 
         #relative information
         self.distFromCOM = ((self.x - self.centerOfMass[0])**2 + (self.y - self.centerOfMass[1])**2 + (self.z - self.centerOfMass[2])**2)**0.5
@@ -452,36 +453,6 @@ class Timestep():
     #---------------------------------------------------------------------------
     # MISCELLANEOUS
     #---------------------------------------------------------------------------
-
-    #TODO: make rotation about arbitrary axis (not important)
-    def rotateAroundZAxis(self, theta, rad=False): #rotates counter-clockwise
-        #rad: True if theta is in radians
-
-        if not rad:
-            theta *= np.pi/180
-
-        cos = np.cos(theta)
-        sin = np.sin(theta)
-
-        R = np.array([[cos, -1*sin],
-                      [sin, cos]])
-
-        #update position
-        xy = np.array([self.x, self.y])
-        new_xy = np.matmul(R, xy)
-
-        self.x = new_xy[0]
-        self.y = new_xy[1]
-
-        #update velocities
-        vxvy = np.array([self.vx, self.vy])
-        new_vxvy = np.matmul(R, vxvy)
-
-        self.vx = new_vxvy[0]
-        self.vy = new_vxvy[1]
-
-        if flags.autoUpdate:
-            self.update()
 
     #make an n-dimensional rectangular cut on the data
     #TODO: make an inverted method, i.e. cut out things within the bounds
