@@ -1,8 +1,5 @@
 numpy
 galpy
 matplotlib
-random
 astropy
 scipy
-unittest
-pathlib

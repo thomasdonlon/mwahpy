@@ -16,7 +16,10 @@ import unittest
 #These functions aren't meant to be accessed by outside files or by end users,
 #and as such they are not well documented, named, or tested
 
-def wrapLong(long):
+def wrapLong(long, rad=False):
+
+    if rad:
+        long = long * 180/np.pi
 
     use_array = True
     if type(long) != type(np.array([])):
@@ -29,12 +32,16 @@ def wrapLong(long):
         elif long[i] > 360:
             long[i] -= 360
 
+    if rad:
+        long = long * np.pi/180
+
     if not use_array:
         long = long[0]
 
     return long
 
 #rotate the given data around the provided axis
+#TODO: Allow array-like input
 def rotAroundArbAxis(x, y, z, ux, uy, uz, theta):
     #TODO: Allow radians or degrees
     #x, y, z: 3D cartesian coordinates of the data
@@ -288,6 +295,7 @@ def gal_to_cyl(l, b, r):
 # Returns: Galactic vx, vy, vz velocities [km/s]
 # NOTE: pmRA = d/dt(RA) * cos(DEC)
 # Arguments should be numpy arrays for most efficient usage
+# Adapted from code written by Alan Pearl 
 def getUVW(dist, rv, ra, dec, pmra, pmde):
 
     # Conversion from Equatorial (J2000) Cartesian to Galactic Cartesian
@@ -720,7 +728,7 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
         origin2 *= np.pi/180
 
     '''
-    This was an attempt at a 3D euler angle method for sky_to_pole, but it's bugged.
+    This was an attempt at a 3D euler angle method for sky_to_pole, but it's buggy.
     I ended up moving to the simplified vector arithmetic version that is implemented below.
     This method, if debugged, would probably avoid the singularities at the poles that
     sky_to_pole runs into currently.
