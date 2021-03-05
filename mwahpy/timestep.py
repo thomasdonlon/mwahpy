@@ -610,7 +610,7 @@ class Timestep():
     def getSelfEnergies(t):
         #t: the Timestep
 
-        gc = 4.30091e-3 * mwahpy_glob.structToSol / 1000 #Newton's gravitational constant in units of
+        gc = 4.30091e-3 * mwahpy_glob.structToSol / 1000 #Newton's gravitational constant in units of kpc/struct mass * (km/s)^2
 
         t = t.copy() #don't hurt the poor innocent Timestep
         t.recenter() #recenters both positions and velocities
