@@ -88,6 +88,52 @@ def readOutput(f):
 
     return d
 
+#parses a milkyway ".in" file and returns a Timestep class structure
+def readInput(f):
+    #f (str): the path of the milkyway ".in" file
+
+    if flags.progressBars:
+        flen = mwahpy_glob.fileLen(f)
+    if flags.verbose:
+        print('\nReading in data from ' + str(f) + '...')
+
+    f = open(f, 'r')
+
+    #remove the header
+    f.readline()
+
+    #store the data here temporarily
+    #indexed this way to avoid the 'ignore' column
+    array_dict = {1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[]}
+
+    #place all the data from the file into the dictionary
+    if flags.progressBars:
+        j = 0
+    for line in f:
+        line = line.strip().split('\t')
+        i = 1
+        while i < len(line):
+            array_dict[i].append(float(line[i]))
+            i += 1
+        if flags.progressBars:
+            j += 1
+            mwahpy_glob.progressBar(j, flen)
+
+    #return the Timestep class using the array dictionary we built
+    if flags.verbose:
+        print('\n'+ str(len(array_dict[1])) + ' objects read in')
+        sys.stdout.write('\rConverting data...')
+    d = Timestep(id_val=array_dict[1], x=array_dict[2], y=array_dict[3], z=array_dict[4], vx=array_dict[5], vy=array_dict[6], vz=array_dict[7], mass=array_dict[8], centerOfMass=[0,0,0], centerOfMomentum=[0,0,0])
+    if flags.verbose:
+        sys.stdout.write('done\n')
+
+    f.close()
+
+    d.update(force=True) #this generates Comass and Comomentum, as well as the other bits
+    #that you expect a Timestep to have initially when read in
+
+    return d
+
 #TODO: add nested progress bars
 def readFolder(f, ts_scale=None):
     #f: the path to the folder that you want to create an Nbody structure out of

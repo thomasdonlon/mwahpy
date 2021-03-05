@@ -177,6 +177,34 @@ class Timestep():
     def __len__(self):
         return len(self.id)
 
+    #replaces this Timestep with a blank Timestep
+    def reset(self):
+        self.id = np.array([])
+        self.x = np.array([])
+        self.y = np.array([])
+        self.z = np.array([])
+        self.vx = np.array([])
+        self.vy = np.array([])
+        self.vz = np.array([])
+        self.mass = np.array([])
+
+        self.centerOfMass = [0,0,0]
+        self.centerOfMomentum = [0,0,0]
+
+        self.time = None
+        self.nbody = None
+        self.potential = None
+
+        self.indexList = ['id', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'mass']
+        self.index = 0
+
+        self.have_basic = False
+        self.have_rvpm = False
+        self.have_energy = False
+
+        self.changed_pos = False
+        self.changed_vel = False
+
     def update(self, force=False):
         #only update the necessary attributes based on what changed
         #if force==True, then force updating everything
@@ -206,6 +234,12 @@ class Timestep():
     #this can't be done by iterating over the object, since comass etc. have to be copied as well
     def copy(self):
         out = Timestep()
+        if self.have_basic:
+            out.calcBasic()
+        if self.have_rvpm:
+            out.calcrvpm()
+        if self.have_energy:
+            out.calcEnergy()
         for key in self.__dict__.keys():
             if type(out[str(key)]) == type(np.array([])) or type(out[str(key)]) == type([]):
                 out[str(key)] = self[str(key)].copy()
@@ -239,8 +273,8 @@ class Timestep():
         self.R = (self.x**2 + self.y**2)**0.5
 
         #galactic coordinate information
-        self.l = np.arctan2(self.y, self.x)
-        self.b = np.arcsin(self.z/self.r)
+        self.l = np.arctan2(self.y, self.x)*180/np.pi
+        self.b = np.arcsin(self.z/self.r)*180/np.pi
 
         #ICRS information
         c = SkyCoord(l=self.l*u.degree, b=self.b*u.degree, frame='galactic')
@@ -260,7 +294,7 @@ class Timestep():
         self.vlos = self.vgsr - 10.1*np.cos(self.b*np.pi/180)*np.cos(self.l*np.pi/180) - 224*np.cos(self.b*np.pi/180)*np.sin(self.l*np.pi/180) - 6.7*np.sin(self.b*np.pi/180)
         self.rad = (self.x*self.vx + self.y*self.vy + self.z*self.vz)/self.r
         self.rot = self.lz/(self.x**2 + self.y**2)**0.5
-        self.vR = self.rad = (self.x*self.vx + self.y*self.vy)/self.R
+        self.vR = (self.x*self.vx + self.y*self.vy)/self.R
 
         #relative information
         self.distFromCOM = ((self.x - self.centerOfMass[0])**2 + (self.y - self.centerOfMass[1])**2 + (self.z - self.centerOfMass[2])**2)**0.5
@@ -409,6 +443,7 @@ class Timestep():
     #centers the timestep so that the COMs are now both zero vectors
     #this can be useful if running live simulations, which can pick up nonzero
     #   overall velocities when they relax from unstable virial equilibrium ICs
+    #Conserves the physics of the system under a change of reference frame
     def recenter(self):
         #center the positions of the particles
         self.x = self.x - self.centerOfMass[0]
@@ -419,6 +454,25 @@ class Timestep():
         self.vx = self.vx - self.centerOfMomentum[0]
         self.vy = self.vy - self.centerOfMomentum[1]
         self.vz = self.vz - self.centerOfMomentum[2]
+
+        if flags.autoUpdate:
+            self.update()
+
+    #centers the timestep so that the COMs of all individual components are now zero vectors
+    #this can be useful if running live simulations, which can pick up nonzero
+    #   overall velocities when they relax from unstable virial equilibrium ICs
+    #WARNING: Does not conserve the physics of the system. This is more for testing
+    #   or debugging purposes, or if you really know what you're doing.
+    def recenterEachComponent(self):
+        #center the positions of the particles
+        data_list = self.splitAtIdWrap()
+
+        for i in data_list:
+            i.recenter()
+
+        self.reset()
+        for i in data_list:
+            self.appendTimestep(i)
 
         if flags.autoUpdate:
             self.update()
@@ -543,3 +597,39 @@ class Timestep():
 #===============================================================================
 # FUNCTIONS INVOLVING TIMESTEP CLASSES
 #===============================================================================
+
+    #Timestep -> np array of floats
+    #computes the energy of each particle based only on the self-gravity
+    #of the particles and their velocities w.r.t. the COM's of the particles.
+    #slow because I am just implementing straight N^2 gravity calcs, but
+    #not sure if there's a better way to do this
+    #NOTE: This is energy per unit mass, not energy
+    #NOTE: Only returns initial energy of the particles in a dwarf when run
+    #      on a Timestep where the entire dwarf is still bound (e.g. the
+    #      beginning of a simulation), otherwise output is ~meaningless
+    def getSelfEnergies(t):
+        #t: the Timestep
+
+        gc = 4.30091e-3 * mwahpy_glob.structToSol / 1000 #Newton's gravitational constant in units of
+
+        t = t.copy() #don't hurt the poor innocent Timestep
+        t.recenter() #recenters both positions and velocities
+
+        pot_energies = []
+
+        #compute the self gravitational potential energy of each particle
+        for x1, y1, z1 in zip(t.x, t.y, t.z):
+            pe = 0
+            for x2, y2, z2, m in zip(t.x, t.y, t.z, t.mass):
+                r = ((x1 - x2)**2 + (y1 - y2)**2 + (z1 - z2)**2)**0.5
+                pe -= gc * m / r #potential energy is negative
+            pot_energies.append(pe)
+        pot_energies = np.array(pot_energies) #do it this way because np.append is horrendously slow
+
+        #compute the kinetic energy of each particle (within reference frame of
+        #the COM's of the particles)
+        kin_energies = t.vx**2 + t.vy**2 + t.vz**2
+
+        energies = pot_energies + kin_energies
+
+        return energies
