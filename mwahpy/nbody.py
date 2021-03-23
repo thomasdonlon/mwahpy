@@ -9,22 +9,9 @@ cutting simulations as a whole, instead of manually going through each timestep
 # IMPORTS
 #===============================================================================
 
-#external imports
 import numpy as np
 import random
 import unittest
-
-#mwahpy imports
-import mwahpy_glob
-import flags
-import output_handler
-import timestep
-
-#TODO: make a Nbody class that reads in from a folder full of timesteps, and acts
-#   as a collection of Timestep instances. Each Timestep instance is one of the timesteps,
-#   and can be called as that timestep.
-
-#TODO: write a function that reads in Nbody data from a folder of Nbody .out files
 
 #===============================================================================
 # NBODY CLASS
@@ -38,7 +25,7 @@ class Nbody():
             #(the given filename, e.g. 99, 2099, etc.) as the key
 
         if ts_scale != None:
-            self.scaleTimes(ts_len)
+            self.scale_times(ts_len)
 
     #---------------------------------------------------------------------------
     # INDEXING
@@ -57,17 +44,17 @@ class Nbody():
     #---------------------------------------------------------------------------
 
     def __iter__(self):
-        self.sortedts = sorted(self.ts.items()) #implementing this here prevents the program from
+        self.sorted_ts = sorted(self.ts.items()) #implementing this here prevents the program from
             #having to sort the dictionary every iteration
         self.index = 0
         return self
 
     def __next__(self):
-        if self.index == len(self.sortedts):
+        if self.index == len(self.sorted_ts):
             raise StopIteration
         else:
             self.index += 1
-            return self.sortedts[self.index - 1][1] #sortedts is actual a list of tuples,
+            return self.sorted_ts[self.index - 1][1] #sorted_ts is actual a list of tuples,
                                                 #but we don't care about the keys
 
     #---------------------------------------------------------------------------
@@ -76,7 +63,7 @@ class Nbody():
 
     #adds the actual times of each timestep in the specified unit to a list
     #this can be provided in the initialization of the Nbody class, or adjusted later
-    def scaleTimes(self, l):
+    def scale_times(self, l):
         #l (float): the length of each timestep
 
         #save the times in the nbody structure

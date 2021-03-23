@@ -11,10 +11,10 @@ import numpy as np
 import sys
 from pathlib import Path
 
-import flags
-import mwahpy_glob
-from timestep import Timestep
-from nbody import Nbody
+from .flags import verbose, progress_bars
+from .mwahpy_glob import file_len, progress_bar
+from .timestep import Timestep
+from .nbody import Nbody
 
 #===============================================================================
 # FUNCTIONS
@@ -24,7 +24,7 @@ from nbody import Nbody
 # INPUT
 #-------------------------------------------------------------------------------
 
-def removeHeader(f):
+def remove_header(f):
     #f (open file): the milkyway ".out" file
 
     comass = []
@@ -45,25 +45,25 @@ def removeHeader(f):
     return comass, comom
 
 #parses a milkyway ".out" file and returns a Timestep class structure
-def readOutput(f):
+def read_output(f):
     #f (str): the path of the milkyway ".out" file
 
-    if flags.progressBars:
-        flen = mwahpy_glob.fileLen(f)
-    if flags.verbose:
+    if progress_bars:
+        flen = file_len(f)
+    if verbose:
         print('\nReading in data from ' + str(f) + '...')
 
     f = open(f, 'r')
 
     #remove the header, get relevant info from header
-    comass, comom = removeHeader(f)
+    comass, comom = remove_header(f)
 
     #store the data here temporarily
     #indexed this way to avoid the 'ignore' column
     array_dict = {1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[], 9:[], 10:[], 11:[]}
 
     #place all the data from the file into the dictionary
-    if flags.progressBars:
+    if progress_bars:
         j = 0
     for line in f:
         line = line.strip().split(',')
@@ -72,16 +72,16 @@ def readOutput(f):
                                  #  this is mostly just for simplicity when reading in, although I guess it probably slows down the code somewhat
             array_dict[i].append(float(line[i]))
             i += 1
-        if flags.progressBars:
+        if progress_bars:
             j += 1
-            mwahpy_glob.progressBar(j, flen)
+            progress_bar(j, flen)
 
     #return the Timestep class using the array dictionary we built
-    if flags.verbose:
+    if verbose:
         print('\n'+ str(len(array_dict[1])) + ' objects read in')
         sys.stdout.write('\rConverting data...')
-    d = Timestep(id_val=array_dict[1], x=array_dict[2], y=array_dict[3], z=array_dict[4], vx=array_dict[8], vy=array_dict[9], vz=array_dict[10], mass=array_dict[11], centerOfMass=comass, centerOfMomentum=comom)
-    if flags.verbose:
+    d = Timestep(id_val=array_dict[1], x=array_dict[2], y=array_dict[3], z=array_dict[4], vx=array_dict[8], vy=array_dict[9], vz=array_dict[10], mass=array_dict[11], center_of_mass=comass, center_of_momentum=comom)
+    if verbose:
         sys.stdout.write('done\n')
 
     f.close()
@@ -89,12 +89,12 @@ def readOutput(f):
     return d
 
 #parses a milkyway ".in" file and returns a Timestep class structure
-def readInput(f):
+def read_input(f):
     #f (str): the path of the milkyway ".in" file
 
-    if flags.progressBars:
-        flen = mwahpy_glob.fileLen(f)
-    if flags.verbose:
+    if progress_bars:
+        flen = file_len(f)
+    if verbose:
         print('\nReading in data from ' + str(f) + '...')
 
     f = open(f, 'r')
@@ -107,7 +107,7 @@ def readInput(f):
     array_dict = {1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[]}
 
     #place all the data from the file into the dictionary
-    if flags.progressBars:
+    if progress_bars:
         j = 0
     for line in f:
         line = line.strip().split('\t')
@@ -115,16 +115,16 @@ def readInput(f):
         while i < len(line):
             array_dict[i].append(float(line[i]))
             i += 1
-        if flags.progressBars:
+        if progress_bars:
             j += 1
-            mwahpy_glob.progressBar(j, flen)
+            progress_bar(j, flen)
 
     #return the Timestep class using the array dictionary we built
-    if flags.verbose:
+    if verbose:
         print('\n'+ str(len(array_dict[1])) + ' objects read in')
         sys.stdout.write('\rConverting data...')
-    d = Timestep(id_val=array_dict[1], x=array_dict[2], y=array_dict[3], z=array_dict[4], vx=array_dict[5], vy=array_dict[6], vz=array_dict[7], mass=array_dict[8], centerOfMass=[0,0,0], centerOfMomentum=[0,0,0])
-    if flags.verbose:
+    d = Timestep(id_val=array_dict[1], x=array_dict[2], y=array_dict[3], z=array_dict[4], vx=array_dict[5], vy=array_dict[6], vz=array_dict[7], mass=array_dict[8], center_of_mass=[0,0,0], center_of_momentum=[0,0,0])
+    if verbose:
         sys.stdout.write('done\n')
 
     f.close()
@@ -135,11 +135,11 @@ def readInput(f):
     return d
 
 #TODO: add nested progress bars
-def readFolder(f, ts_scale=None):
+def read_folder(f, ts_scale=None):
     #f: the path to the folder that you want to create an Nbody structure out of
     #ts_scale: the scale of a single timestep in the Nbody sim
 
-    if flags.verbose:
+    if verbose:
         print('\nReading in data from directory ' + str(f) + '...')
 
     n = Nbody(ts_scale=ts_scale) #create the Nbody instance
@@ -147,10 +147,9 @@ def readFolder(f, ts_scale=None):
     #iterate through the folder
     for i in Path(f).iterdir():
 
-        t = readOutput(str(i))
+        t = read_output(str(i))
         time = int(str(i).split('/')[-1])
         n[time] = t #assign each timestep to the correct place in the Nbody
-
 
     return n
 
@@ -160,10 +159,10 @@ def readFolder(f, ts_scale=None):
 
 #parses a Timestep class object and outputs a file that can be read into a
 #MilkyWay@home N-body simulation as the 'manual bodies' parameter
-def makeNbodyInput(t, f):
+def make_nbody_input(t, f):
     #t (Timestep): the Timestep object that will be printed out
     #f (str): the path of the file that will be printed to
-    if flags.verbose:
+    if verbose:
         print('Writing Timestep as N-body input to '+f+'...')
 
     f = open(f, 'w')
@@ -172,22 +171,22 @@ def makeNbodyInput(t, f):
     i = 0
 
     #recenter on center of mass for ease of inserting a dwarf
-    xnew = t.x - t.centerOfMass[0]
-    ynew = t.y - t.centerOfMass[1]
-    znew = t.z - t.centerOfMass[2]
+    xnew = t.x - t.center_of_mass[0]
+    ynew = t.y - t.center_of_mass[1]
+    znew = t.z - t.center_of_mass[2]
 
     while i < len(t):
         f.write('\n1\t'+str(int(t.id[i]))+'\t'+str(xnew[i])+'\t'+str(ynew[i])+'\t'+str(znew[i])+'\t'+\
                 str(t.vx[i])+'\t'+str(t.vy[i])+'\t'+str(t.vz[i])+'\t'+str(t.mass[i]))
-        if flags.progressBars:
-            mwahpy_glob.progressBar(i, len(t))
+        if progress_bars:
+            progress_bar(i, len(t))
         i += 1
 
-    if flags.verbose:
+    if verbose:
         print('\ndone')
 
 #prints out a '.csv' file of the Timestep class structure
-def makeCSV(t, f_name):
+def make_csv(t, f_name):
     #t: the Timestep object being written out
     #f: the path for the output csv file
 
@@ -195,7 +194,7 @@ def makeCSV(t, f_name):
 
     #make the header
     #TODO: Print out COM's
-    if flags.verbose:
+    if verbose:
         print('Writing header...')
     header = ''
     for key in t:
@@ -205,13 +204,13 @@ def makeCSV(t, f_name):
 
     #iterate through the data and print each line
     i = 0
-    if flags.verbose:
+    if verbose:
         print('Printing data...')
     while i < len(self): #i avoided zip() here because it's messy to zip
     #                        like a billion different arrays, although zip()
     #                        is "better programming"
-        if flags.progressBars:
-            mwahpy_glob.progressBar(i, len(t))
+        if progress_bars:
+            progress_bar(i, len(t))
         line = ''
         for key in t:
             line += (str(t[key][i]) + ',')

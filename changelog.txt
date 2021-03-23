@@ -1,0 +1,7 @@
+v1.3.0:
+ - added changelog
+ - fixed bug in Timestep.copy() that would cause error if the Timestep had calculated values
+ - adapted python standard naming convention (mostly, method names went from camelCase to lower_case)
+ - consolidated coords.py tests into tests.py
+ - bug fix in coords.cart_to_plane()
+ - fixed import scheme
