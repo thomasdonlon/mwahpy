@@ -1,7 +1,6 @@
 import numpy as np
 from numpy import linalg
 import scipy as sc
-import unittest
 
 #TODO: Make sure all transformations have inverse transformations
 #TODO: Make sure all transormations have unit tests

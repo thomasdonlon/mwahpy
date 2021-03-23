@@ -12,18 +12,17 @@ imported data from N-body output files.
 
 #external imports
 import numpy as np
-import coords as co
 from astropy.coordinates import SkyCoord
 import astropy.units as u
 import random
 import galpy.potential
-import unittest
 
 #mwahpy imports
 from .mwahpy_glob import struct_to_sol
 from .flags import auto_update, verbose
 from .plot import scatter, hist2d
 from .pot import mwahpy_default_pot
+from .coords import get_rvpm
 
 #===============================================================================
 # TIMESTEP CLASS
@@ -305,13 +304,13 @@ class Timestep():
         self.have_basic = True #make sure the getter doesn't try to run this again
 
     def calc_rvpm(self):
-        #the biggest source of overhead in this class is co.get_rvpm
+        #the biggest source of overhead in this class is get_rvpm
         #so, don't run it unless you have to.
 
         if verbose:
             print('Calculating proper motion values...')
 
-        self.pmra, self.pmdec = co.get_rvpm(self.ra, self.dec, self.dist, self.vx, self.vy, self.vz)[1:]
+        self.pmra, self.pmdec = get_rvpm(self.ra, self.dec, self.dist, self.vx, self.vy, self.vz)[1:]
         #already get rv from vlos, don't need to save it as something else
         self.pmtot = (self.pmra**2 + self.pmdec**2)**0.5
         #4.848e-6 is arcsec->rad, 3.086e16 is kpc->km, and 3.156e7 is sidereal yr -> seconds

@@ -11,7 +11,6 @@ cutting simulations as a whole, instead of manually going through each timestep
 
 import numpy as np
 import random
-import unittest
 
 #===============================================================================
 # NBODY CLASS
