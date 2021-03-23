@@ -19,9 +19,9 @@ from astropy.coordinates import SkyCoord
 import galpy
 from galpy.orbit import Orbit
 
-import coords as co
-import flags
-from pot import pot
+from .coords import cart_to_lambet, get_plane_normal, plane_OLS, gal_to_lambet
+from .flags import verbose
+from .pot import mwahpy_default_pot
 
 '''
 ================================================================================
@@ -81,7 +81,7 @@ class OrbitData():
     def LamBet(self, normal, point):
         #normal: the normal vector to the plane of the Great Circle we are estimating for the orbit
         #point: parameter for the axis generation of the Great Circle coordinates
-        self.L, self.B = co.cart_to_LamBet(self.x, self.y, self.z, normal, point)
+        self.L, self.B = cart_to_lambet(self.x, self.y, self.z, normal, point)
         self.r = (self.x**2 + self.y**2 + self.z**2)**0.5
         self.B_err = self.b_err #should be error propogated (Newby et al. 2013) but is not yet
         return self
@@ -139,7 +139,7 @@ def getModelFromOrbit(data, o, normal, point):
     #we flip it around so that we are fitting both the forwards and the backwards orbit
     ts = np.linspace(0, t_length, num=resolution)*u.Gyr
     o_rev = o.flip()
-    o_rev.integrate(ts, pot)
+    o_rev.integrate(ts, mwahpy_default_pot)
 
     #sign swap on vx because galpy is left-handed, and we are inputting data in a right-handed coordinate system
     data_orbit, data_orbit_rev = getOrbitDataFromOrbit(o, o_rev)
@@ -194,7 +194,7 @@ def chiSquared(params, data=[], normal=(0, 0, 0), point=(1, 0, 0)):
     #point: parameter for the axis generation of the Great Circle coordinates
 
     o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4] - 220, params[5]], uvw=True, lb=True, ro=8., vo=220.) #generate the orbit
-    o.integrate(ts, pot) #integrate the orbit
+    o.integrate(ts, mwahpy_default_pot) #integrate the orbit
 
     B_model, d_model, vx_model, vy_model, vz_model, vgsr_model, costs = getModelFromOrbit(data, o, normal, point) #get model data from orbit
 
@@ -236,7 +236,7 @@ def chiSquared(params, data=[], normal=(0, 0, 0), point=(1, 0, 0)):
     if type(x2) == type(np.array([])):
         x2 = x2[0]
 
-    if flags.verbose:
+    if verbose:
         print('X^2: ' + str(x2))
 
     return x2
@@ -244,7 +244,7 @@ def chiSquared(params, data=[], normal=(0, 0, 0), point=(1, 0, 0)):
 #optimize: data -> [float, float, float, float, float], (float, float, float), (float, float, float)
 #takes in data, then fits a Great Circle to that data and minimizes the chi_squared to fit an orbit to the data
 def optimize(data_opt, max_it, bounds, **kwargs):
-    normal = co.getPlaneNormal(co.plane_OLS(data_opt.x, data_opt.y, data_opt.z)) #get normal vector for fit Great Circle
+    normal = get_plane_normal(plane_OLS(data_opt.x, data_opt.y, data_opt.z)) #get normal vector for fit Great Circle
     point = (1, 0, 0) #not currently fitting this, but this can be changed or fit at a later date
     #this way it makes 0 deg. in the Great Circle ~0 deg. in galactic longitude
 
@@ -263,7 +263,7 @@ def optimize(data_opt, max_it, bounds, **kwargs):
     ============================================================================
     '''
 
-    params = scopt.differential_evolution(chiSquared, bounds, args=(data_opt, normal, point), strategy='rand1bin', maxiter=max_it, popsize=pop_size, mutation=diff_scaling_factor, recombination=crossover_rate, workers=-1, disp=not(flags.verbose), **kwargs).x
+    params = scopt.differential_evolution(chiSquared, bounds, args=(data_opt, normal, point), strategy='rand1bin', maxiter=max_it, popsize=pop_size, mutation=diff_scaling_factor, recombination=crossover_rate, workers=-1, disp=not(verbose), **kwargs).x
     #'''
 
     x2 = chiSquared(params, data_opt, normal, point)
@@ -303,7 +303,7 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
         global ts
         ts = np.linspace(0, t_length, num=resolution)*u.Gyr
 
-    if flags.verbose:
+    if verbose:
         print('===================================')
         print('Optimizing:')
         print('===================================')
@@ -313,7 +313,7 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
     #optimization
     params, normal, point, x2 = optimize(data_opt, max_it, bounds, **kwargs)
 
-    if flags.verbose:
+    if verbose:
         print('===================================')
         print('Params: l, b, d, vx, vy, vz')
         print(params)
@@ -332,10 +332,10 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
 
 def plotOrbitLamBet(L, B, params, normal, point):
     o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4] - 220, params[5]], uvw=True, lb=True, ro=8., vo=220.) #generate the orbit
-    o.integrate(ts, pot) #integrate the orbit
+    o.integrate(ts, mwahpy_default_pot) #integrate the orbit
 
     o_rev = o.flip()
-    o_rev.integrate(ts, pot)
+    o_rev.integrate(ts, mwahpy_default_pot)
 
     #sign swap on vx because galpy is left-handed, and we are inputting data in a right-handed coordinate system
     data_orbit, data_orbit_rev = getOrbitDataFromOrbit(o, o_rev)
@@ -357,10 +357,10 @@ def plotOrbitLamBet(L, B, params, normal, point):
 
 def plotOrbitgal(l, b, d, params):
     o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4] - 220, params[5]], uvw=True, lb=True, ro=8., vo=220.) #generate the orbit
-    o.integrate(ts, pot) #integrate the orbit
+    o.integrate(ts, mwahpy_default_pot) #integrate the orbit
 
     o_rev = o.flip()
-    o_rev.integrate(ts, pot)
+    o_rev.integrate(ts, mwahpy_default_pot)
 
     #sign swap on vx because galpy is left-handed, and we are inputting data in a right-handed coordinate system
     data_orbit, data_orbit_rev = getOrbitDataFromOrbit(o, o_rev)
@@ -401,7 +401,7 @@ def test():
     d_err = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
 
     params, normal, point, x2 = fit_orbit(l, b, b_err, d, d_err)
-    L, B = co.gal_to_LamBet(l, b, d, normal, point)
+    L, B = gal_to_lambet(l, b, d, normal, point)
     plotOrbitLamBet(L, B, params, normal, point)
     plotOrbitgal(l, b, d, params)
 

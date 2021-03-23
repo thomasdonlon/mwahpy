@@ -18,9 +18,8 @@ from astropy.coordinates import SkyCoord
 import galpy
 from galpy.orbit import Orbit
 
-import coords as co
-import flags
-from pot import pot
+from .flags import verbose
+from .pot import mwahpy_default_pot
 
 '''
 ================================================================================
@@ -145,7 +144,7 @@ def getModelFromOrbit(data, o):
     #we flip it around so that we are fitting both the forwards and the backwards orbit
     ts = np.linspace(0, t_length, num=resolution)*u.Gyr
     o_rev = o.flip()
-    o_rev.integrate(ts, pot)
+    o_rev.integrate(ts, mwahpy_default_pot)
 
     #sign swap on vx because galpy is left-handed, and we are inputting data in a right-handed coordinate system
     data_orbit, data_orbit_rev = getOrbitDataFromOrbit(o, o_rev)
@@ -198,7 +197,7 @@ def chiSquared(params, data=[]):
     #point: parameter for the axis generation of the Great Circle coordinates
 
     o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4]-220, params[5]], uvw=True, lb=True, ro=8., vo=220., zo=0.) #generate the orbit
-    o.integrate(ts, pot) #integrate the orbit
+    o.integrate(ts, mwahpy_default_pot) #integrate the orbit
 
     B_model, d_model, vx_model, vy_model, vz_model, vgsr_model, costs = getModelFromOrbit(data, o) #get model data from orbit
 
@@ -358,10 +357,10 @@ def unwrap(a, threshold=10):
 
 def plotOrbitgal(l, b, d, params, vgsr=None):
     o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4] - 220, params[5]], uvw=True, lb=True, ro=8., vo=220.) #generate the orbit
-    o.integrate(ts, pot) #integrate the orbit
+    o.integrate(ts, mwahpy_default_pot) #integrate the orbit
 
     o_rev = o.flip()
-    o_rev.integrate(ts, pot)
+    o_rev.integrate(ts, mwahpy_default_pot)
 
     #sign swap on vx because galpy is left-handed, and we are inputting data in a right-handed coordinate system
     data_orbit, data_orbit_rev = getOrbitDataFromOrbit(o, o_rev)
@@ -411,10 +410,10 @@ def plotOrbiticrs(l, b, d, params, vgsr=None):
     dec = s.dec
 
     o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4] - 220, params[5]], uvw=True, lb=True, ro=8., vo=220.) #generate the orbit
-    o.integrate(ts, pot) #integrate the orbit
+    o.integrate(ts, mwahpy_default_pot) #integrate the orbit
 
     o_rev = o.flip()
-    o_rev.integrate(ts, pot)
+    o_rev.integrate(ts, mwahpy_default_pot)
 
     #sign swap on vx because galpy is left-handed, and we are inputting data in a right-handed coordinate system
     data_orbit, data_orbit_rev = getOrbitDataFromOrbit(o, o_rev)

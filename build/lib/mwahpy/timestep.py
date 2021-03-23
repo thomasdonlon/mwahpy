@@ -20,10 +20,10 @@ import galpy.potential
 import unittest
 
 #mwahpy imports
-import mwahpy_glob
-import flags
-import plot
-import pot
+from .mwahpy_glob import struct_to_sol
+from .flags import auto_update, verbose
+from .plot import scatter, hist2d
+from .pot import mwahpy_default_pot
 
 #===============================================================================
 # TIMESTEP CLASS
@@ -40,9 +40,9 @@ class AttrDict(dict):
 
 class Timestep():
 
-    def __init__(self, id_val=[], x=[], y=[], z=[], vx=[], vy=[], vz=[], mass=[], centerOfMass=[0, 0, 0], centerOfMomentum=[0, 0, 0], potential=None, time=None, nbody=None):
-        #all this is typically specified by the readOutput function in output_handler
-        #readOutput is the preferred way to input data to this data structure
+    def __init__(self, id_val=[], x=[], y=[], z=[], vx=[], vy=[], vz=[], mass=[], center_of_mass=[0, 0, 0], center_of_momentum=[0, 0, 0], potential=None, time=None, nbody=None):
+        #all this is typically specified by the read_output function in output_handler
+        #read_output is the preferred way to input data to this data structure
         #but if you're really feeling adventurous you can always do it yourself
 
         #-----------------------------------------------------------------------
@@ -72,11 +72,11 @@ class Timestep():
 
         #NOTE: Any time you update the position data, you have to update
         #   the center of mass (and same for velocity and COMomentum)
-        #   This is done automatically if flags.autoUpdate is on
+        #   This is done automatically if auto_update is on
         #   If you are manually screwing around with the provided values,
         #   you will need to update it manually
-        self.centerOfMass = centerOfMass
-        self.centerOfMomentum = centerOfMomentum
+        self.center_of_mass = center_of_mass
+        self.center_of_momentum = center_of_momentum
 
         #-----------------------------------------------------------------------
         # HOUSEKEEPING
@@ -95,7 +95,7 @@ class Timestep():
 
         #this has to be manually updated any time a new iterable quantity is added
         #to the Timestep class. This allows us to control what values are iterated over.
-        self.indexList = ['id', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'mass']
+        self.index_list = ['id', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'mass']
         self.index = 0
 
         #these should initially be set to false. If the user tries to get a value
@@ -123,7 +123,7 @@ class Timestep():
 
     #---------------------------------------------------------------------------
     # ITERATOR CONTROL
-    #self.indexList allows us to ignore things that are not identically iterable in self.__dict__(),
+    #self.index_list allows us to ignore things that are not identically iterable in self.__dict__(),
     #such as the centers of mass and momentum
 
     def __iter__(self):
@@ -131,11 +131,11 @@ class Timestep():
         return self
 
     def __next__(self):
-        if self.index == len(self.indexList):
+        if self.index == len(self.index_list):
             raise StopIteration
         else:
             self.index += 1
-            return self.indexList[self.index - 1]
+            return self.index_list[self.index - 1]
 
     #---------------------------------------------------------------------------
     # These allow for the behavior we want from the class attributes, i.e. self.id == self['id']
@@ -144,20 +144,20 @@ class Timestep():
 
     def __getattr__(self, i):
         if (not(self.have_basic) and i in ['msol', 'l', 'b', 'ra', 'dec', 'dist', 'lx', 'ly', 'lz', 'lperp', 'ltot', 'r', 'R', 'vlos', 'vgsr', 'rad', 'rot', 'distFromCOM']):
-            self.calcBasic()
+            self.calc_basic()
         if (not(self.have_rvpm) and i in ['rv', 'pmra', 'pmdec',  'pmtot', 'vtan']):
-            self.calcrvpm()
+            self.calc_rvpm()
         if (not(self.have_energy) and i in ['PE', 'KE', 'energy']):
-            self.calcEnergy()
+            self.calc_energy()
         return self.__dict__[i]
 
     def __getitem__(self, i):
         if (not(self.have_basic) and i in ['msol', 'l', 'b', 'ra', 'dec', 'dist', 'lx', 'ly', 'lz', 'lperp', 'ltot', 'r', 'R', 'vlos', 'vgsr', 'rad', 'rot', 'distFromCOM']):
-            self.calcBasic()
+            self.calc_basic()
         if (not(self.have_rvpm) and i in ['rv', 'pmra', 'pmdec',  'pmtot', 'vtan']):
-            self.calcrvpm()
+            self.calc_rvpm()
         if (not(self.have_energy) and i in ['PE', 'KE', 'energy']):
-            self.calcEnergy(potential=self.potential)
+            self.calc_energy(potential=self.potential)
         return self.__dict__[i]
 
     def __setitem__(self, i, val):
@@ -177,25 +177,53 @@ class Timestep():
     def __len__(self):
         return len(self.id)
 
+    #replaces this Timestep with a blank Timestep
+    def reset(self):
+        self.id = np.array([])
+        self.x = np.array([])
+        self.y = np.array([])
+        self.z = np.array([])
+        self.vx = np.array([])
+        self.vy = np.array([])
+        self.vz = np.array([])
+        self.mass = np.array([])
+
+        self.center_of_mass = [0,0,0]
+        self.center_of_momentum = [0,0,0]
+
+        self.time = None
+        self.nbody = None
+        self.potential = None
+
+        self.index_list = ['id', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'mass']
+        self.index = 0
+
+        self.have_basic = False
+        self.have_rvpm = False
+        self.have_energy = False
+
+        self.changed_pos = False
+        self.changed_vel = False
+
     def update(self, force=False):
         #only update the necessary attributes based on what changed
-        #if force==True, then force updating everything
+        #if force==True, then force updating everything. Should be only rarely needed
         if force:
             self.changed_pos = True
             self.changed_vel = True
 
         if self.changed_pos:
-            self.centerOfMass = [np.sum(self.x*self.mass/sum(self.mass)), np.sum(self.y*self.mass/sum(self.mass)), np.sum(self.z*self.mass/sum(self.mass))]
+            self.center_of_mass = [np.sum(self.x*self.mass/sum(self.mass)), np.sum(self.y*self.mass/sum(self.mass)), np.sum(self.z*self.mass/sum(self.mass))]
         if self.changed_vel:
-            self.centerOfMomentum = [np.sum(self.vx*self.mass/sum(self.mass)), np.sum(self.vy*self.mass/sum(self.mass)), np.sum(self.vz*self.mass/sum(self.mass))]
+            self.center_of_momentum = [np.sum(self.vx*self.mass/sum(self.mass)), np.sum(self.vy*self.mass/sum(self.mass)), np.sum(self.vz*self.mass/sum(self.mass))]
 
         if self.changed_pos or self.changed_vel:
             if self.have_basic:
-                self.calcBasic()
+                self.calc_basic()
             if self.have_rvpm:
-                self.calcrvpm()
+                self.calc_rvpm()
             if self.have_energy:
-                self.calcEnergy(potential=self.potential)
+                self.calc_energy(potential=self.potential)
 
         #the positions and velocities have not changed since updating
         #(since we just updated)
@@ -206,6 +234,12 @@ class Timestep():
     #this can't be done by iterating over the object, since comass etc. have to be copied as well
     def copy(self):
         out = Timestep()
+        if self.have_basic:
+            out.calc_basic()
+        if self.have_rvpm:
+            out.calc_rvpm()
+        if self.have_energy:
+            out.calc_energy()
         for key in self.__dict__.keys():
             if type(out[str(key)]) == type(np.array([])) or type(out[str(key)]) == type([]):
                 out[str(key)] = self[str(key)].copy()
@@ -220,7 +254,7 @@ class Timestep():
     #this dramatically increases the speed of the package if the user is only using
     #a few values that need to be calculated
 
-    def calcBasic(self):
+    def calc_basic(self):
         #none of these calculations take very long, so it's fair to group them up
         #this is only taken out of the original initialization because then you can update them
         #if you end up changing the provided values
@@ -228,10 +262,10 @@ class Timestep():
         #this could be split up even more if any of the component value calculations
         #ends up taking a significant amount of time, but I doubt that will ever be the case
 
-        if flags.verbose:
+        if verbose:
             print('Calculating basic values...')
 
-        self.msol = self.mass * mwahpy_glob.structToSol
+        self.msol = self.mass * struct_to_sol
 
         #position information
         self.r = (self.x**2 + self.y**2 + self.z**2)**0.5
@@ -239,8 +273,8 @@ class Timestep():
         self.R = (self.x**2 + self.y**2)**0.5
 
         #galactic coordinate information
-        self.l = np.arctan2(self.y, self.x)
-        self.b = np.arcsin(self.z/self.r)
+        self.l = np.arctan2(self.y, self.x)*180/np.pi
+        self.b = np.arcsin(self.z/self.r)*180/np.pi
 
         #ICRS information
         c = SkyCoord(l=self.l*u.degree, b=self.b*u.degree, frame='galactic')
@@ -260,48 +294,48 @@ class Timestep():
         self.vlos = self.vgsr - 10.1*np.cos(self.b*np.pi/180)*np.cos(self.l*np.pi/180) - 224*np.cos(self.b*np.pi/180)*np.sin(self.l*np.pi/180) - 6.7*np.sin(self.b*np.pi/180)
         self.rad = (self.x*self.vx + self.y*self.vy + self.z*self.vz)/self.r
         self.rot = self.lz/(self.x**2 + self.y**2)**0.5
-        self.vR = self.rad = (self.x*self.vx + self.y*self.vy)/self.R
+        self.vR = (self.x*self.vx + self.y*self.vy)/self.R
 
         #relative information
-        self.distFromCOM = ((self.x - self.centerOfMass[0])**2 + (self.y - self.centerOfMass[1])**2 + (self.z - self.centerOfMass[2])**2)**0.5
+        self.distFromCOM = ((self.x - self.center_of_mass[0])**2 + (self.y - self.center_of_mass[1])**2 + (self.z - self.center_of_mass[2])**2)**0.5
 
         if not(self.have_basic): #only run if first time running method, not if updating
-            self.indexList = self.indexList + ['msol', 'l', 'b', 'ra', 'dec', 'dist', 'lx', 'ly', 'lz', 'lperp', 'ltot', 'r', 'R', 'vlos', 'vgsr', 'rad', 'rot', 'distFromCOM']
+            self.index_list = self.index_list + ['msol', 'l', 'b', 'ra', 'dec', 'dist', 'lx', 'ly', 'lz', 'lperp', 'ltot', 'r', 'R', 'vlos', 'vgsr', 'rad', 'rot', 'distFromCOM']
 
         self.have_basic = True #make sure the getter doesn't try to run this again
 
-    def calcrvpm(self):
-        #the biggest source of overhead in this class is co.getrvpm
+    def calc_rvpm(self):
+        #the biggest source of overhead in this class is co.get_rvpm
         #so, don't run it unless you have to.
 
-        if flags.verbose:
+        if verbose:
             print('Calculating proper motion values...')
 
-        self.pmra, self.pmdec = co.getrvpm(self.ra, self.dec, self.dist, self.vx, self.vy, self.vz)[1:]
+        self.pmra, self.pmdec = co.get_rvpm(self.ra, self.dec, self.dist, self.vx, self.vy, self.vz)[1:]
         #already get rv from vlos, don't need to save it as something else
         self.pmtot = (self.pmra**2 + self.pmdec**2)**0.5
         #4.848e-6 is arcsec->rad, 3.086e16 is kpc->km, and 3.156e7 is sidereal yr -> seconds
         self.vtan = 4.74*self.dist*self.pmtot #eq. to self.r*np.tan(self.pmtot*4.848e-6) * 3.086e16 / 3.156e7
 
         if not(self.have_rvpm): #only run if first time running method, not if updating
-            self.indexList = self.indexList + ['pmra', 'pmdec',  'pmtot', 'vtan']
+            self.index_list = self.index_list + ['pmra', 'pmdec',  'pmtot', 'vtan']
 
         self.have_rvpm = True #make sure the getter doesn't try to run this again
 
-    def calcEnergy(self, potential=None):
+    def calc_energy(self, potential=None):
         #calculating the energy of every particle can generate some overhead,
         #so I've quarantined it with a flag.
 
-        if flags.verbose:
+        if verbose:
             print('Calculating energy values...')
 
         if potential == None:
-            potential = pot.pot
+            potential = mwahpy_default_pot
 
         #in a logarithmic halo, the magnitude of the potential doesn't impact the result,
         #just the difference in potentials. So, you can specify a potential offset
         #to keep bound objects' total energy negative.
-        PE = galpy.potential.evaluatePotentials(potential, self.R * u.kpc, self.z*u.kpc, ro=8., vo=220.) + pot.energy_offset
+        PE = galpy.potential.evaluatePotentials(potential, self.R * u.kpc, self.z*u.kpc, ro=8., vo=220.) + energy_offset
         KE = 0.5*(self.vx**2 + self.vy**2 + self.vz**2)
 
         #set attributes
@@ -311,25 +345,25 @@ class Timestep():
 
         #allow iteration over these attributes
         if not(self.have_energy):  #only run if first time running method, not if updating
-            self.indexList = self.indexList + ['PE', 'KE', 'energy']
+            self.index_list = self.index_list + ['PE', 'KE', 'energy']
 
         self.have_energy = True #make sure the getter doesn't try to run this again
 
     #---------------------------------------------------------------------------
 
     #cuts the first n entries from every attribute in the Timestep structure
-    def cutFirstN(self, n):
+    def cut_first_n(self, n):
         for key in self:
             self[key] = self[key][n:]
-        if flags.autoUpdate:
+        if auto_update:
             self.update()
 
     #cuts the last n entries from every attribute in the Timestep structure
-    def cutLastN(self, n):
+    def cut_last_n(self, n):
         l = len(self) #length changes during this, so have to save it
         for key in self:
             self[key] = self[key][:l-n]
-        if flags.autoUpdate:
+        if auto_update:
             self.update()
 
     #cut the data to only include the values at the given indices
@@ -337,11 +371,11 @@ class Timestep():
         #indices: the indices you want to take, must be array-like
         for key in self:
             self[key] = np.take(self[key], indices)
-        if flags.autoUpdate:
+        if auto_update:
             self.update()
 
     #resets the IDs of the Timestep instance
-    def resetIds(self):
+    def reset_ids(self):
         self.id = np.arange(len(self))
 
     #splits the Timestep into two new Timestep structures,
@@ -351,10 +385,10 @@ class Timestep():
         Timestep1 = self.copy()
         Timestep2 = self.copy()
 
-        Timestep1.cutLastN(len(self) - n)
-        Timestep2.cutFirstN(n)
+        Timestep1.cut_last_n(len(self) - n)
+        Timestep2.cut_first_n(n)
 
-        if flags.autoUpdate:
+        if auto_update:
             Timestep1.update()
             Timestep2.update()
 
@@ -363,7 +397,7 @@ class Timestep():
     #splits the Timestep into a list of new Timestep structures,
     #where the Timestep is split every time ID wraps back to zero
     #TODO: the dwarf id start at 1, not 0
-    def splitAtIdWrap(self):
+    def split_at_id_wrap(self):
 
         outlist = []
         indices = np.where(self.id==0)[0] #1D list of arrays
@@ -376,25 +410,25 @@ class Timestep():
             i += 1
         outlist.append(Timestep2)
 
-        if flags.autoUpdate:
+        if auto_update:
             for t in outlist:
                 t.update()
 
         return outlist
 
     #append a Timestep object onto this one
-    def appendTimestep(self, t):
+    def append_timestep(self, t):
         #t: the Timestep to append to this object
         for key, dkey in zip(self, t):
             self[key] = np.append(self[key], t[dkey])
 
-        if flags.autoUpdate:
+        if auto_update:
             self.update()
 
     #append the nth item of another Timestep object onto this one
     #WARNING: Extremely time intensive if used repeatedly, np.append is not a speedy function
     #   you should always try to append a timestep instead if possible
-    def appendPoint(self, t, n=0, id=None):
+    def append_point(self, t, n=0, id=None):
         #t: the Timestep object with the item being appended
         #n (optional): the index of the item in t to be appended
         #id (optional): if not None, uses finds the first item with matching id and appends that
@@ -403,31 +437,51 @@ class Timestep():
         for key, tkey in zip(self, t):
             self[key] = np.append(self[key], t[tkey][n])
 
-        if flags.autoUpdate:
+        if auto_update:
             self.update()
 
     #centers the timestep so that the COMs are now both zero vectors
     #this can be useful if running live simulations, which can pick up nonzero
     #   overall velocities when they relax from unstable virial equilibrium ICs
+    #Conserves the physics of the system under a change of reference frame
     def recenter(self):
         #center the positions of the particles
-        self.x = self.x - self.centerOfMass[0]
-        self.y = self.y - self.centerOfMass[1]
-        self.z = self.z - self.centerOfMass[2]
+        self.x = self.x - self.center_of_mass[0]
+        self.y = self.y - self.center_of_mass[1]
+        self.z = self.z - self.center_of_mass[2]
 
         #center the velocities of the particles
-        self.vx = self.vx - self.centerOfMomentum[0]
-        self.vy = self.vy - self.centerOfMomentum[1]
-        self.vz = self.vz - self.centerOfMomentum[2]
+        self.vx = self.vx - self.center_of_momentum[0]
+        self.vy = self.vy - self.center_of_momentum[1]
+        self.vz = self.vz - self.center_of_momentum[2]
 
-        if flags.autoUpdate:
+        if auto_update:
+            self.update()
+
+    #centers the timestep so that the COMs of all individual components are now zero vectors
+    #this can be useful if running live simulations, which can pick up nonzero
+    #   overall velocities when they relax from unstable virial equilibrium ICs
+    #WARNING: Does not conserve the physics of the system. This is more for testing
+    #   or debugging purposes, or if you really know what you're doing.
+    def recenter_each_component(self):
+        #center the positions of the particles
+        data_list = self.split_at_id_wrap()
+
+        for i in data_list:
+            i.recenter()
+
+        self.reset()
+        for i in data_list:
+            self.append_timestep(i)
+
+        if auto_update:
             self.update()
 
     #---------------------------------------------------------------------------
     # OUTPUT
     #---------------------------------------------------------------------------
 
-    def printParticle(self, n, dec=8):
+    def print_particle(self, n, dec=8):
         #n (int): the location of the particle that you want the information for
         #TODO: allow for using the id to find the particle
         print('Printing data for Particle '+str(n)+':')
@@ -445,10 +499,10 @@ class Timestep():
     #this is just to allow you to access the routines as timestep.<method>()
 
     def scatter(self, x, y, **kwargs):
-        plot.scatter(self, x, y, **kwargs)
+        scatter(self, x, y, **kwargs)
 
     def hist2d(self, x, y, **kwargs):
-        plot.hist2d(self, x, y, **kwargs)
+        hist2d(self, x, y, **kwargs)
 
     #---------------------------------------------------------------------------
     # MISCELLANEOUS
@@ -456,9 +510,9 @@ class Timestep():
 
     #make an n-dimensional rectangular cut on the data
     #TODO: make an inverted method, i.e. cut out things within the bounds
-    def subsetRect(self, axes, bounds):
+    def subset_rect(self, axes, bounds):
         #axes ([str, ...]): the parameters/values that you are cutting on. Input as a list of strings
-        #   The strings must be in self.indexList
+        #   The strings must be in self.index_list
         #bounds ([(float, float), ...]): The boundary conditions that you are cutting on
         #   given as a list of tuples, each with two floats.
         #   If you wish to only declare a minimum or maximum, then leave the other value as None
@@ -491,9 +545,9 @@ class Timestep():
         self.take(indices)
         self.update()
 
-    #TODO: make n-dimensional like subsetRect
+    #TODO: make n-dimensional like subset_rect
     #make a circular cut of the data in 2 dimensions
-    def subsetCirc(self, axes, rads, centers):
+    def subset_circ(self, axes, rads, centers):
         #axs ([str]): the axes to cut on
         #rads ([float]): The radiii of the circular cut (along each axis)
         #center ([float], len=#axes): The center around which to make the circular cut
@@ -514,7 +568,7 @@ class Timestep():
 
     #cut the Timestep instance to n random stars from the Timestep instance
     #uses the reservoir algorithm for single-pass random sampling
-    def randSample(self, n):
+    def rand_sample(self, n):
         #n: the number of stars to sample
 
         reservoir = np.arange(0,n)
@@ -539,7 +593,58 @@ class Timestep():
         self.take(indices)
         self.update()
 
+    #rotate all particles ccw around the Z axis by theta radians
+    def rot_around_z_axis(self, theta):
+        #theta: rotation angle in radians
+
+        newx = self.x * np.cos(theta) - self.y * np.sin(theta)
+        newy = self.x * np.sin(theta) + self.y * np.cos(theta)
+        newvx = self.vx * np.cos(theta) - self.vy * np.sin(theta)
+        newvy = self.vx * np.sin(theta) + self.vy * np.cos(theta)
+
+        self.x = newx
+        self.y = newy
+        self.vx = newvx
+        self.vy = newvy
+
+        self.update()
 
 #===============================================================================
 # FUNCTIONS INVOLVING TIMESTEP CLASSES
 #===============================================================================
+
+    #Timestep -> np array of floats
+    #computes the energy of each particle based only on the self-gravity
+    #of the particles and their velocities w.r.t. the COM's of the particles.
+    #slow because I am just implementing straight N^2 gravity calcs, but
+    #not sure if there's a better way to do this
+    #NOTE: This is energy per unit mass, not energy
+    #WARNING: Only returns initial energy of the particles in a dwarf when run
+    #         on a Timestep where the entire dwarf is still bound (e.g. the
+    #         beginning of a simulation), otherwise output is ~meaningless
+    def get_self_energies(t):
+        #t: the Timestep
+
+        gc = 4.30091e-3 * struct_to_sol / 1000 #Newton's gravitational constant in units of kpc/struct mass * (km/s)^2
+
+        t = t.copy() #don't hurt the poor innocent Timestep
+        t.recenter() #recenters both positions and velocities
+
+        pot_energies = []
+
+        #compute the self gravitational potential energy of each particle
+        for x1, y1, z1 in zip(t.x, t.y, t.z):
+            pe = 0
+            for x2, y2, z2, m in zip(t.x, t.y, t.z, t.mass):
+                r = ((x1 - x2)**2 + (y1 - y2)**2 + (z1 - z2)**2)**0.5
+                pe -= gc * m / r #potential energy is negative
+            pot_energies.append(pe)
+        pot_energies = np.array(pot_energies) #do it this way because np.append is horrendously slow
+
+        #compute the kinetic energy of each particle (within reference frame of
+        #the COM's of the particles)
+        kin_energies = t.vx**2 + t.vy**2 + t.vz**2
+
+        energies = pot_energies + kin_energies
+
+        return energies

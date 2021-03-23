@@ -35,7 +35,7 @@ def scatter(t, x, y, show=False, s=5.0, color='k', marker='o', **kwargs):
 
 #sticks a big fat red dot wherever the specific star(s) is, given an id(s)
 #if vx and vy are specified, an arrow is drawn
-def traceParticle(t, id, x, y, vx=None, vy=None, vscale=0.02, show=False, s=50., color='r', marker='o', **kwargs):
+def trace_particle(t, id, x, y, vx=None, vy=None, vscale=0.02, show=False, s=50., color='r', marker='o', **kwargs):
     #t (Timestep): the Timestep object that your particle is plotted over
     #id (int, can be array-like): the (list of) id(s) for your particle(s)
     #x (str): the x-axis parameter

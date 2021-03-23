@@ -16,7 +16,7 @@ from galpy.potential import HernquistPotential
 from galpy.potential import LogarithmicHaloPotential
 from galpy.potential import MiyamotoNagaiPotential
 
-from mwahpy_glob import G
+from .mwahpy_glob import G
 
 #===============================================================================
 # CONSTANTS
@@ -31,16 +31,16 @@ pot_disk = MiyamotoNagaiPotential(amp=G*m_disk, a=6.5*u.kpc, b=0.26*u.kpc, ro=8.
 pot_halo = LogarithmicHaloPotential(amp=2*v_halo**2, q=1., core=12.0*u.kpc, ro=8., vo=220.)
 
 #this potential is from Newberg et al. 2010, Orphan Stream Model 5. It's basically Law 2005
-pot = [pot_bulge, pot_disk, pot_halo]
+mwahpy_default_pot = [pot_bulge, pot_disk, pot_halo]
 
 energy_offset = -60000 #adjusts the energy to be consistent with Donlon et al. 2019
-
 
 #===============================================================================
 # FUNCTIONS
 #===============================================================================
 
-def plotPotential(potential, Rrange=[0.01,10.]):
+#produces a rotation curve for the given potential
+def plot_potential(potential, Rrange=[0.01,10.]):
     fig = plt.figure(figsize=(12,8))
     potential.plotRotcurve(Rrange=Rrange, overplot=True)
     plt.show()

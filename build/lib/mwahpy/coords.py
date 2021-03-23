@@ -16,7 +16,7 @@ import unittest
 #These functions aren't meant to be accessed by outside files or by end users,
 #and as such they are not well documented, named, or tested
 
-def wrapLong(long, rad=False):
+def wrap_long(long, rad=False):
 
     if rad:
         long = long * 180/np.pi
@@ -42,7 +42,7 @@ def wrapLong(long, rad=False):
 
 #rotate the given data around the provided axis
 #TODO: Allow array-like input
-def rotAroundArbAxis(x, y, z, ux, uy, uz, theta):
+def rot_around_arb_axis(x, y, z, ux, uy, uz, theta):
     #TODO: Allow radians or degrees
     #x, y, z: 3D cartesian coordinates of the data
     #ux, uy, uz: 3d cartesian coordinates of the axis vector u = (ux, uy, uz)
@@ -295,8 +295,8 @@ def gal_to_cyl(l, b, r):
 # Returns: Galactic vx, vy, vz velocities [km/s]
 # NOTE: pmRA = d/dt(RA) * cos(DEC)
 # Arguments should be numpy arrays for most efficient usage
-# Adapted from code written by Alan Pearl 
-def getUVW(dist, rv, ra, dec, pmra, pmde):
+# Adapted from code written by Alan Pearl
+def get_uvw(dist, rv, ra, dec, pmra, pmde):
 
     # Conversion from Equatorial (J2000) Cartesian to Galactic Cartesian
     EQ2GC = np.array( [[-0.05487572, -0.87343729, -0.48383453],
@@ -325,9 +325,9 @@ def getUVW(dist, rv, ra, dec, pmra, pmde):
 
 #-------------------------------------------------------------------------------
 
-def getvxvyvz(dist, rv, ra, dec, pmra, pmde):
+def get_vxvyvz(dist, rv, ra, dec, pmra, pmde):
 
-    U, V, W = getUVW(dist, rv, ra, dec, pmra, pmde)
+    U, V, W = get_uvw(dist, rv, ra, dec, pmra, pmde)
 
     # Sun's velocity is (10.1, 224.0, 6.7)_GSR
     vx = U + 10.1
@@ -342,7 +342,7 @@ def getvxvyvz(dist, rv, ra, dec, pmra, pmde):
 #TODO: Do the linear algebra to avoid a inv calcualtion, since that's huge time waste
 #solar reflex motion will be already removed if UVW are galactocentric
 #inputs must be arrays, even if just of length 1
-def getrvpm(ra, dec, dist, U, V, W):
+def get_rvpm(ra, dec, dist, U, V, W):
     k = 4.74057
     rv = np.array([0.0]*len(ra))
     pmra = np.array([0.0]*len(ra))
@@ -375,12 +375,12 @@ def getrvpm(ra, dec, dist, U, V, W):
 #-------------------------------------------------------------------------------
 
 #inputs must be arrays, even if just of length 1
-def removeSolarMotionFromPM(ra, dec, dist, pmra, pmdec):
+def remove_sol_mot_from_pm(ra, dec, dist, pmra, pmdec):
     vx = np.array([-10] * len(ra))
     vy = np.array([-224] * len(ra))
     vz = np.array([-7] * len(ra))
 
-    rv, mura, mudec = getrvpm(ra, dec, dist, vx, vy, vz)
+    rv, mura, mudec = get_rvpm(ra, dec, dist, vx, vy, vz)
 
     pmra -= mura
     pmdec -= mudec
@@ -391,7 +391,7 @@ def removeSolarMotionFromPM(ra, dec, dist, pmra, pmdec):
 
 #does not work for arrays!
 #TODO: make work with arrays
-def getUVWerrors(dist, ra, dec, pmra, pmdec, err_pmra, err_pmdec, err_rv, err_dist):
+def get_uvw_errors(dist, ra, dec, pmra, pmdec, err_pmra, err_pmdec, err_rv, err_dist):
     #distance in pc
     k = 4.74057
 
@@ -418,7 +418,7 @@ def getUVWerrors(dist, ra, dec, pmra, pmdec, err_pmra, err_pmdec, err_rv, err_di
 
     return err_u, err_v, err_w
 
-def rvToVgsr(l, b, rv):
+def rv_to_vgsr(l, b, rv):
     #TODO: Allow ra, dec as inputs
 
     use_array = True
@@ -486,9 +486,9 @@ def plane_OLS(x,y,z, print_distances=False):
 
 #-------------------------------------------------------------------------------
 
-#getPlaneNormal: [float, float, float, float] --> np.array([float, float, float])
+#get_plane_normal: [float, float, float, float] --> np.array([float, float, float])
 #takes in parameters that define a plane in 3D and returns a normalized normal vector to that plane
-def getPlaneNormal(params):
+def get_plane_normal(params):
     #params ([a, b, c, d]) corresponding to the equation for a plane ax + by + cz + d = 0
     #comes from the plan fitting method above
 
@@ -527,11 +527,9 @@ def cart_to_plane(x, y, z, normal, point):
 
     #get new x, y, z through change of basis
     xyz = np.array([x, y, z])
+    xyz = np.matmul(np.array([x_plane, y_plane, z_plane]), xyz)
 
-    COB = linalg.inv(np.array([x_plane, y_plane, z_plane]).T)
-    new_xyz = np.matmul(COB, xyz)
-
-    return x, y, z
+    return xyz[0], xyz[1], xyz[2]
 
 #gal2plane: np.array(floats), np.array(floats), np.array(floats), (float, float, float), (float, float, float) --> np.array(floats), np.array(floats), np.array(floats)
 #takes in galactic coordinates for a star(s) and returns their x,y,z coordinates with respect to a rotated plane with the normal vector provided
@@ -545,7 +543,7 @@ def gal_to_plane(l, b, d, normal, point):
 
 #-------------------------------------------------------------------------------
 
-def gal_to_LamBet(l, b, d, normal, point):
+def gal_to_lambet(l, b, d, normal, point):
 
     x_prime, y_prime, z_prime = gal_to_plane(l, b, d, normal, point)
     Lam = np.arctan2(y_prime, x_prime)*180/np.pi #convert to degrees
@@ -562,7 +560,7 @@ def gal_to_LamBet(l, b, d, normal, point):
 
 #-------------------------------------------------------------------------------
 
-def cart_to_LamBet(x,y,z, normal, point):
+def cart_to_lambet(x,y,z, normal, point):
 
     x_prime, y_prime, z_prime = cart_to_plane(x,y,z, normal=normal, point=point)
     Lam = np.arctan2(y_prime, x_prime)*180/np.pi #convert to degrees
@@ -579,7 +577,7 @@ def cart_to_LamBet(x,y,z, normal, point):
 
 #-------------------------------------------------------------------------------
 
-def xyz2Sgr(x,y,z):
+def cart_to_sgr(x,y,z):
 
     x_prime = x_prime + 8
     xyz = np.array([x, y, z])
@@ -613,7 +611,7 @@ def xyz2Sgr(x,y,z):
 
 #gal2plane: np.array(floats), np.array(floats), np.array(floats), (float, float, float), (float, float, float) --> np.array(floats), np.array(floats)
 #takes in galactic coordinates for a star(s) and returns their Lamba, Beta coordinates with respect to a rotated plane with the normal vector provided
-def gal2Sgr(l, b):
+def gal_to_sgr(l, b):
     #x, y, z: galactocentric x, y, z coordinates
     #normal: 3-vector providing the orientation of the plane to rotate into
     #point: 3-vector 'suggesting' the direction of the new x-axis
@@ -643,7 +641,7 @@ def gal2Sgr(l, b):
     y = xyz[1]
     z = xyz[2]
 
-    Lam = wrapLong(np.arctan2(y, x)*180/np.pi)
+    Lam = wrap_long(np.arctan2(y, x)*180/np.pi)
     Bet = np.arcsin(z/(x**2 + y**2 + z**2)**0.5)*180/np.pi
 
     return Lam, Bet
@@ -652,7 +650,7 @@ def gal2Sgr(l, b):
 
 #gal2plane: np.array(floats), np.array(floats), np.array(floats), (float, float, float), (float, float, float) --> np.array(floats), np.array(floats)
 #takes in galactic coordinates for a star(s) and returns their Lamba, Beta coordinates with respect to a rotated plane with the normal vector provided
-def Sgr2gal(Lam, Bet):
+def sgr_to_gal(Lam, Bet):
     #x, y, z: galactocentric x, y, z coordinates
     #normal: 3-vector providing the orientation of the plane to rotate into
     #point: 3-vector 'suggesting' the direction of the new x-axis
@@ -683,7 +681,7 @@ def Sgr2gal(Lam, Bet):
     y = xyz[1]
     z = xyz[2]
 
-    l = wrapLong(np.arctan2(y, x)*180/np.pi)
+    l = wrap_long(np.arctan2(y, x)*180/np.pi)
     b = np.arcsin(z/(x**2 + y**2 + z**2)**0.5)*180/np.pi
 
     return l, b
@@ -714,8 +712,8 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
 
     sky1 = sky1.copy() #fix aliasing
     sky2 = sky2.copy()
-    pole1 = pole[0]
-    pole2 = pole[1]
+    pole1 = pole[0] #separate tuples for readability
+    pole2 = pole[1] #and easy scalability
     origin1 = origin[0]
     origin2 = origin[1]
 
@@ -726,63 +724,6 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
         pole2 *= np.pi/180
         origin1 *= np.pi/180
         origin2 *= np.pi/180
-
-    '''
-    This was an attempt at a 3D euler angle method for sky_to_pole, but it's buggy.
-    I ended up moving to the simplified vector arithmetic version that is implemented below.
-    This method, if debugged, would probably avoid the singularities at the poles that
-    sky_to_pole runs into currently.
-
-    #construct a 3D frame in the current long/lat frame
-    #all points have unit distance
-    x = np.cos(sky1)*np.cos(sky2)
-    y = np.sin(sky1)*np.cos(sky2)
-    z = np.sin(sky2)
-    xyz = np.array([x, y, z])
-
-    #rotate old pole into correct lat by rotating around y-axis
-    theta = np.pi/2 - pole2 #angle to rotate
-    print('Theta:', theta)
-    cos = np.cos(theta)
-    sin = np.sin(theta)
-    Ry = np.array([[cos,    0, sin],
-                  [0,      1, 0  ],
-                  [-1*sin, 0, cos]])
-
-    #rotate old pole into correct long by rotating around z-axis
-    theta = pole1
-    cos = np.cos(theta)
-    sin = np.sin(theta)
-    Rz = np.array([[cos, -1*sin, 0],
-                   [sin, cos,    0],
-                   [0,   0,      1]])
-
-    #rotate data into new frame
-    R = np.matmul(Rz, Ry)
-    xyz = np.matmul(R, xyz)
-    print('xyz =',xyz)
-
-    #rotate z=0 plane of new pole around new pole to align origin
-    r1 = np.array([1, 0, 0]) #rotate old origin into new rotated plane
-    r1 = np.matmul(R, r1)
-
-    #construct vector of desired origin
-    r2 = np.array([np.cos(origin1)*np.cos(origin2), np.sin(origin1)*np.cos(origin2), np.sin(origin2)])
-
-    #angle to rotate
-    psi = np.arccos(np.dot(r1, r2))
-    print('psi =', psi)
-
-    #rotate data by psi around the new pole axis
-    x = xyz[0]
-    y = xyz[1]
-    z = xyz[2]
-    x, y, z = rotAroundArbAxis(x, y, z, np.cos(pole1)*np.cos(pole2), np.sin(pole1)*np.cos(pole2), np.sin(pole2), psi)
-
-    #calculate Lam, Bet in new frame
-    Lam = np.arctan2(y, x)
-    Bet = np.arcsin(z/(x**2 + y**2 + z**2)**0.5)
-    '''
 
     #--------------------
     #calculate latitude
@@ -844,7 +785,7 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
         Bet *= 180/np.pi
 
     if wrap:
-        Lam = wrapLong(Lam) #TODO: wrapLong should allow for radians
+        Lam = wrap_long(Lam) #TODO: wrap_long should allow for radians
 
     if not use_array:
         Lam = Lam[0]
@@ -852,84 +793,120 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
 
     return Lam, Bet
 
-#===============================================================================
-# UNIT TESTING
-#===============================================================================
-#to run tests, run this file like you would run a regular python script
+#sky_to_pole: array(float), array(float), tuple(float, float), tuple(float, float) -> array(float), array(float)
+#rotate the positions on the sky (sky1, sky2) into a new frame determined by
+#the pole of the new frame (pole1, pole2) and the origin of the new frame (origin1, origin2)
+#The output is the longitude and latitude in the new coordinate frame
 
-#to add more tests,
-# 1) Find a test class that fits the description of the test you want to add,
-#    then add that test to the class as a function beginning with "test_"
-# 2) Create a new class beginning with "Test" and composed of just (unittest.TestCase)
-#    and then add new functions that begin with "test_" to that class.
-#    This should be used if new tests do not fit the descriptions of other
-#    test classes
+#NOTE: Inputs can be any spherical geometry, as long as the pole & origin arguments
+#are in the same coordinate system as the (sky1, sky2) coordinates.
+#e.g. if sky1 is a list of RAs and sky2 is a list of Decs, then
+#the pole and origin arguments must also be specified in RA Dec.
 
-#after changing this file, it should be run in order to make sure all tests pass
-#if tests don't pass, congratulations you broke something
-#please fix it
+'''
+This was an attempt at a 3D euler angle method for sky_to_pole, but it's buggy.
+I ended up moving to the simplified vector arithmetic version that is implemented above.
+This method, if debugged, would probably avoid the singularities at the poles that
+sky_to_pole runs into currently.
+'''
+'''
+def sky_to_pole_bad(sky1, sky2, pole, origin, wrap=False, rad=False):
+    #sky1, sky2: positions of the data on the sky (e.g. sky1 = array(RA), sky2 = array(Dec), etc.)
+    #pole: position of the pole of the new coordinate system, tuple
+    #origin: position of the origin of the new coordinate system, tuple
+    #wrap: if True, Lam is constrained to only positive values. Otherwise, Lam is in [-180,180]
+    #rad: is True, ALL inputs are in radians. ALL inputs should be in degrees if rad=False
 
-prec = 8 #number of digits to round to when comparing values
-#WARNING: Tests may fail at high levels of prec or after repeated conversions
-#due to computer precision problems
+    use_array = True
+    if type(sky1) != type(np.array([])):
+        use_array = False
+        sky1 = np.array([sky1])
+        sky2 = np.array([sky2])
 
-class TestInverses(unittest.TestCase):
+    sky1 = sky1.copy() #fix aliasing
+    sky2 = sky2.copy()
+    pole1 = pole[0] #separate tuples for readability
+    pole2 = pole[1] #and easy scalability
+    origin1 = origin[0]
+    origin2 = origin[1]
 
-    #First order coordinate (position) transformations
+    if not rad:
+        sky1 *= np.pi/180
+        sky2 *= np.pi/180
+        pole1 *= np.pi/180
+        pole2 *= np.pi/180
+        origin1 *= np.pi/180
+        origin2 *= np.pi/180
 
-    def test_cart_to_gal_rh(self):
-        #right-handed
-        x, y, z = 1., 2., 3.
-        l, b, r = cart_to_gal(x, y, z)
-        new_x, new_y, new_z = gal_to_cart(l, b, r)
-        self.assertTrue((round(new_x, prec) == round(x, prec)) and (round(new_y, prec) == round(y, prec)) and (round(new_z, prec) == round(z, prec)))
+    #construct a 3D frame in the current long/lat frame
+    #all points have unit distance
+    x = np.cos(sky1)*np.cos(sky2)
+    y = np.sin(sky1)*np.cos(sky2)
+    z = np.sin(sky2)
+    xyz = np.array([x, y, z])
 
-    def test_cart_to_gal_lh(self):
-        #left-handed
-        x, y, z = 1., 2., 3.
-        l, b, r = cart_to_gal(x, y, z, left_handed=True)
-        new_x, new_y, new_z = gal_to_cart(l, b, r, left_handed=True)
-        self.assertTrue((round(new_x, prec) == round(x, prec)) and (round(new_y, prec) == round(y, prec)) and (round(new_z, prec) == round(z, prec)))
+    #rotate old pole into correct lat by rotating around y-axis
+    theta = -1*(np.pi/2 - pole2) #angle to rotate
+    print('Theta:', theta)
+    cos = np.cos(theta)
+    sin = np.sin(theta)
+    Ry = np.array([[cos,    0, sin],
+                   [0,      1, 0  ],
+                   [-1*sin, 0, cos]])
 
-    def test_cart_to_cyl(self):
-        x, y, z = 1., 2., 3.
-        R, z, phi = cart_to_cyl(x, y, z)
-        new_x, new_y, new_z = cyl_to_cart(R, z, phi)
-        self.assertTrue((round(new_x, prec) == round(x, prec)) and (round(new_y, prec) == round(y, prec)) and (round(new_z, prec) == round(z, prec)))
+    #rotate old pole into correct long by rotating around z-axis
+    theta = -1*pole1
+    print('Theta:', theta)
+    cos = np.cos(theta)
+    sin = np.sin(theta)
+    Rz = np.array([[cos, -1*sin, 0],
+                   [sin, cos,    0],
+                   [0,   0,      1]])
 
-    def test_cart_to_sph(self):
-        x, y, z = 1., 2., 3.
-        phi, theta, r = cart_to_sph(x, y, z)
-        new_x, new_y, new_z = sph_to_cart(phi, theta, r)
-        self.assertTrue((round(new_x, prec) == round(x, prec)) and (round(new_y, prec) == round(y, prec)) and (round(new_z, prec) == round(z, prec)))
+    #rotate z=0 plane of new pole around new pole to align origin
+    r1 = np.array([1, 0, 0]) #rotate old origin into new rotated plane
+    r1 = np.matmul(Rz, np.matmul(Ry, r1))
 
-    #Second order coordinate (position) transformations
+    #construct vector of desired origin
+    r2 = np.array([np.cos(origin1)*np.cos(origin2), np.sin(origin1)*np.cos(origin2), np.sin(origin2)])
 
-    def test_cyl_to_gal(self):
-        R, z, phi = 10., 5., 120.
-        l, b, r = cyl_to_gal(R, z, phi)
-        new_R, new_z, new_phi = gal_to_cyl(l, b, r)
-        self.assertTrue((round(new_R, prec) == round(R, prec)) and (round(new_z, prec) == round(z, prec)) and (round(new_phi, prec) == round(phi, prec)))
+    #calculate angle to rotate
+    psi = np.arccos(np.dot(r1, r2))
 
-    #higher order coordinate transformations
+    #determine sign of psi
+    psi *= np.sign(np.dot(np.cross(r1, r2), np.array([np.cos(pole1)*np.cos(pole2), np.sin(pole1)*np.cos(pole2), np.sin(pole2)])))
+    print('psi =', psi)
 
-    def test_sky_to_pole(self):
-        tol = 1e-6 #tolerance for this test
-        ra = np.linspace(10, 350, 10) #avoid poles, which do not test well but work
-        #the ra rotates strangely but the dec = +/-90 so it doesn't matter
-        dec = np.linspace(-80, 80, 10)
-        ra_new, dec_new = sky_to_pole(ra, dec, (0, 90), (0, 0)) #null transformation
-        self.assertTrue((np.sum(np.abs(ra_new - ra)) <= tol) and (np.sum(np.abs(dec_new - dec)) <= tol))
+    #rotate data into new frame
+    xyz = np.matmul(Rz, np.matmul(Ry, xyz))
 
-        ra = np.linspace(10, 350, 10) #avoid poles, which do not test well but work
-        dec = np.linspace(-80, 80, 10)
-        L, B = sky_to_pole(ra, dec, (0, 0), (90, 0))
-        ra_new, dec_new = sky_to_pole(L, B, (90, 0), (0, 90)) #this *should* be the inverse transformation
-        self.assertTrue((np.sum(np.abs(ra_new - ra)) <= tol) and (np.sum(np.abs(dec_new - dec)) <= tol))
+    #rotate data by psi around the new pole axis
+    #first, calculate the new pole axis in the new frame
+    new_axis = np.array([np.cos(pole1)*np.cos(pole2), np.sin(pole1)*np.cos(pole2), np.sin(pole2)])
+    new_axis = np.matmul(Rz, np.matmul(Ry, new_axis))
+    x, y, z = rot_around_arb_axis(xyz[0], xyz[1], xyz[2], new_axis[0], new_axis[1], new_axis[2], psi)
+    print('xyz =',x,',',y,',',z)
+
+    #calculate Lam, Bet in new frame
+    Lam = np.arctan2(y, x)
+    Bet = np.arcsin(z/(x**2 + y**2 + z**2)**0.5)
+
+    #---------------------------
+
+    if not rad:
+        Lam *= 180/np.pi
+        Bet *= 180/np.pi
+
+    if wrap:
+        Lam = wrap_long(Lam) #TODO: wrap_long should allow for radians
+
+    if not use_array:
+        Lam = Lam[0]
+        Bet = Bet[0]
+
+    return Lam, Bet
+    '''
 
 #===============================================================================
 # RUNTIME
 #===============================================================================
-
-if __name__ == '__main__':
-    unittest.main()
