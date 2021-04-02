@@ -295,7 +295,7 @@ def gal_to_cyl(l, b, r):
 # NOTE: pmRA = d/dt(RA) * cos(DEC)
 # Arguments should be numpy arrays for most efficient usage
 # Adapted from code written by Alan Pearl
-def get_uvw(dist, rv, ra, dec, pmra, pmde):
+def get_uvw(ra, dec, dist, rv, pmra, pmde):
 
     # Conversion from Equatorial (J2000) Cartesian to Galactic Cartesian
     EQ2GC = np.array( [[-0.05487572, -0.87343729, -0.48383453],
@@ -324,9 +324,9 @@ def get_uvw(dist, rv, ra, dec, pmra, pmde):
 
 #-------------------------------------------------------------------------------
 
-def get_vxvyvz(dist, rv, ra, dec, pmra, pmde):
+def get_vxvyvz(ra, dec, dist, rv, pmra, pmde):
 
-    U, V, W = get_uvw(dist, rv, ra, dec, pmra, pmde)
+    U, V, W = get_uvw(ra, dec, dist, rv, pmra, pmde)
 
     # Sun's velocity is (10.1, 224.0, 6.7)_GSR
     vx = U + 10.1
@@ -337,11 +337,21 @@ def get_vxvyvz(dist, rv, ra, dec, pmra, pmde):
 
 #-------------------------------------------------------------------------------
 
-#TODO: Make function accept input of not array
-#TODO: Do the linear algebra to avoid a inv calcualtion, since that's huge time waste
+#TODO: Do the linear algebra to avoid a inv calculation, since that's huge time waste
 #solar reflex motion will be already removed if UVW are galactocentric
 #inputs must be arrays, even if just of length 1
 def get_rvpm(ra, dec, dist, U, V, W):
+
+    use_array = True
+    if type(ra) != type(np.array([])):
+        use_array = False
+        ra = np.array([ra])
+        dec = np.array([dec])
+        dist = np.array([dist])
+        U = np.array([U])
+        V = np.array([V])
+        W = np.array([W])
+
     k = 4.74057
     rv = np.array([0.0]*len(ra))
     pmra = np.array([0.0]*len(ra))
@@ -368,6 +378,11 @@ def get_rvpm(ra, dec, dist, U, V, W):
         pmdec[i] = rvpm[2][0]/dist[i]/k
 
         i += 1
+
+    if not use_array:
+        rv = rv[0]
+        pmra = pmra[0]
+        pmdec = pmdec[0]
 
     return rv, pmra, pmdec
 
@@ -441,19 +456,10 @@ def rv_to_vgsr(l, b, rv):
 #MISC TOOLS
 #=====================================
 
-#calculate approximate local standard of rest (LSR) velocity at a point in the galactic plane
-def approx_lsr(x, y):
-    v_lsr = 220
-    vx = v_lsr / (1 + (x/y)**2)**0.5
-    vy = v_lsr / (1 + (y/x)**2)**0.5
-    if x > 0:
-        vy = -1 * vy
-    if y < 0:
-        vx = -1 * vx
-    return vx, vy
-
 #-------------------------------------------------------------------------------
 
+#this is more or less meant to be a helper function, I think.
+#I won't add it to the documentation for that reason.
 #borrowed from NewbyTools
 def plane_dist(x,y,z, params):
     a,b,c = params
@@ -511,11 +517,10 @@ def cart_to_plane(x, y, z, normal, point):
 
     #ensure that normal and point are normalized
     len_normal = (normal[0]**2 + normal[1]**2 + normal[2]**2)**0.5
-    if len_normal != 1.0:
-        normal = (normal[0]/len_normal, normal[1]/len_normal, normal[2]/len_normal)
+    normal = (normal[0]/len_normal, normal[1]/len_normal, normal[2]/len_normal)
+    
     len_point = (point[0]**2 + point[1]**2 + point[2]**2)**0.5
-    if len_point != 1.0:
-        point = (point[0]/len_point, point[1]/len_point, point[2]/len_point)
+    point = (point[0]/len_point, point[1]/len_point, point[2]/len_point)
 
     #define new axes along the plane
     z_plane = np.array(normal)
@@ -609,11 +614,9 @@ def cart_to_sgr(x,y,z):
 #-------------------------------------------------------------------------------
 
 #gal2plane: np.array(floats), np.array(floats), np.array(floats), (float, float, float), (float, float, float) --> np.array(floats), np.array(floats)
-#takes in galactic coordinates for a star(s) and returns their Lamba, Beta coordinates with respect to a rotated plane with the normal vector provided
+#takes in galactic coordinates for a star(s) and returns their Lamba, Beta coordinates with respect to the Sgr stream plane
 def gal_to_sgr(l, b):
-    #x, y, z: galactocentric x, y, z coordinates
-    #normal: 3-vector providing the orientation of the plane to rotate into
-    #point: 3-vector 'suggesting' the direction of the new x-axis
+    #l, b: Galactic coordinates (can be arrays)
 
     x = np.cos(l*np.pi/180)*np.cos(b*np.pi/180)
     y = np.sin(l*np.pi/180)*np.cos(b*np.pi/180)

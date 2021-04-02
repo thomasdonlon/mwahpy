@@ -1,10 +1,22 @@
-v1.3.1:
+v1.3.4:
+ - Timestep.typ attribute stores whether particles are baryons (0) or dark matter (1)
+ - output_handler has been updated to also read in particle type
+ - Timestep.only_baryons() and Timestep_only_dark_matter() cut the data to only
+   include one type of particle
+ - Added support for galactic spherical coordinates (phi, theta)
+ - Added find_progenitor()
+ - make_nbody_input() no longer recenters the Timestep before printing out
+ - fixed 'self not defined' error in output_handler.make_csv()
+ - Timestep.rad and Timestep.rot are now Timestep.vrad and Timestep.vrot
+ - updated documentation pdf to new naming convention
+ - updated documentation to include all supported functions
+ - updated README
+ - removed coords.approx_lsr()
+
+v1.3.3:
  - added changelog
  - fixed bug in Timestep.copy() that would cause error if the Timestep had calculated values
  - adapted python standard naming convention (mostly, method names went from camelCase to lower_case)
  - consolidated coords.py tests into tests.py
  - bug fix in coords.cart_to_plane()
  - fixed import scheme
-
-v1.3.0:
- - internal testing version

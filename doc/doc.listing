@@ -1,4 +1,4 @@
->>> n.scaleTimes(0.5)
+>>> n.scale_times(0.5)
 >>> for ts in n:
 ...     print(ts.time)
 0.5

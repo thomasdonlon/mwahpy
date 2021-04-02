@@ -31,6 +31,16 @@ Issues with the package can be directed to my github profile or on the
 MilkyWay@home forums at milkyway.cs.rpi.edu. Improvements or additions are
 welcome, just send a pull request to the mwahpy github repository.
 
+CONTENTS
+========================================
+
+A non-exhaustive list of contents of the package is given below:
+
+ - easy importing of data from N-body output
+ - easy manipulation of data after reading in
+ - A variety of coordinate transformations for typical coordinate systems used in Galactic astronomy
+ - easy visualization of the imported data through plotting functionality
+ - a tutorial .pdf document along with documentation for each function in the package
 
 INSTALLATION
 ========================================
@@ -53,14 +63,17 @@ FOR USERS:
 
 FOR DEVELOPERS:
 
-1. Download the mwahpy github repository
+1. Clone the mwahpy github repository
 
-2. Place the files in the repository in your sys-path directory
-(this can be found by running "python3 -m site" in your terminal
-and is given after "USER-SITE")
-(also see https://stackoverflow.com/questions/122327/how-do-i-find-the-location-of-my-python-site-packages-directory)
+2. Make the desired changes in the source code
 
-3. Insert import statements for the subpackages that you want to use:
+3. Navigate to the directory where you cloned the repo, and then run
+
+> python3 setup.py develop --user
+
+(note, you will probably need to uninstall any previous versions of mwahpy you had on your machine before running this)
+
+4. To test your changes, insert import statements for the subpackages that you want to use in your .py files as you normally would:
 
 > import mwahpy.{mwahpy subpackage}
 
@@ -68,41 +81,35 @@ and is given after "USER-SITE")
 
 > ...
 
-in your code
+Any time you make a change to the source code, you'll have to repeat step 3
 
-4. Do science
+5. Once you are done making changes to the source code, put in a pull request to master
 
-Alternatively,
+6. Navigate to the directory where you cloned the repo, and then run
 
-1. Download the mwahpy github repository
+> python3 setup.py develop --uninstall
 
-2. At the beginning of your .py file, put the path to the /mwahpy/mwahpy directory,
-and then import the relevant mwahpy .py files that you need to access
+> pip3 install mwahpy
 
-> sys.path.insert(1, '.../mwahpy/mwahpy')
-
-> import {mwahpy subpackage}
-
-> import {other mwahpy subpackage}
-
-> ...
-
-3. Do science
-
-CONTENTS
-========================================
-
-A non-exhaustive list of contents of the package is given below:
-
- - easy importing of data from N-body output
- - easy manipulation of data after reading in
- - A variety of coordinate transformations for typical coordinate systems used in Galactic astronomy
- - easy visualization of the imported data through plotting functionality
+Your changes will not be available in the main mwahpy build until a new release comes out.
 
 TODO
 ========================================
 
+MAJOR:
+ - Expand plot capabilities
  - Finish refactoring coords.py
  - Finish unit testing of coordinate transformations
  - Refactor and polish orbit_fitting_gc.py
- - Write API
+
+MINOR:
+- Apparently there's a MW@h readout method with a different number of values or
+  different values than normally used? Should probably support that.
+- Inverse (cut out within range) subset_circ() & subset_rect() options
+- Implement better linear algebra to reduce the computation time of coords.get_rvpm()
+- Play around with turning off mwahpy_glob.verbose flag for some things to quiet unnecessary output
+
+BUGS
+========================================
+
+ No known bugs.

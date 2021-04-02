@@ -21,7 +21,7 @@ import galpy.potential
 from .mwahpy_glob import struct_to_sol
 from .flags import auto_update, verbose
 from .plot import scatter, hist2d
-from .pot import mwahpy_default_pot
+from .pot import mwahpy_default_pot, energy_offset
 from .coords import get_rvpm
 
 #===============================================================================

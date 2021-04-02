@@ -59,17 +59,16 @@ def read_output(f):
     comass, comom = remove_header(f)
 
     #store the data here temporarily
-    #indexed this way to avoid the 'ignore' column
-    array_dict = {1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[], 9:[], 10:[], 11:[]}
+    array_dict = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[], 9:[], 10:[], 11:[]}
 
     #place all the data from the file into the dictionary
     if progress_bars:
         j = 0
     for line in f:
         line = line.strip().split(',')
-        i = 1
+        i = 0
         while i < len(line) - 1: #this grabs l, b, r data even though that is calculated from x, y, z in the Timestep class implementation
-                                 #  this is mostly just for simplicity when reading in, although I guess it probably slows down the code somewhat
+                                 #it's mostly just for simplicity when reading in, although I guess it probably slows down the code somewhat
             array_dict[i].append(float(line[i]))
             i += 1
         if progress_bars:
@@ -80,7 +79,7 @@ def read_output(f):
     if verbose:
         print('\n'+ str(len(array_dict[1])) + ' objects read in')
         sys.stdout.write('\rConverting data...')
-    d = Timestep(id_val=array_dict[1], x=array_dict[2], y=array_dict[3], z=array_dict[4], vx=array_dict[8], vy=array_dict[9], vz=array_dict[10], mass=array_dict[11], center_of_mass=comass, center_of_momentum=comom)
+    d = Timestep(typ=array_dict[0], id_val=array_dict[1], x=array_dict[2], y=array_dict[3], z=array_dict[4], vx=array_dict[8], vy=array_dict[9], vz=array_dict[10], mass=array_dict[11], center_of_mass=comass, center_of_momentum=comom)
     if verbose:
         sys.stdout.write('done\n')
 
@@ -103,15 +102,14 @@ def read_input(f):
     f.readline()
 
     #store the data here temporarily
-    #indexed this way to avoid the 'ignore' column
-    array_dict = {1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[]}
+    array_dict = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[]}
 
     #place all the data from the file into the dictionary
     if progress_bars:
         j = 0
     for line in f:
         line = line.strip().split('\t')
-        i = 1
+        i = 0
         while i < len(line):
             array_dict[i].append(float(line[i]))
             i += 1
@@ -123,7 +121,7 @@ def read_input(f):
     if verbose:
         print('\n'+ str(len(array_dict[1])) + ' objects read in')
         sys.stdout.write('\rConverting data...')
-    d = Timestep(id_val=array_dict[1], x=array_dict[2], y=array_dict[3], z=array_dict[4], vx=array_dict[5], vy=array_dict[6], vz=array_dict[7], mass=array_dict[8], center_of_mass=[0,0,0], center_of_momentum=[0,0,0])
+    d = Timestep(typ=array_dict[0], id_val=array_dict[1], x=array_dict[2], y=array_dict[3], z=array_dict[4], vx=array_dict[5], vy=array_dict[6], vz=array_dict[7], mass=array_dict[8], center_of_mass=[0,0,0], center_of_momentum=[0,0,0])
     if verbose:
         sys.stdout.write('done\n')
 
@@ -159,7 +157,7 @@ def read_folder(f, ts_scale=None):
 
 #parses a Timestep class object and outputs a file that can be read into a
 #MilkyWay@home N-body simulation as the 'manual bodies' parameter
-def make_nbody_input(t, f):
+def make_nbody_input(t, f, recenter=True):
     #t (Timestep): the Timestep object that will be printed out
     #f (str): the path of the file that will be printed to
     if verbose:
@@ -170,13 +168,8 @@ def make_nbody_input(t, f):
 
     i = 0
 
-    #recenter on center of mass for ease of inserting a dwarf
-    xnew = t.x - t.center_of_mass[0]
-    ynew = t.y - t.center_of_mass[1]
-    znew = t.z - t.center_of_mass[2]
-
-    while i < len(t):
-        f.write('\n1\t'+str(int(t.id[i]))+'\t'+str(xnew[i])+'\t'+str(ynew[i])+'\t'+str(znew[i])+'\t'+\
+    while i < len(t): #no idea why it's int(t.id[i]) instead of t.id[i]. Should change and see if it breaks.
+        f.write('\n'+str(t.typ[i])+'\t'+str(int(t.id[i]))+'\t'+str(xnew[i])+'\t'+str(ynew[i])+'\t'+str(znew[i])+'\t'+\
                 str(t.vx[i])+'\t'+str(t.vy[i])+'\t'+str(t.vz[i])+'\t'+str(t.mass[i]))
         if progress_bars:
             progress_bar(i, len(t))
@@ -206,7 +199,7 @@ def make_csv(t, f_name):
     i = 0
     if verbose:
         print('Printing data...')
-    while i < len(self): #i avoided zip() here because it's messy to zip
+    while i < len(t): #i avoided zip() here because it's messy to zip
     #                        like a billion different arrays, although zip()
     #                        is "better programming"
         if progress_bars:
