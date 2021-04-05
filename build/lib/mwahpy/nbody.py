@@ -24,7 +24,7 @@ class Nbody():
             #(the given filename, e.g. 99, 2099, etc.) as the key
 
         if ts_scale != None:
-            self.scale_times(ts_len)
+            self.scale_times(ts_scale)
 
     #---------------------------------------------------------------------------
     # INDEXING

@@ -39,7 +39,7 @@ class AttrDict(dict):
 
 class Timestep():
 
-    def __init__(self, id_val=[], x=[], y=[], z=[], vx=[], vy=[], vz=[], mass=[], center_of_mass=[0, 0, 0], center_of_momentum=[0, 0, 0], potential=None, time=None, nbody=None):
+    def __init__(self, typ=[], id_val=[], x=[], y=[], z=[], vx=[], vy=[], vz=[], mass=[], center_of_mass=[0, 0, 0], center_of_momentum=[0, 0, 0], potential=None, time=None, nbody=None):
         #all this is typically specified by the read_output function in output_handler
         #read_output is the preferred way to input data to this data structure
         #but if you're really feeling adventurous you can always do it yourself
@@ -60,14 +60,15 @@ class Timestep():
 
         #-----------------------------------------------------------------------
 
-        self.id = np.array(id_val)
-        self.x = np.array(x)
+        self.typ = np.array(typ)   #0 if baryon, 1 if DM
+        self.id = np.array(id_val) #does not need to be unique ID
+        self.x = np.array(x)       #Galactocentric Cartesian positions
         self.y = np.array(y)
         self.z = np.array(z)
-        self.vx = np.array(vx)
+        self.vx = np.array(vx)     #Galactocentric Cartesian velocities
         self.vy = np.array(vy)
         self.vz = np.array(vz)
-        self.mass = np.array(mass)
+        self.mass = np.array(mass) #structure masses
 
         #NOTE: Any time you update the position data, you have to update
         #   the center of mass (and same for velocity and COMomentum)
@@ -94,7 +95,7 @@ class Timestep():
 
         #this has to be manually updated any time a new iterable quantity is added
         #to the Timestep class. This allows us to control what values are iterated over.
-        self.index_list = ['id', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'mass']
+        self.index_list = ['typ', 'id', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'mass']
         self.index = 0
 
         #these should initially be set to false. If the user tries to get a value
@@ -178,6 +179,7 @@ class Timestep():
 
     #replaces this Timestep with a blank Timestep
     def reset(self):
+        self.typ = np.array([])
         self.id = np.array([])
         self.x = np.array([])
         self.y = np.array([])
@@ -194,7 +196,7 @@ class Timestep():
         self.nbody = None
         self.potential = None
 
-        self.index_list = ['id', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'mass']
+        self.index_list = ['typ', 'id', 'x', 'y', 'z', 'vx', 'vy', 'vz', 'mass']
         self.index = 0
 
         self.have_basic = False
@@ -272,14 +274,19 @@ class Timestep():
         self.R = (self.x**2 + self.y**2)**0.5
 
         #galactic coordinate information
-        self.l = np.arctan2(self.y, self.x)*180/np.pi
-        self.b = np.arcsin(self.z/self.r)*180/np.pi
+        self.l = np.arctan2(self.y, self.x + 8)*180/np.pi
+        self.b = np.arcsin(self.z/self.dist)*180/np.pi
 
         #ICRS information
         c = SkyCoord(l=self.l*u.degree, b=self.b*u.degree, frame='galactic')
         c_trans = c.transform_to('icrs')
         self.ra = c_trans.ra.degree
         self.dec = c_trans.dec.degree
+
+        #galactocentric spherical coordinates
+        #l = b = theta = phi = 0, theta=pi at NGP, -pi at SGP, phi increases in the same direction as l
+        self.phi = np.arctan2(self.y, self.x)*180/np.pi
+        self.theta = np.arcsin(self.z/self.r)*180/np.pi
 
         #angular momentum information
         self.lx = self.y * self.vz - self.z * self.vy
@@ -291,15 +298,15 @@ class Timestep():
         #velocity information
         self.vgsr = ((self.x+8)*self.vx + self.y*self.vy + self.x*self.vz)/self.dist
         self.vlos = self.vgsr - 10.1*np.cos(self.b*np.pi/180)*np.cos(self.l*np.pi/180) - 224*np.cos(self.b*np.pi/180)*np.sin(self.l*np.pi/180) - 6.7*np.sin(self.b*np.pi/180)
-        self.rad = (self.x*self.vx + self.y*self.vy + self.z*self.vz)/self.r
-        self.rot = self.lz/(self.x**2 + self.y**2)**0.5
+        self.vrad = (self.x*self.vx + self.y*self.vy + self.z*self.vz)/self.r
+        self.vrot = self.lz/(self.x**2 + self.y**2)**0.5
         self.vR = (self.x*self.vx + self.y*self.vy)/self.R
 
         #relative information
-        self.distFromCOM = ((self.x - self.center_of_mass[0])**2 + (self.y - self.center_of_mass[1])**2 + (self.z - self.center_of_mass[2])**2)**0.5
+        self.dist_from_com = ((self.x - self.center_of_mass[0])**2 + (self.y - self.center_of_mass[1])**2 + (self.z - self.center_of_mass[2])**2)**0.5
 
         if not(self.have_basic): #only run if first time running method, not if updating
-            self.index_list = self.index_list + ['msol', 'l', 'b', 'ra', 'dec', 'dist', 'lx', 'ly', 'lz', 'lperp', 'ltot', 'r', 'R', 'vlos', 'vgsr', 'rad', 'rot', 'distFromCOM']
+            self.index_list = self.index_list + ['msol', 'l', 'b', 'ra', 'dec', 'phi', 'theta', 'dist', 'lx', 'ly', 'lz', 'lperp', 'ltot', 'r', 'R', 'vlos', 'vgsr', 'vrad', 'vrot', 'dist_from_com']
 
         self.have_basic = True #make sure the getter doesn't try to run this again
 
@@ -476,6 +483,28 @@ class Timestep():
         if auto_update:
             self.update()
 
+    #cut the Timestep so only baryons (typ==0) remain
+    def only_baryons(self):
+        #find indices of particles with typ==0
+        ind = []
+        for i, t in zip(range(len(self.typ)), self.typ): #ugly but fast I think
+            if t==0:
+                ind.append(i)
+
+        #cut the data
+        self.take(ind)
+
+    #cut the Timestep so only dark matter particles (typ==1) remain
+    def only_dark_matter(self):
+        #find indices of particles with typ==1
+        ind = []
+        for i, t in zip(range(len(self.typ)), self.typ): #ugly but fast I think
+            if t==0:
+                ind.append(i)
+
+        #cut the data
+        self.take(ind)
+
     #---------------------------------------------------------------------------
     # OUTPUT
     #---------------------------------------------------------------------------
@@ -612,38 +641,111 @@ class Timestep():
 # FUNCTIONS INVOLVING TIMESTEP CLASSES
 #===============================================================================
 
-    #Timestep -> np array of floats
-    #computes the energy of each particle based only on the self-gravity
-    #of the particles and their velocities w.r.t. the COM's of the particles.
-    #slow because I am just implementing straight N^2 gravity calcs, but
-    #not sure if there's a better way to do this
-    #NOTE: This is energy per unit mass, not energy
-    #WARNING: Only returns initial energy of the particles in a dwarf when run
-    #         on a Timestep where the entire dwarf is still bound (e.g. the
-    #         beginning of a simulation), otherwise output is ~meaningless
-    def get_self_energies(t):
-        #t: the Timestep
+#Timestep -> np array of floats
+#computes the energy of each particle based only on the self-gravity
+#of the particles and their velocities w.r.t. the COM's of the particles.
+#slow because I am just implementing straight N^2 gravity calcs, but
+#not sure if there's a better way to do this
+#NOTE: This is energy per unit mass, not energy
+#WARNING: Only returns initial energy of the particles in a dwarf when run
+#         on a Timestep where the entire dwarf is still bound (e.g. the
+#         beginning of a simulation), otherwise output is ~meaningless
+def get_self_energies(t):
+    #t: the Timestep
 
-        gc = 4.30091e-3 * struct_to_sol / 1000 #Newton's gravitational constant in units of kpc/struct mass * (km/s)^2
+    gc = 4.30091e-3 * struct_to_sol / 1000 #Newton's gravitational constant in units of kpc/struct mass * (km/s)^2
 
-        t = t.copy() #don't hurt the poor innocent Timestep
-        t.recenter() #recenters both positions and velocities
+    t = t.copy() #don't hurt the poor innocent Timestep
+    t.recenter() #recenters both positions and velocities
 
-        pot_energies = []
+    pot_energies = []
 
-        #compute the self gravitational potential energy of each particle
-        for x1, y1, z1 in zip(t.x, t.y, t.z):
-            pe = 0
-            for x2, y2, z2, m in zip(t.x, t.y, t.z, t.mass):
-                r = ((x1 - x2)**2 + (y1 - y2)**2 + (z1 - z2)**2)**0.5
-                pe -= gc * m / r #potential energy is negative
-            pot_energies.append(pe)
-        pot_energies = np.array(pot_energies) #do it this way because np.append is horrendously slow
+    #compute the self gravitational potential energy of each particle
+    for x1, y1, z1 in zip(t.x, t.y, t.z):
+        pe = 0
+        for x2, y2, z2, m in zip(t.x, t.y, t.z, t.mass):
+            r = ((x1 - x2)**2 + (y1 - y2)**2 + (z1 - z2)**2)**0.5
+            pe -= gc * m / r #potential energy is negative
+        pot_energies.append(pe)
+    pot_energies = np.array(pot_energies) #do it this way because np.append is horrendously slow
 
-        #compute the kinetic energy of each particle (within reference frame of
-        #the COM's of the particles)
-        kin_energies = t.vx**2 + t.vy**2 + t.vz**2
+    #compute the kinetic energy of each particle (within reference frame of
+    #the COM's of the particles)
+    kin_energies = t.vx**2 + t.vy**2 + t.vz**2
 
-        energies = pot_energies + kin_energies
+    energies = pot_energies + kin_energies
 
-        return energies
+    return energies
+
+#calculates where the progenitor of a stream is
+#More specifically, it computes where the highest concentration of baryons is
+#in Galactic Cartesian coordinates
+#written by Eric Mendelsohn, 2021
+#adapted for mwahpy by Tom Donlon, 2021
+
+#TODO: Can have trouble finding progenitors around poles. If progenitor is
+#   above 60 deg or so, could apply arbitrary spherical rotation to bring it back
+#   into a spot that the algorithm handles better
+def find_progenitor(t, ran=100.):
+    #t (Timestep): the Timestep that you are running the algorithm on
+    #ran (float, optional): the maximum distance range to search, in kpc
+
+    bins = 1000
+
+    #don't wreck the data that's passed in
+    t = t.copy()
+
+    #cut the Timestep so only the baryons are considered
+    t.only_baryons()
+
+    #cut the data to the prescribed distance ranges
+    t.subset_rect(['r'], [(0.0001, ran)])
+
+    #histogram the data in spherical galactic coords
+    h = np.histogram2d(t.theta, t.phi, bins=bins, range=((-90, 90), (-180, 180)))[0]
+    phi_vals = np.linspace(-180, 180, bins)
+    theta_vals = np.linspace(-90, 90, bins)
+
+    #Find (theta,phi) with the maximum star density
+    theta_max_bin = 0
+    phi_max_bin = 0
+    for i in range(len(h)):
+        for j in range(len(h[i])):
+            if (h[theta_max_bin][phi_max_bin]/np.cos(theta_vals[theta_max_bin]*np.pi/180) < h[i][j]/np.cos(theta_vals[i]*np.pi/180)):
+                theta_max_bin = i
+                phi_max_bin = j
+
+    #Pull out stars in max bin
+    theta_binsize = 180/bins
+    phi_binsize = 360/bins
+    accepted_stars = t.copy()
+    accepted_stars.subset_rect(['theta', 'phi'], [(theta_vals[theta_max_bin]-theta_binsize/2, theta_vals[theta_max_bin]+theta_binsize/2), \
+                                                             (phi_vals[phi_max_bin]-phi_binsize/2, phi_vals[phi_max_bin]+phi_binsize/2)])
+
+    #Find r of progenitor while correcting for sigma clipping
+    for n in range(50):
+        #Find average and standard deviation of r
+        star_num = len(accepted_stars)
+        if (star_num < 2):
+            print('COULD NOT RESOLVE PROGENITOR')
+            return [0.0,0.0,0.0]
+        r_total = np.sum(accepted_stars.r)
+        r2_total = np.sum((accepted_stars.r)**2)
+        r_mean = r_total/star_num
+        r2_mean = r2_total/star_num
+        r_sig = ((r2_mean - r_mean**2.0)*star_num/(star_num - 1.0))**0.5
+
+        #Perform 2.5-sigma clipping
+        new_accepted_stars = []
+        for i in range(len(accepted_stars)):
+            if(abs(accepted_stars.r[i] - r_mean)/abs(r_sig) < 2.5):
+                new_accepted_stars.append(i)
+        accepted_stars.take(new_accepted_stars)
+
+    #Report coordinates in XYZ
+    x_val = r_mean*np.cos(theta_vals[theta_max_bin]*np.pi/180)*np.cos(phi_vals[phi_max_bin]*np.pi/180)
+    y_val = r_mean*np.cos(theta_vals[theta_max_bin]*np.pi/180)*np.sin(phi_vals[phi_max_bin]*np.pi/180)
+    z_val = r_mean*np.sin(theta_vals[theta_max_bin]*np.pi/180)
+    pos = [x_val,y_val,z_val]
+
+    return pos

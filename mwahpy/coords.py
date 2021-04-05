@@ -518,7 +518,7 @@ def cart_to_plane(x, y, z, normal, point):
     #ensure that normal and point are normalized
     len_normal = (normal[0]**2 + normal[1]**2 + normal[2]**2)**0.5
     normal = (normal[0]/len_normal, normal[1]/len_normal, normal[2]/len_normal)
-    
+
     len_point = (point[0]**2 + point[1]**2 + point[2]**2)**0.5
     point = (point[0]/len_point, point[1]/len_point, point[2]/len_point)
 
@@ -727,6 +727,15 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
         origin1 *= np.pi/180
         origin2 *= np.pi/180
 
+    rx, ry, rz = long_lat_to_unit_vec(pole1, pole2, rad=True)
+    rpole = np.array([rx, ry, rz]).T
+    rx, ry, rz = long_lat_to_unit_vec(origin1, origin2, rad=True)
+    rorigin = np.array([rx, ry, rz]).T
+
+    #if pole and origin aren't exactly orthogonal, there's an offset generated in Lambda and Beta.
+    #we subtract this from both and then things are happy.
+    offset = np.arccos(np.dot(rpole, rorigin)) - np.pi/2
+
     #--------------------
     #calculate latitude
     #--------------------
@@ -738,7 +747,7 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
     #regardless, the longitude half of this function is much longer than this half
     #so optimize that first
 
-    Bet = np.pi/2 - np.arccos(udotv)
+    Bet = np.pi/2 - np.arccos(udotv) + offset
 
     #--------------------
     #calculate longitude
@@ -756,7 +765,8 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
 
     #Use this to determine hemisphere of point
     Oprime = np.cross(n, O) #should be magnitude = 1, or close to it
-    #if a bad origin is defined (not on equator) this will not unit length
+    Oprime /= (Oprime[0]**2 + Oprime[1]**2 + Oprime[2]**2)**0.5 #normalize it just in case
+    #if a bad origin is defined (not on equator) this will not unit length unless normalized
 
     #unit vectors to the points:
     px, py, pz = long_lat_to_unit_vec(sky1, sky2, rad=True)
@@ -772,13 +782,13 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
 
     #construct arrays for the angle between the new polar origin vector and the point
     #and also the array to tell you which hemisphere the point is in
-    Lam = np.arccos(comp_wise_dot(rejnp, O, normalize=True))
+    Lam = np.arccos(comp_wise_dot(rejnp, O, normalize=True)) - offset
     hemi = comp_wise_dot(rejnp, Oprime)
 
-    #correct angles on the far hemisphere'
+    #correct angles on the far hemisphere
     for i in range(len(Lam)):
         if hemi[i] < 0:
-            Lam[i] = 2*np.pi - Lam[i]
+            Lam[i] = 0 - Lam[i]
 
     #---------------------------
 
@@ -787,7 +797,7 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
         Bet *= 180/np.pi
 
     if wrap:
-        Lam = wrap_long(Lam) #TODO: wrap_long should allow for radians
+        Lam = wrap_long(Lam)
 
     if not use_array:
         Lam = Lam[0]

@@ -1,3 +1,6 @@
+v1.3.5:
+ - fixed an offset issue in sky_to_pole() if origin and pole weren't exactly orthogonal.
+
 v1.3.4:
  - Timestep.typ attribute stores whether particles are baryons (0) or dark matter (1)
  - output_handler has been updated to also read in particle type
