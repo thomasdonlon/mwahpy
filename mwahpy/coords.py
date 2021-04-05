@@ -699,6 +699,84 @@ def sgr_to_gal(Lam, Bet):
 #are in the same coordinate system as the (sky1, sky2) coordinates.
 #e.g. if sky1 is a list of RAs and sky2 is a list of Decs, then
 #the pole and origin arguments must also be specified in RA Dec.
+
+def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
+    #sky1, sky2: positions of the data on the sky (e.g. sky1 = array(RA), sky2 = array(Dec), etc.)
+    #pole: position of the pole of the new coordinate system, tuple
+    #origin: position of the origin of the new coordinate system, tuple
+    #wrap: if True, Lam is constrained to only positive values. Otherwise, Lam is in [-180,180]
+    #rad: is True, ALL inputs are in radians. ALL inputs should be in degrees if rad=False
+
+    use_array = True
+    if type(sky1) != type(np.array([])):
+        use_array = False
+        sky1 = np.array([sky1])
+        sky2 = np.array([sky2])
+
+    sky1 = sky1.copy() #fix aliasing
+    sky2 = sky2.copy()
+    pole1 = pole[0] #separate tuples for readability
+    pole2 = pole[1] #and easy scalability
+    origin1 = origin[0]
+    origin2 = origin[1]
+
+    if not rad:
+        sky1 *= np.pi/180
+        sky2 *= np.pi/180
+        pole1 *= np.pi/180
+        pole2 *= np.pi/180
+        origin1 *= np.pi/180
+        origin2 *= np.pi/180
+
+    #construct a 3D frame in the current long/lat frame
+    #all points have unit distance
+    x = np.cos(sky1)*np.cos(sky2)
+    y = np.sin(sky1)*np.cos(sky2)
+    z = np.sin(sky2)
+    xyz = np.array([x, y, z])
+
+    #build the change of basis matrix
+    r_pole = np.array([np.cos(pole1)*np.cos(pole2), np.sin(pole1)*np.cos(pole2), np.sin(pole2)])
+    r_origin = np.array([np.cos(origin1)*np.cos(origin2), np.sin(origin1)*np.cos(origin2), np.sin(origin2)])
+    r_newy = np.cross(r_pole, r_origin)
+
+    cob_mat = np.array([r_origin, r_newy, r_pole])
+
+    #compute the new values
+    xyz = np.matmul(cob_mat, xyz)
+    x = xyz[0]
+    y = xyz[1]
+    z = xyz[2]
+
+    #calculate Lam, Bet in new frame
+    Lam = np.arctan2(y, x)
+    Bet = np.arcsin(z/(x**2 + y**2 + z**2)**0.5)
+
+    #---------------------------
+
+    if not rad:
+        Lam *= 180/np.pi
+        Bet *= 180/np.pi
+
+    if wrap:
+        Lam = wrap_long(Lam) #TODO: wrap_long should allow for radians
+
+    if not use_array:
+        Lam = Lam[0]
+        Bet = Bet[0]
+
+    return Lam, Bet
+
+'''
+#sky_to_pole: array(float), array(float), tuple(float, float), tuple(float, float) -> array(float), array(float)
+#rotate the positions on the sky (sky1, sky2) into a new frame determined by
+#the pole of the new frame (pole1, pole2) and the origin of the new frame (origin1, origin2)
+#The output is the longitude and latitude in the new coordinate frame
+
+#NOTE: Inputs can be any spherical geometry, as long as the pole & origin arguments
+#are in the same coordinate system as the (sky1, sky2) coordinates.
+#e.g. if sky1 is a list of RAs and sky2 is a list of Decs, then
+#the pole and origin arguments must also be specified in RA Dec.
 def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
     #sky1, sky2: positions of the data on the sky (e.g. sky1 = array(RA), sky2 = array(Dec), etc.)
     #pole: position of the pole of the new coordinate system, tuple
@@ -804,120 +882,7 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
         Bet = Bet[0]
 
     return Lam, Bet
-
-#sky_to_pole: array(float), array(float), tuple(float, float), tuple(float, float) -> array(float), array(float)
-#rotate the positions on the sky (sky1, sky2) into a new frame determined by
-#the pole of the new frame (pole1, pole2) and the origin of the new frame (origin1, origin2)
-#The output is the longitude and latitude in the new coordinate frame
-
-#NOTE: Inputs can be any spherical geometry, as long as the pole & origin arguments
-#are in the same coordinate system as the (sky1, sky2) coordinates.
-#e.g. if sky1 is a list of RAs and sky2 is a list of Decs, then
-#the pole and origin arguments must also be specified in RA Dec.
-
 '''
-This was an attempt at a 3D euler angle method for sky_to_pole, but it's buggy.
-I ended up moving to the simplified vector arithmetic version that is implemented above.
-This method, if debugged, would probably avoid the singularities at the poles that
-sky_to_pole runs into currently.
-'''
-'''
-def sky_to_pole_bad(sky1, sky2, pole, origin, wrap=False, rad=False):
-    #sky1, sky2: positions of the data on the sky (e.g. sky1 = array(RA), sky2 = array(Dec), etc.)
-    #pole: position of the pole of the new coordinate system, tuple
-    #origin: position of the origin of the new coordinate system, tuple
-    #wrap: if True, Lam is constrained to only positive values. Otherwise, Lam is in [-180,180]
-    #rad: is True, ALL inputs are in radians. ALL inputs should be in degrees if rad=False
-
-    use_array = True
-    if type(sky1) != type(np.array([])):
-        use_array = False
-        sky1 = np.array([sky1])
-        sky2 = np.array([sky2])
-
-    sky1 = sky1.copy() #fix aliasing
-    sky2 = sky2.copy()
-    pole1 = pole[0] #separate tuples for readability
-    pole2 = pole[1] #and easy scalability
-    origin1 = origin[0]
-    origin2 = origin[1]
-
-    if not rad:
-        sky1 *= np.pi/180
-        sky2 *= np.pi/180
-        pole1 *= np.pi/180
-        pole2 *= np.pi/180
-        origin1 *= np.pi/180
-        origin2 *= np.pi/180
-
-    #construct a 3D frame in the current long/lat frame
-    #all points have unit distance
-    x = np.cos(sky1)*np.cos(sky2)
-    y = np.sin(sky1)*np.cos(sky2)
-    z = np.sin(sky2)
-    xyz = np.array([x, y, z])
-
-    #rotate old pole into correct lat by rotating around y-axis
-    theta = -1*(np.pi/2 - pole2) #angle to rotate
-    print('Theta:', theta)
-    cos = np.cos(theta)
-    sin = np.sin(theta)
-    Ry = np.array([[cos,    0, sin],
-                   [0,      1, 0  ],
-                   [-1*sin, 0, cos]])
-
-    #rotate old pole into correct long by rotating around z-axis
-    theta = -1*pole1
-    print('Theta:', theta)
-    cos = np.cos(theta)
-    sin = np.sin(theta)
-    Rz = np.array([[cos, -1*sin, 0],
-                   [sin, cos,    0],
-                   [0,   0,      1]])
-
-    #rotate z=0 plane of new pole around new pole to align origin
-    r1 = np.array([1, 0, 0]) #rotate old origin into new rotated plane
-    r1 = np.matmul(Rz, np.matmul(Ry, r1))
-
-    #construct vector of desired origin
-    r2 = np.array([np.cos(origin1)*np.cos(origin2), np.sin(origin1)*np.cos(origin2), np.sin(origin2)])
-
-    #calculate angle to rotate
-    psi = np.arccos(np.dot(r1, r2))
-
-    #determine sign of psi
-    psi *= np.sign(np.dot(np.cross(r1, r2), np.array([np.cos(pole1)*np.cos(pole2), np.sin(pole1)*np.cos(pole2), np.sin(pole2)])))
-    print('psi =', psi)
-
-    #rotate data into new frame
-    xyz = np.matmul(Rz, np.matmul(Ry, xyz))
-
-    #rotate data by psi around the new pole axis
-    #first, calculate the new pole axis in the new frame
-    new_axis = np.array([np.cos(pole1)*np.cos(pole2), np.sin(pole1)*np.cos(pole2), np.sin(pole2)])
-    new_axis = np.matmul(Rz, np.matmul(Ry, new_axis))
-    x, y, z = rot_around_arb_axis(xyz[0], xyz[1], xyz[2], new_axis[0], new_axis[1], new_axis[2], psi)
-    print('xyz =',x,',',y,',',z)
-
-    #calculate Lam, Bet in new frame
-    Lam = np.arctan2(y, x)
-    Bet = np.arcsin(z/(x**2 + y**2 + z**2)**0.5)
-
-    #---------------------------
-
-    if not rad:
-        Lam *= 180/np.pi
-        Bet *= 180/np.pi
-
-    if wrap:
-        Lam = wrap_long(Lam) #TODO: wrap_long should allow for radians
-
-    if not use_array:
-        Lam = Lam[0]
-        Bet = Bet[0]
-
-    return Lam, Bet
-    '''
 
 #===============================================================================
 # RUNTIME
