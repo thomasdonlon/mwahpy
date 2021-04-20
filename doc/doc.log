@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2020.4.11)  2 APR 2021 15:47
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2020.4.11)  20 APR 2021 10:31
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1444,9 +1444,6 @@ ra\TS1/zi4/m/n/10 '\OT1/zi4/m/it/10 , \TS1/zi4/m/n/10 '\OT1/zi4/m/it/10 vlos\TS
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
  ) 
 Here is how much of TeX's memory you used:
  28856 strings out of 492982
@@ -1473,7 +1470,7 @@ sr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/sha
 re/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texl
 ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/share/texmf/font
 s/type1/public/cm-super/sfrm1000.pfb>
-Output written on doc.pdf (43 pages, 308041 bytes).
+Output written on doc.pdf (43 pages, 308471 bytes).
 PDF statistics:
  249 PDF objects out of 1000 (max. 8388607)
  163 compressed objects within 2 object streams

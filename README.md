@@ -81,8 +81,6 @@ FOR DEVELOPERS:
 
 > ...
 
-Any time you make a change to the source code, you'll have to repeat step 3
-
 5. Once you are done making changes to the source code, put in a pull request to master
 
 6. Navigate to the directory where you cloned the repo, and then run
@@ -112,4 +110,5 @@ MINOR:
 BUGS
 ========================================
 
- No known bugs.
+- output_handler.make_nbody_input() sometimes produces output that is unreadable by MilkyWay@home Nbody.
+  It is believed that this is an issue with tab characters and different operating systems.

@@ -1,5 +1,10 @@
 v1.3.5:
- - fixed an offset issue in sky_to_pole() if origin and pole weren't exactly orthogonal.
+ - sky_to_pole() now uses a change of basis matrix instead of vector math
+ - fixed bugs with mismatches of Timestep.index_list after extra calculations
+ - Timestep.id is now an array of ints, not floats
+ - added Timestep.take_by_id()
+ - output_handler.make_nbody_input() now properly handles the 'recenter' keyword arg
+ - updated README
 
 v1.3.4:
  - Timestep.typ attribute stores whether particles are baryons (0) or dark matter (1)

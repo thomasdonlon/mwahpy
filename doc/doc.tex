@@ -32,7 +32,7 @@
    \begin{center}
        \vspace*{5cm}
 
-       \huge\textbf{MilkyWay@home Python Package Documentation \\ (\textit{mwahpy} v1.3.4)}
+       \huge\textbf{MilkyWay@home Python Package Documentation \\ (\textit{mwahpy} v1.3.5)}
 
        \vspace{0.5cm}
         
@@ -2189,11 +2189,25 @@ For example, if one wanted all particles with position within 2 kpc of the point
 
 \item \verb!mwahpy.timestep.take(indices)!
 
+Cuts the \verb!Timestep! to only include the particles with indices equal to those of \verb!indices!. WARNING: If the first particle in the \verb!Timestep! has an \verb!id! of 1, then this will be off by 1 from the particle \verb!id!. In that case, \verb!Timestep.take_by_id()! may have the desired behavior instead of this function. 
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!indices! (list of ints) : The list of indices. Only particles with indices equal to a value in this list will be in the cut \verb!Timestep!.
+
+\end{itemize}
+
+\textit{Returns}: 
+
+
+
+\item \verb!mwahpy.timestep.take_by_id(ids)!
+
 Cuts the \verb!Timestep! to only include the particles with the specified values of \verb!id!.
 
 \textit{Parameters}: \begin{itemize}
 
-\item \verb!indices! (list of ints) : The list of \verb!id!s. Only particles with \verb!id! equal to a value in this list will be in the cut \verb!Timestep!.
+\item \verb!ids! (list of ints) : The list of \verb!id!s. Only particles with \verb!id! equal to a value in this list will be in the cut \verb!Timestep!.
 
 \end{itemize}
 

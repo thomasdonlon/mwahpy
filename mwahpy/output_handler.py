@@ -163,13 +163,16 @@ def make_nbody_input(t, f, recenter=True):
     if verbose:
         print('Writing Timestep as N-body input to '+f+'...')
 
+    if recenter:
+        t.recenter()
+
     f = open(f, 'w')
     f.write('#ignore\tid\tx\ty\tz\tvx\tvy\tvz\tm')
 
     i = 0
 
-    while i < len(t): #no idea why it's int(t.id[i]) instead of t.id[i]. Should change and see if it breaks.
-        f.write('\n'+str(t.typ[i])+'\t'+str(int(t.id[i]))+'\t'+str(xnew[i])+'\t'+str(ynew[i])+'\t'+str(znew[i])+'\t'+\
+    while i < len(t):
+        f.write('\n'+str(t.typ[i])+'\t'+str(t.id[i])+'\t'+str(t.x[i])+'\t'+str(t.y[i])+'\t'+str(t.z[i])+'\t'+\
                 str(t.vx[i])+'\t'+str(t.vy[i])+'\t'+str(t.vz[i])+'\t'+str(t.mass[i]))
         if progress_bars:
             progress_bar(i, len(t))

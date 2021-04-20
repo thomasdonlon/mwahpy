@@ -18,7 +18,7 @@ import random
 
 class Nbody():
 
-    def __init__(self, ts={}, ts_scale=None):
+    def __init__(self, ts=dict(), ts_scale=None):
 
         self.ts = ts #dictionary of Timestep instances with the numerical timestep
             #(the given filename, e.g. 99, 2099, etc.) as the key
@@ -68,7 +68,7 @@ class Nbody():
         #save the times in the nbody structure
         self.times = [l * x for x in sorted(self.ts.keys())]
 
-        new_ts = {} #have to build a new dict in order to not delete information
+        new_ts = dict() #have to build a new dict in order to not delete information
                    #while renaming the keys of the old dict
 
         #save the time in each Timestep so that it can be accessed from there
