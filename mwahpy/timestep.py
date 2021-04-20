@@ -68,7 +68,7 @@ class Timestep():
 
         #-----------------------------------------------------------------------
 
-        self.typ = np.array(typ)   #0 if baryon, 1 if DM
+        self.typ = np.array(typ).astype('int')   #0 if baryon, 1 if DM
         self.id = np.array(id_val).astype('int') #does not need to be unique ID
         self.x = np.array(x)       #Galactocentric Cartesian positions
         self.y = np.array(y)
@@ -395,7 +395,7 @@ class Timestep():
         for i in ids: #there must be a quicker way to do this, but I can't think of one right now
             indices_list.append(id_list.index(i))
         for key in self:
-            self[key] = np.take(self[key], indices)
+            self[key] = np.take(self[key], indices_list)
         if auto_update:
             self.update()
 

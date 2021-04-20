@@ -3,8 +3,10 @@ v1.3.5:
  - fixed bugs with mismatches of Timestep.index_list after extra calculations
  - Timestep.id is now an array of ints, not floats
  - added Timestep.take_by_id()
- - output_handler.make_nbody_input() now properly handles the 'recenter' keyword arg
+ - output_handler.make_nbody_input() now properly handles the 'recenter' keyword argument
+ - output_handler.make_nbody_input() pads now floats correctly
  - updated README
+ - Timestep.typ is now a list of ints, not floats
 
 v1.3.4:
  - Timestep.typ attribute stores whether particles are baryons (0) or dark matter (1)
