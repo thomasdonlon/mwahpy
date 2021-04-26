@@ -110,5 +110,5 @@ MINOR:
 BUGS
 ========================================
 
-- output_handler.make_nbody_input() sometimes produces output that is unreadable by MilkyWay@home Nbody.
-  It is believed that this is an issue with tab characters and different operating systems.
+- output_handler.make_nbody_input() sometimes produces output that is unreadable by MilkyWay@home N-Body.
+  N-Body can only read .in files that only contain dark matter (#ignore = 1) files. This is more of a bug in the N-Body client than mwahpy.

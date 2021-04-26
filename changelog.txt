@@ -1,3 +1,7 @@
+v1.3.6:
+ - fixed sky_to_pole() tests and a couple other tests
+ - fixed a bug with output_handler.make_nbody_input() not writing '\n' at end of file
+
 v1.3.5:
  - sky_to_pole() now uses a change of basis matrix instead of vector math
  - fixed bugs with mismatches of Timestep.index_list after extra calculations
