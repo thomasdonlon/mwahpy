@@ -6,8 +6,6 @@ setup.py
 .github/workflows/python-publish.yml
 __pycache__/flags.cpython-35.pyc
 __pycache__/mwahpy_global.cpython-35.pyc
-dist/mwahpy-1.3.4-py3-none-any.whl
-dist/mwahpy-1.3.4.tar.gz
 doc/doc.aux
 doc/doc.listing
 doc/doc.log

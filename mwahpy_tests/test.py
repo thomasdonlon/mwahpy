@@ -124,8 +124,8 @@ class TestTimestepMethods(unittest.TestCase):
         self.assertTrue(len(t.center_of_momentum) == 3)
         self.assertTrue(round(abs(t.center_of_momentum[0] - 6.001115213580641) + abs(t.center_of_momentum[1] + 65.29652414026405) + abs(t.center_of_momentum[2] + 26.462554427407223), prec) == 0)
 
-        self.assertTrue(len(t.distFromCOM) == len(t))
-        self.assertTrue(round(abs(t.distFromCOM[0] - ((t.center_of_mass[0] - t.x[0])**2 + (t.center_of_mass[1] - t.y[0])**2 + (t.center_of_mass[2] - t.z[0])**2)**0.5), prec) == 0)
+        self.assertTrue(len(t.dist_from_com) == len(t))
+        self.assertTrue(round(abs(t.dist_from_com[0] - ((t.center_of_mass[0] - t.x[0])**2 + (t.center_of_mass[1] - t.y[0])**2 + (t.center_of_mass[2] - t.z[0])**2)**0.5), prec) == 0)
 
 class TestCoordsInverses(unittest.TestCase):
 
@@ -167,18 +167,19 @@ class TestCoordsInverses(unittest.TestCase):
 
     #higher order coordinate transformations
 
-    def test_sky_to_pole(self):
+    def test_sky_to_pole_null(self):
         tol = 1e-6 #tolerance for this test
-        ra = np.linspace(10, 350, 10) #avoid poles, which do not test well but work
-        #the ra rotates strangely but the dec = +/-90 so it doesn't matter
-        dec = np.linspace(-80, 80, 10)
-        ra_new, dec_new = co.sky_to_pole(ra, dec, (0, 90), (0, 0)) #null transformation
+        ra = np.linspace(0, 360, 10)
+        dec = np.linspace(-90, 90, 10)
+        ra_new, dec_new = co.sky_to_pole(ra, dec, (0, 90), (0, 0), wrap=True) #null transformation
         self.assertTrue((np.sum(np.abs(ra_new - ra)) <= tol) and (np.sum(np.abs(dec_new - dec)) <= tol))
 
-        ra = np.linspace(10, 350, 10) #avoid poles, which do not test well but work
+    def test_sky_to_pole_inverse(self):
+        tol = 1e-6 #tolerance for this test
+        ra = np.linspace(10, 350, 10) #exact poles don't transform well
         dec = np.linspace(-80, 80, 10)
-        L, B = co.sky_to_pole(ra, dec, (0, 0), (90, 0))
-        ra_new, dec_new = co.sky_to_pole(L, B, (90, 0), (0, 90)) #this *should* be the inverse transformation
+        L, B = co.sky_to_pole(ra, dec, (0, 0), (90, 0), wrap=True)
+        ra_new, dec_new = co.sky_to_pole(L, B, (90, 0), (0, 90), wrap=True) #I'm like 75% sure this is the inverse transformation
         self.assertTrue((np.sum(np.abs(ra_new - ra)) <= tol) and (np.sum(np.abs(dec_new - dec)) <= tol))
 
 #===============================================================================

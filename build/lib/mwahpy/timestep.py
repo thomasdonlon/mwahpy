@@ -25,6 +25,14 @@ from .pot import mwahpy_default_pot, energy_offset
 from .coords import get_rvpm
 
 #===============================================================================
+# CONSTANTS
+#===============================================================================
+
+basic_quantity_list = ['msol', 'l', 'b', 'ra', 'dec', 'phi', 'theta', 'dist', 'lx', 'ly', 'lz', 'lperp', 'ltot', 'r', 'R', 'vlos', 'vgsr', 'vrad', 'vrot', 'vR', 'dist_from_com']
+rvpm_quantity_list = ['rv', 'pmra', 'pmdec',  'pmtot', 'vtan']
+energy_quantity_list = ['PE', 'KE', 'energy']
+
+#===============================================================================
 # TIMESTEP CLASS
 #===============================================================================
 
@@ -39,7 +47,7 @@ class AttrDict(dict):
 
 class Timestep():
 
-    def __init__(self, typ=[], id_val=[], x=[], y=[], z=[], vx=[], vy=[], vz=[], mass=[], center_of_mass=[0, 0, 0], center_of_momentum=[0, 0, 0], potential=None, time=None, nbody=None):
+    def __init__(self, typ=list(), id_val=list(), x=list(), y=list(), z=list(), vx=list(), vy=list(), vz=list(), mass=list(), center_of_mass=[0, 0, 0], center_of_momentum=[0, 0, 0], potential=None, time=None, nbody=None):
         #all this is typically specified by the read_output function in output_handler
         #read_output is the preferred way to input data to this data structure
         #but if you're really feeling adventurous you can always do it yourself
@@ -60,8 +68,8 @@ class Timestep():
 
         #-----------------------------------------------------------------------
 
-        self.typ = np.array(typ)   #0 if baryon, 1 if DM
-        self.id = np.array(id_val) #does not need to be unique ID
+        self.typ = np.array(typ).astype('int')   #0 if baryon, 1 if DM
+        self.id = np.array(id_val).astype('int') #does not need to be unique ID
         self.x = np.array(x)       #Galactocentric Cartesian positions
         self.y = np.array(y)
         self.z = np.array(z)
@@ -143,20 +151,20 @@ class Timestep():
     #related values works as intended
 
     def __getattr__(self, i):
-        if (not(self.have_basic) and i in ['msol', 'l', 'b', 'ra', 'dec', 'dist', 'lx', 'ly', 'lz', 'lperp', 'ltot', 'r', 'R', 'vlos', 'vgsr', 'rad', 'rot', 'distFromCOM']):
+        if (not(self.have_basic) and i in basic_quantity_list):
             self.calc_basic()
-        if (not(self.have_rvpm) and i in ['rv', 'pmra', 'pmdec',  'pmtot', 'vtan']):
+        if (not(self.have_rvpm) and i in rvpm_quantity_list):
             self.calc_rvpm()
-        if (not(self.have_energy) and i in ['PE', 'KE', 'energy']):
+        if (not(self.have_energy) and i in energy_quantity_list):
             self.calc_energy()
         return self.__dict__[i]
 
     def __getitem__(self, i):
-        if (not(self.have_basic) and i in ['msol', 'l', 'b', 'ra', 'dec', 'dist', 'lx', 'ly', 'lz', 'lperp', 'ltot', 'r', 'R', 'vlos', 'vgsr', 'rad', 'rot', 'distFromCOM']):
+        if (not(self.have_basic) and i in basic_quantity_list):
             self.calc_basic()
-        if (not(self.have_rvpm) and i in ['rv', 'pmra', 'pmdec',  'pmtot', 'vtan']):
+        if (not(self.have_rvpm) and i in rvpm_quantity_list):
             self.calc_rvpm()
-        if (not(self.have_energy) and i in ['PE', 'KE', 'energy']):
+        if (not(self.have_energy) and i in energy_quantity_list):
             self.calc_energy(potential=self.potential)
         return self.__dict__[i]
 
@@ -235,7 +243,7 @@ class Timestep():
     #this can't be done by iterating over the object, since comass etc. have to be copied as well
     def copy(self):
         out = Timestep()
-        if self.have_basic:
+        if self.have_basic: #these set the proper flags and index_list, etc. but don't cost computation time
             out.calc_basic()
         if self.have_rvpm:
             out.calc_rvpm()
@@ -306,8 +314,7 @@ class Timestep():
         self.dist_from_com = ((self.x - self.center_of_mass[0])**2 + (self.y - self.center_of_mass[1])**2 + (self.z - self.center_of_mass[2])**2)**0.5
 
         if not(self.have_basic): #only run if first time running method, not if updating
-            self.index_list = self.index_list + ['msol', 'l', 'b', 'ra', 'dec', 'phi', 'theta', 'dist', 'lx', 'ly', 'lz', 'lperp', 'ltot', 'r', 'R', 'vlos', 'vgsr', 'vrad', 'vrot', 'dist_from_com']
-
+            self.index_list = self.index_list + basic_quantity_list
         self.have_basic = True #make sure the getter doesn't try to run this again
 
     def calc_rvpm(self):
@@ -324,7 +331,7 @@ class Timestep():
         self.vtan = 4.74*self.dist*self.pmtot #eq. to self.r*np.tan(self.pmtot*4.848e-6) * 3.086e16 / 3.156e7
 
         if not(self.have_rvpm): #only run if first time running method, not if updating
-            self.index_list = self.index_list + ['pmra', 'pmdec',  'pmtot', 'vtan']
+            self.index_list = self.index_list + rvpm_quantity_list
 
         self.have_rvpm = True #make sure the getter doesn't try to run this again
 
@@ -351,7 +358,7 @@ class Timestep():
 
         #allow iteration over these attributes
         if not(self.have_energy):  #only run if first time running method, not if updating
-            self.index_list = self.index_list + ['PE', 'KE', 'energy']
+            self.index_list = self.index_list + energy_quantity_list
 
         self.have_energy = True #make sure the getter doesn't try to run this again
 
@@ -377,6 +384,18 @@ class Timestep():
         #indices: the indices you want to take, must be array-like
         for key in self:
             self[key] = np.take(self[key], indices)
+        if auto_update:
+            self.update()
+
+    #cut the data to only include particles with id in ids
+    def take_by_id(self, ids):
+        #ids: the ids of the particles you want to take, must be array-like
+        id_list = self.id.tolist()
+        indices_list = []
+        for i in ids: #there must be a quicker way to do this, but I can't think of one right now
+            indices_list.append(id_list.index(i))
+        for key in self:
+            self[key] = np.take(self[key], indices_list)
         if auto_update:
             self.update()
 
