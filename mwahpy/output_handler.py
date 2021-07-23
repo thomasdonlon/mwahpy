@@ -45,11 +45,18 @@ def remove_header(f):
     return comass, comom
 
 #parses a milkyway ".out" file and returns a Timestep class structure
-def read_output(f):
+def read_output(f, start=None, stop=None):
     #f (str): the path of the milkyway ".out" file
+    #start (optional): the line to actually start reading in data
+    #stop (optional): the line to stop reading in data
 
     if progress_bars:
         flen = file_len(f)
+        #properly adjust for length change based on start and stop points
+        if start:
+            flen -= start
+        if stop:
+            flen -= stop
     if verbose:
         print('\nReading in data from ' + str(f) + '...')
 
@@ -62,8 +69,16 @@ def read_output(f):
     array_dict = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[], 9:[], 10:[], 11:[]}
 
     #place all the data from the file into the dictionary
-    if progress_bars:
-        j = 0
+    j = 0 #line num tracker
+
+    #if start is specified,
+    #skip lines until we're at the starting line
+    if start:
+        while j < start:
+            f.readline()
+            j += 1
+
+    j = 0 #reset line counter for progress bar
     for line in f:
         line = line.strip().split(',')
         i = 0
@@ -71,8 +86,14 @@ def read_output(f):
                                  #it's mostly just for simplicity when reading in, although I guess it probably slows down the code somewhat
             array_dict[i].append(float(line[i]))
             i += 1
+        j += 1
+
+        #stop reading in lines if we're past the stop setting
+        if stop:
+            if j >= stop:
+                break
+
         if progress_bars:
-            j += 1
             progress_bar(j, flen)
 
     #return the Timestep class using the array dictionary we built

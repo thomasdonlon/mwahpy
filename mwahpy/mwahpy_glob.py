@@ -1,6 +1,6 @@
 '''
 This file is a place to store constants and other information
-that is widely used throughout mwahpy.
+that are widely used throughout mwahpy.
 '''
 
 #TODO: Get more accurate solar velocity and position of Sun from GC

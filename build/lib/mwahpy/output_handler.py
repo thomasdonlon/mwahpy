@@ -172,12 +172,14 @@ def make_nbody_input(t, f, recenter=True):
     i = 0
 
     while i < len(t):
-        f.write('\n{}\t{}\t{:.18f}\t{:.18f}\t{:.18f}\t{:.18f}\t{:.18f}\t{:.18f}\t{}'.format(t.typ[i], t.id[i], t.x[i], t.y[i], t.z[i], t.vx[i], t.vy[i], t.vz[i], t.mass[i]))
-        #f.write('\n'+str(t.typ[i])+'\t'+str(t.id[i])+'\t'+str(t.x[i])+'\t'+str(t.y[i])+'\t'+str(t.z[i])+'\t'+\
-        #        str(t.vx[i])+'\t'+str(t.vy[i])+'\t'+str(t.vz[i])+'\t'+str(t.mass[i]))
+        f.write('\n{} {} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {} '.format(1, t.id[i], t.x[i], t.y[i], t.z[i], t.vx[i], t.vy[i], t.vz[i], t.mass[i]))
+        #f.write('\n'+str(1)+' '+str(t.id[i])+' '+str(t.x[i])+' '+str(t.y[i])+' '+str(t.z[i])+' '+\
+        #        str(t.vx[i])+' '+str(t.vy[i])+' '+str(t.vz[i])+' '+str(t.mass[i]))
         if progress_bars:
             progress_bar(i, len(t))
         i += 1
+
+    f.write('\n')
 
     if verbose:
         print('\ndone')

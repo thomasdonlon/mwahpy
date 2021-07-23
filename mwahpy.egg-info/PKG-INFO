@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: mwahpy
-Version: 1.3.5
+Version: 1.3.6
 Summary: A python package for easily parsing and processing data from MilkyWay@home
 Home-page: https://github.com/thomasdonlon/mwahpy
 Author: Tom Donlon
@@ -118,8 +118,8 @@ Description:  MILKYWAY@HOME PYTHON PACKAGE (MWAHPY)
         BUGS
         ========================================
         
-        - output_handler.make_nbody_input() sometimes produces output that is unreadable by MilkyWay@home Nbody.
-          It is believed that this is an issue with tab characters and different operating systems.
+        - output_handler.make_nbody_input() sometimes produces output that is unreadable by MilkyWay@home N-Body.
+          N-Body can only read .in files that only contain dark matter (#ignore = 1) files. This is more of a bug in the N-Body client than mwahpy.
         
 Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3

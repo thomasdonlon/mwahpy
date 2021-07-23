@@ -6,6 +6,7 @@ setup.py
 .github/workflows/python-publish.yml
 __pycache__/flags.cpython-35.pyc
 __pycache__/mwahpy_global.cpython-35.pyc
+__pycache__/setup.cpython-36.pyc
 doc/doc.aux
 doc/doc.listing
 doc/doc.log

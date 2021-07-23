@@ -298,7 +298,7 @@ class Timestep():
 
         #angular momentum information
         self.lx = self.y * self.vz - self.z * self.vy
-        self.ly = self.x * self.vz - self.z * self.vx
+        self.ly = self.z * self.vx - self.x * self.vz
         self.lz = self.x * self.vy - self.y * self.vx
         self.lperp = (self.lx**2 + self.ly**2)**0.5
         self.ltot = (self.lx**2 + self.ly**2 + self.lz**2)**0.5
