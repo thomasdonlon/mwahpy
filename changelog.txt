@@ -1,3 +1,12 @@
+v1.3.8
+ - refactored and fixed orbit_fitting_gc
+ - better way to do coords.cart_to_plane()
+ - added coords.cart_to_lonlat()
+ - coords.gal_to_lambet() and coords.cart_to_lambet() now use coords.cart_to_lonlat()
+   in the background as abstraction
+ - added coords.gal_to_lambet_galcentric(), will probably be deprecated soon in
+   order to clarify coordinate systems
+
 v1.3.7:
  - Fixed sign of Ly
  - added start and stop keywords to output_handler.read_output()

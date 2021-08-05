@@ -19,7 +19,7 @@ from astropy.coordinates import SkyCoord
 import galpy
 from galpy.orbit import Orbit
 
-from .coords import cart_to_lambet, get_plane_normal, plane_OLS, gal_to_lambet
+from .coords import get_plane_normal, plane_OLS, cart_to_lambet, gal_to_lambet_galcentric
 from .flags import verbose
 from .pot import mwahpy_default_pot
 
@@ -47,13 +47,15 @@ t_length = 0.5 #Gyr
 resolution = 1000
 ts = np.linspace(0, t_length, num=resolution)*u.Gyr
 
-punishment = 1000 #multiplier for every degree that the lambda fitting function is off
+deg_sep_pun = 1000 #multiplier for every degree that the lambda fitting function is off
 #this can be tweaked based on how many degrees of freedom you have - fewer DOF
 #means punishment can/should be smaller
 
+loop_pun = 10000 #punishment for every time that the orbit has to loop around in Lam
+
 '''
 ================================================================================
- HELPER FUNCTIONS FOR OPTIMIZATION
+ CLASSES
 ================================================================================
 '''
 
@@ -73,43 +75,70 @@ class OrbitData():
         self.vx_err = vx_err
         self.vy_err = vy_err
         self.vz_err = vz_err
+        self.vgsr_err = vgsr_err
 
-        self.x = self.d*np.cos(self.l)*np.cos(self.b) - 8
-        self.y = self.d*np.sin(self.l)*np.cos(self.b)
-        self.z = self.d*np.sin(self.b)
+        self.x = self.d*np.cos(self.l*np.pi/180)*np.cos(self.b*np.pi/180) - 8
+        self.y = self.d*np.sin(self.l*np.pi/180)*np.cos(self.b*np.pi/180)
+        self.z = self.d*np.sin(self.b*np.pi/180)
 
-    def LamBet(self, normal, point):
+        self.r = (self.x**2 + self.y**2 + self.z**2)**0.5
+
+    def calc_lam_bet(self, normal, point):
         #normal: the normal vector to the plane of the Great Circle we are estimating for the orbit
         #point: parameter for the axis generation of the Great Circle coordinates
         self.L, self.B = cart_to_lambet(self.x, self.y, self.z, normal, point)
-        self.r = (self.x**2 + self.y**2 + self.z**2)**0.5
         self.B_err = self.b_err #should be error propogated (Newby et al. 2013) but is not yet
-        return self
+
+'''
+================================================================================
+ HELPER FUNCTIONS FOR OPTIMIZATION
+================================================================================
+'''
+
+#do this in one place so it's uniform across the file and easily changeable
+def make_orbit(params):
+
+    #negate the x velocity because galpy is in left-handed frame and we aren't barbarians
+    o = Orbit(vxvv=[params[0]*u.deg, params[1]*u.deg, params[2]*u.kpc, -1*params[3]*u.km/u.s, params[4]*u.km/u.s, params[5]*u.km/u.s], uvw=True, lb=True, ro=8., vo=220., zo=0., solarmotion=[0, -220, 0])
+    o.integrate(ts, mwahpy_default_pot)
+
+    return o
+
+#-------------------------------------------------------------------------------
 
 #this function just makes a few places in the code cleaner
-def getOrbitDataFromOrbit(o, o_rev):
+def get_OrbitData_from_orbit(o, o_rev):
     #o: the orbit
     #o: the reversed orbit
     #both of these should be integrated prior to calling this function
 
-    data_orbit = OrbitData(np.array(o.ll(ts)), np.array(o.bb(ts)), np.array(o.dist(ts)), np.array(o.vx(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o.vy(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o.vz(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o.vlos(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]))
-    data_orbit_rev = OrbitData(np.array(o_rev.ll(ts)), np.array(o_rev.bb(ts)), np.array(o_rev.dist(ts)), np.array(o_rev.vx(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o_rev.vy(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o_rev.vz(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o.vlos(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]))
+    #don't think that the velocities need obs=[8., 0., etc] except the vlos (to make it vgsr)
+    data_orbit = OrbitData(np.array(o.ll(ts)), np.array(o.bb(ts)), np.array(o.dist(ts)), np.array(o.vx(ts)), np.array(o.vy(ts)), np.array(o.vz(ts)), np.array(o.vlos(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]))
+    data_orbit_rev = OrbitData(np.array(o_rev.ll(ts)), np.array(o_rev.bb(ts)), np.array(o_rev.dist(ts)), np.array(o_rev.vx(ts))*-1, np.array(o_rev.vy(ts))*-1, np.array(o_rev.vz(ts))*-1, np.array(o.vlos(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]))
 
     return data_orbit, data_orbit_rev
 
-def getClosestIndex(val, Lam):
-    L = np.abs(Lam - val)
-    m = np.min(L)
-    ind = np.where(L == m)
+#-------------------------------------------------------------------------------
 
-    return ind[0], m*punishment
-
-#getPointList: np.array([]), np.array([]), int, int -> np.array([])
 #given the full list of Lambdas, outputs the indices of the points within that list closest to our data's Lambdas
 #(while keeping in mind that it may wrap from 0 to 360 degrees and vice versa)
-def getPointList(vals, Lam):
+def get_point_list(vals, Lam):
     #vals: the Lambda values that you want to find the closest indices to
     #Lam: the array of Lambda values that you are searching through
+
+    #---------------------------------------------------------------------------
+    #grabs the index of the value in Lam with the closest value to val
+    def get_closest_index(val, Lam):
+        Lam = np.abs(Lam - val)
+        m = np.min(Lam)
+
+        try: #another race condition?
+            ind = np.where(Lam == m)[0][0]
+        except IndexError:
+            ind = -1
+
+        return ind, m*deg_sep_pun
+    #---------------------------------------------------------------------------
 
     point_list = []
     Lam_list = []
@@ -118,7 +147,7 @@ def getPointList(vals, Lam):
     for val in vals:
 
         #within that segment, find the index which produces the value closest to val
-        point, c = getClosestIndex(val, Lam)
+        point, c = get_closest_index(val, Lam)
         costs += c
 
         #toss it in the list
@@ -127,30 +156,27 @@ def getPointList(vals, Lam):
 
     return point_list, costs
 
-#getModelFromOrbit: data, orbit, vector, vector -> list(int) x3
-#take in data, orbit, and plane info: Output model data corresponding to each data point
-def getModelFromOrbit(data, o, normal, point):
-    #data: the data that the orbit is being fit to
-    #o: the test orbit that we are calculating the goodness-of-fit of
-    #normal: the normal vector to the plane of the Great Circle we are estimating for the orbit
-    #point: parameter for the axis generation of the Great Circle coordinates
+#-------------------------------------------------------------------------------
 
-    #initialize the orbit we are fitting --
+#take in data, orbit, and plane info: Output model data corresponding to each data point
+def get_model_from_params(data, params, normal, point):
+
+    #initialize the orbit we are fitting
+    o = make_orbit(params)
+
     #we flip it around so that we are fitting both the forwards and the backwards orbit
-    ts = np.linspace(0, t_length, num=resolution)*u.Gyr
     o_rev = o.flip()
     o_rev.integrate(ts, mwahpy_default_pot)
 
-    #sign swap on vx because galpy is left-handed, and we are inputting data in a right-handed coordinate system
-    data_orbit, data_orbit_rev = getOrbitDataFromOrbit(o, o_rev)
-    data_orbit = data_orbit.LamBet(normal, point)
-    data_orbit_rev = data_orbit_rev.LamBet(normal, point)
+    data_orbit, data_orbit_rev = get_OrbitData_from_orbit(o, o_rev)
+    data_orbit.calc_lam_bet(normal, point)
+    data_orbit_rev.calc_lam_bet(normal, point)
 
     #grab full lists so that we can select the closest points once we get a list
     Lam = np.append(np.flip(data_orbit_rev.L), data_orbit.L)
 
     #get the list of points closest to each data point in Lambda
-    point_list, costs = getPointList(data.L, Lam)
+    point_list, costs = get_point_list(data.L, Lam)
 
     #grab the model points from the point list we grabbed
     Bet = np.append(np.flip(data_orbit_rev.B), data_orbit.B)
@@ -185,50 +211,34 @@ def getModelFromOrbit(data, o, normal, point):
 
     return B_model, D_model, vx_model, vy_model, vz_model, vgsr_model, costs
 
-#chi_squared: data, galpy.Orbit() --> float
+#-------------------------------------------------------------------------------
+
 #takes in the observed data and a test orbit and calculates the goodness-of-fit using a chi-squared method
-def chiSquared(params, data=[], normal=(0, 0, 0), point=(1, 0, 0)):
-    #data: the data that the orbit is being fit to
-    #o: the test orbit that we are calculating the goodness-of-fit of
-    #normal: the normal vector to the plane of the Great Circle we are estimating for the orbit
-    #point: parameter for the axis generation of the Great Circle coordinates
+def chi_squared(params, data=[], normal=(0, 0, 0), point=(1, 0, 0)):
 
-    o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4] - 220, params[5]], uvw=True, lb=True, ro=8., vo=220.) #generate the orbit
-    o.integrate(ts, mwahpy_default_pot) #integrate the orbit
-
-    B_model, d_model, vx_model, vy_model, vz_model, vgsr_model, costs = getModelFromOrbit(data, o, normal, point) #get model data from orbit
+    B_model, d_model, vx_model, vy_model, vz_model, vgsr_model, costs = get_model_from_params(data, params, normal, point) #get model data from orbit
 
     x2_B = sum(((B_model - data.B)/data.B_err)**2)
     x2_d = sum(((d_model - data.d)/data.d_err)**2)
 
+    #this is the main chi squared that we are minimizing
+    x2 = x2_B + x2_d + costs
+
     if vx_flag:
         x2_vx = sum(((vx_model - data.vx)/data.vx_err)**2)
-    else:
-        x2_vx = 0
+        x2 += x2_vx
 
     if vy_flag:
         x2_vy = sum(((vy_model - data.vy)/data.vy_err)**2)
-    else:
-        x2_vy = 0
+        x2 += x2_vy
 
     if vz_flag:
         x2_vz = sum(((vz_model - data.vz)/data.vz_err)**2)
-    else:
-        x2_vz = 0
+        x2 += x2_vz
 
     if vgsr_flag:
         x2_vgsr = sum(((vgsr_model - data.vgsr)/data.vgsr_err)**2)
-    else:
-        x2_vgsr = 0
-
-    #get normalization factor
-    N = len(data.L) #number of data points
-    n = 5 #number of parameters
-    eta = N - n - 1 #normalizing parameter
-    if eta <= 0:
-        eta = 1 #if you use fewer data points than needed to constrain the problem, then this will still work but it won't be normalized correctly
-
-    x2 = (1/eta) * (x2_B + x2_d + x2_vx + x2_vy + x2_vz + x2_vgsr) + costs #Willett et al. 2009, give or take
+        x2 += x2_vgsr
 
     #there's a weird edge case where occasionally x2 is a short array of floats
     #this bit prevents scipy from throwing an error
@@ -241,14 +251,18 @@ def chiSquared(params, data=[], normal=(0, 0, 0), point=(1, 0, 0)):
 
     return x2
 
-#optimize: data -> [float, float, float, float, float], (float, float, float), (float, float, float)
-#takes in data, then fits a Great Circle to that data and minimizes the chi_squared to fit an orbit to the data
+#-------------------------------------------------------------------------------
+
+#takes in data, then fits a Great Circle to that data and
+#minimizes the chi_squared to fit an orbit to the data
 def optimize(data_opt, max_it, bounds, **kwargs):
+
+    #compute the preferred galactocentric spherical frame to fit this orbit in
+    #(should be close to the orbital plane of the observed data)
     normal = get_plane_normal(plane_OLS(data_opt.x, data_opt.y, data_opt.z)) #get normal vector for fit Great Circle
     point = (1, 0, 0) #not currently fitting this, but this can be changed or fit at a later date
-    #this way it makes 0 deg. in the Great Circle ~0 deg. in galactic longitude
 
-    data_opt = data_opt.LamBet(normal, point)
+    data_opt.calc_lam_bet(normal, point)
 
     '''
     ============================================================================
@@ -263,10 +277,10 @@ def optimize(data_opt, max_it, bounds, **kwargs):
     ============================================================================
     '''
 
-    params = scopt.differential_evolution(chiSquared, bounds, args=(data_opt, normal, point), strategy='rand1bin', maxiter=max_it, popsize=pop_size, mutation=diff_scaling_factor, recombination=crossover_rate, workers=-1, disp=not(verbose), **kwargs).x
-    #'''
+    #the actual bulk of the optimization
+    params = scopt.differential_evolution(chi_squared, bounds, args=(data_opt, normal, point), maxiter=max_it, popsize=pop_size, mutation=diff_scaling_factor, recombination=crossover_rate, workers=-1, disp=not(verbose), **kwargs).x
 
-    x2 = chiSquared(params, data_opt, normal, point)
+    x2 = chi_squared(params, data_opt, normal, point)
 
     return params, normal, point, x2
 
@@ -276,8 +290,14 @@ def optimize(data_opt, max_it, bounds, **kwargs):
 ================================================================================
 '''
 
+#pass in l, b, d values (and optional vx, vy, vz, vlos velocities)
+#computes the best orbit fit to those parameters
+#outputs the parameters for that best orbit fit
+#also need to pass in errors for each value used (except l)
+
+#additional kwargs are passed to scipy.optimize.differential_evolution()
 def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
-              vx_err=None, vy_err=None, vz_err=None, vgsr_err=None, max_it=20, \
+              vx_err=None, vy_err=None, vz_err=None, vgsr_err=None, max_it=100, \
               bounds=[(0, 360), (-90, 90), (0, 100), (-1000, 1000), (-1000, 1000), (-1000, 1000)], \
               t_len=None, **kwargs):
 
@@ -304,11 +324,14 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
         ts = np.linspace(0, t_length, num=resolution)*u.Gyr
 
     if verbose:
+        print('Building orbit data...')
+
+    data_opt = OrbitData(l, b, d, vx, vy, vz, vgsr, b_err, d_err, vx_err, vy_err, vz_err, vgsr_err)
+
+    if verbose:
         print('===================================')
         print('Optimizing:')
         print('===================================')
-
-    data_opt = OrbitData(l, b, d, vx, vy, vz, vgsr, b_err, d_err, vx_err, vy_err, vz_err, vgsr_err)
 
     #optimization
     params, normal, point, x2 = optimize(data_opt, max_it, bounds, **kwargs)
@@ -330,17 +353,23 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
 
     return params, normal, point, x2
 
-def plotOrbitLamBet(L, B, params, normal, point):
-    o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4] - 220, params[5]], uvw=True, lb=True, ro=8., vo=220.) #generate the orbit
-    o.integrate(ts, mwahpy_default_pot) #integrate the orbit
+'''
+================================================================================
+ PLOTTING
+================================================================================
+'''
+
+def plot_orbit_lam_bet(L, B, params, normal, point):
+
+    o = make_orbit(params)
 
     o_rev = o.flip()
     o_rev.integrate(ts, mwahpy_default_pot)
 
     #sign swap on vx because galpy is left-handed, and we are inputting data in a right-handed coordinate system
-    data_orbit, data_orbit_rev = getOrbitDataFromOrbit(o, o_rev)
-    data_orbit = data_orbit.LamBet(normal, point)
-    data_orbit_rev = data_orbit_rev.LamBet(normal, point)
+    data_orbit, data_orbit_rev = get_OrbitData_from_orbit(o, o_rev)
+    data_orbit.calc_lam_bet(normal, point)
+    data_orbit_rev.calc_lam_bet(normal, point)
 
     fig = plt.figure(figsize=(9, 6))
 
@@ -355,15 +384,15 @@ def plotOrbitLamBet(L, B, params, normal, point):
 
     plt.show()
 
-def plotOrbitgal(l, b, d, params):
-    o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4] - 220, params[5]], uvw=True, lb=True, ro=8., vo=220.) #generate the orbit
-    o.integrate(ts, mwahpy_default_pot) #integrate the orbit
+def plot_orbit_gal(l, b, d, params):
+
+    o = make_orbit(params)
 
     o_rev = o.flip()
     o_rev.integrate(ts, mwahpy_default_pot)
 
     #sign swap on vx because galpy is left-handed, and we are inputting data in a right-handed coordinate system
-    data_orbit, data_orbit_rev = getOrbitDataFromOrbit(o, o_rev)
+    data_orbit, data_orbit_rev = get_OrbitData_from_orbit(o, o_rev)
 
     fig = plt.figure(figsize=(18, 8))
     ax1 = fig.add_subplot(121)
@@ -393,17 +422,45 @@ def plotOrbitgal(l, b, d, params):
  TESTING
 ================================================================================
 '''
+
 def test():
-    l = np.array([0, 20, 40, 60, 80, 100, 120, 140, 160, 180])
-    b = np.array([0, 10, 20, 10, 0, -10, -20, -10, 0, 10])
-    b_err = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
-    d = np.array([20, 18, 15, 12, 10, 12, 15, 18, 20, 23])
-    d_err = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+    test_o_l = 90
+    test_o_b = 20
+    test_o_d = 25
+    test_o_vx = 150
+    test_o_vy = -200
+    test_o_vz = 100
+
+    ts = np.linspace(0, 0.25, 1000)*u.Gyr
+    sample = np.array([100, 250, 400, 500, 600, 750, 850])
+
+    o = make_orbit([test_o_l, test_o_b, test_o_d, test_o_vx, test_o_vy, test_o_vz])
+    o.integrate(ts, mwahpy_default_pot)
+    l = np.take(o.ll(ts), sample)
+    b = np.take(o.bb(ts), sample)
+    d = np.take(o.dist(ts), sample)
+
+    plt.scatter(l, b, s=5)
+    plt.scatter(o.ll(ts), o.bb(ts), s=1)
+    plt.show()
+
+    plt.scatter(l, d, s=5)
+    plt.scatter(o.ll(ts), o.dist(ts), s=1)
+    plt.show()
+
+    b_err = np.zeros(len(b)) + 0.05
+    d_err = np.zeros(len(d)) + 1
+
+    test_orbit_data = OrbitData(l, b, d, None, None, None, None, b_err, d_err, None, None, None, None)
+    test_orbit_data.calc_lam_bet((0, 0, 1), (1, 0, 0))
+
+    print('Chi Squared of actual values:')
+    print(chi_squared([test_o_l, test_o_b, test_o_d, test_o_vx, test_o_vy, test_o_vz], data=test_orbit_data, normal=(0, 0, 1), point=(1, 0, 0)))
 
     params, normal, point, x2 = fit_orbit(l, b, b_err, d, d_err)
-    L, B = gal_to_lambet(l, b, d, normal, point)
-    plotOrbitLamBet(L, B, params, normal, point)
-    plotOrbitgal(l, b, d, params)
+    L, B = gal_to_lambet_galcentric(l, b, d, normal, point)
+    plot_orbit_lam_bet(L, B, params, normal, point)
+    plot_orbit_gal(l, b, d, params)
 
 '''
 ================================================================================
