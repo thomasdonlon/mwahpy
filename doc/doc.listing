@@ -1,9 +1,39 @@
->>> n.scale_times(0.5)
->>> for ts in n:
-...     print(ts.time)
-0.5
-1.0
-1.5
->>> n[0.5].x
-array([ 4.53813066, -0.59395581, -1.41000385, -0.00613003,  0.11393187,
-        0.38487162,  0.35803147,  0.3565866 ,  0.52268562,  3.57179938])
+>>> import numpy as np
+>>> import matplotlib.pyplot as plt
+>>> import mwahpy.orbit_fitter as of
+
+>>> #parameters for the mock orbit
+>>> test_o_l = 90
+>>> test_o_b = 20
+>>> test_o_d = 25
+>>> test_o_vx = 150
+>>> test_o_vy = -200
+>>> test_o_vz = 100
+
+>>> #sample the mock orbit
+>>> ts = np.linspace(0, 0.25, 1000)*u.Gyr
+>>> sample = np.array([100, 250, 400, 500, 600, 750, 850])
+>>> o = of.make_orbit([test_o_l, test_o_b, test_o_d, test_o_vx, test_o_vy,
+ test_o_vz])
+
+>>> l = np.take(o.ll(ts), sample)
+>>> b = np.take(o.bb(ts), sample)
+>>> d = np.take(o.dist(ts), sample)
+
+>>> plt.scatter(l, b, s=5) #plot the mock sky position data
+>>> plt.scatter(o.ll(ts), o.bb(ts), s=1)
+>>> plt.show()
+
+>>> plt.scatter(l, d, s=5) #plot the mock position/dist data
+>>> plt.scatter(o.ll(ts), o.dist(ts), s=1)
+>>> plt.show()
+
+>>> print('Goodness-of-Fit of actual values:')
+>>> print(chi_squared([test_o_l, test_o_b, test_o_d, test_o_vx, test_o_vy,
+ test_o_vz], data=test_orbit_data))
+
+>>> params, x2 = of.fit_orbit(l, b, b_err, d, d_err) #the orbit fitting
+
+>>> of.plot_orbit_gal(l, b, d, params) #plots of the orbit fit
+>>> of.plot_orbit_icrs(l, b, d, params)
+

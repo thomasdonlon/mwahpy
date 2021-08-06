@@ -43,6 +43,8 @@ mwahpy/__pycache__/mwahpy_glob.cpython-36.pyc
 mwahpy/__pycache__/mwahpy_global.cpython-35.pyc
 mwahpy/__pycache__/nbody.cpython-36.pyc
 mwahpy/__pycache__/orbit_fitting.cpython-36.pyc
+mwahpy/__pycache__/orbit_fitting_gc.cpython-36.pyc
+mwahpy/__pycache__/orbit_fitting_gc_new.cpython-36.pyc
 mwahpy/__pycache__/output_handler.cpython-35.pyc
 mwahpy/__pycache__/output_handler.cpython-36.pyc
 mwahpy/__pycache__/plot.cpython-36.pyc

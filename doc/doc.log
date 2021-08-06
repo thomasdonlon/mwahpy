@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2020.4.11)  20 APR 2021 10:31
+This is pdfTeX, Version 3.14159265-2.6-1.40.18 (TeX Live 2017/Debian) (preloaded format=pdflatex 2020.4.11)  6 AUG 2021 17:14
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1242,69 +1242,72 @@ Underfull \hbox (badness 10000) in paragraph at lines 307--308
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 321--322
+Package mdframed Info: Not enough space on this page on input line 323.
+ [9]
+Package mdframed Info: Not enough space on this page on input line 323.
+
+Underfull \hbox (badness 10000) in paragraph at lines 329--330
 
  []
 
-[9]
 \openout4 = `doc.listing'.
 
- (./doc.listing
+(./doc.listing
 Overfull \hbox (5.54744pt too wide) in paragraph at lines 2--3
 [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][] 
  []
 
 )
-Underfull \hbox (badness 10000) in paragraph at lines 338--339
-
- []
-
-\openout4 = `doc.listing'.
-
-(./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 351--352
+Underfull \hbox (badness 10000) in paragraph at lines 346--347
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing) [10]
-Underfull \hbox (badness 10000) in paragraph at lines 361--362
+Underfull \hbox (badness 10000) in paragraph at lines 359--360
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 374--375
+Underfull \hbox (badness 10000) in paragraph at lines 369--370
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 389--390
+Underfull \hbox (badness 10000) in paragraph at lines 382--383
+
+ []
+
+\openout4 = `doc.listing'.
+
+(./doc.listing)
+Underfull \hbox (badness 10000) in paragraph at lines 397--398
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing) [11]
-Underfull \hbox (badness 10000) in paragraph at lines 416--417
+Underfull \hbox (badness 10000) in paragraph at lines 424--425
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Overfull \hbox (24.6621pt too wide) in paragraph at lines 427--428
+Overfull \hbox (24.6621pt too wide) in paragraph at lines 435--436
 []\OT1/cmr/m/n/10 Finally, if you would like to add two [][]\OT1/zi4/m/it/10 Ti
 mestep []\OT1/cmr/m/n/10 in-stances to-gether, use the [][]\OT1/zi4/m/it/10 app
 end_timestep() []\OT1/cmr/m/n/10 or [][]\OT1/zi4/m/it/10 append_point()
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 427--428
+Underfull \hbox (badness 10000) in paragraph at lines 435--436
 
  []
 
@@ -1314,7 +1317,7 @@ Underfull \hbox (badness 10000) in paragraph at lines 427--428
 \openout4 = `doc.listing'.
 
  (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 475--476
+Underfull \hbox (badness 10000) in paragraph at lines 483--484
 
  []
 
@@ -1322,28 +1325,28 @@ Underfull \hbox (badness 10000) in paragraph at lines 475--476
 \openout4 = `doc.listing'.
 
  (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 482--483
+Underfull \hbox (badness 10000) in paragraph at lines 490--491
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 497--498
+Underfull \hbox (badness 10000) in paragraph at lines 505--506
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 506--507
+Underfull \hbox (badness 10000) in paragraph at lines 514--515
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 518--519
+Underfull \hbox (badness 10000) in paragraph at lines 526--527
 
  []
 
@@ -1351,88 +1354,107 @@ Underfull \hbox (badness 10000) in paragraph at lines 518--519
 \openout4 = `doc.listing'.
 
  (./doc.listing)
-Underfull \hbox (badness 10000) in paragraph at lines 533--534
+Underfull \hbox (badness 10000) in paragraph at lines 541--542
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing) [15]
-Underfull \hbox (badness 10000) in paragraph at lines 571--572
+Underfull \hbox (badness 10000) in paragraph at lines 579--580
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing) [16]
-Underfull \hbox (badness 10000) in paragraph at lines 583--584
+Underfull \hbox (badness 10000) in paragraph at lines 591--592
 
  []
 
 \openout4 = `doc.listing'.
 
 (./doc.listing) [17] [18]
-Overfull \hbox (2.27293pt too wide) in paragraph at lines 682--683
+\openout4 = `doc.listing'.
+
+ (./doc.listing
+Overfull \hbox (5.54744pt too wide) in paragraph at lines 16--17
+[][][][][][][][][][][][][][][][][][][][][][][][][][] 
+ []
+
+
+Overfull \hbox (5.54744pt too wide) in paragraph at lines 32--33
+[][][][][][][][][][][][][][][][][][][][][][] 
+ []
+
+) [19] [20] [21]
+Overfull \hbox (2.27293pt too wide) in paragraph at lines 794--795
 []\OT1/cmr/m/n/10 Adapted from $\OT1/zi4/m/it/10 https : / / stackoverflow . co
 m / questions / 6169217 / replace-[]console-[]output-[]in-[]python$\OT1/cmr/m/n
 /10 .
  []
 
-[19] [20] [21] [22] [23] [24] [25] [26]
-Overfull \hbox (30.21434pt too wide) in paragraph at lines 1204--1205
+[22] [23] [24] [25] [26] [27] [28] [29] [30]
+Overfull \hbox (30.21434pt too wide) in paragraph at lines 1368--1369
 [][][]\OT1/zi4/m/it/10 mwahpy.coords.get_uvw_errors(ra, dec, dist, rv, pmra, pm
 de, err_pmra, err_pmdec, err_rv, err_dist) 
  []
 
-[27]
-Overfull \hbox (7.81969pt too wide) in paragraph at lines 1302--1303
+[31]
+Overfull \hbox (7.81969pt too wide) in paragraph at lines 1466--1467
 []\OT1/cmr/m/n/10 Removes the so-lar re-flex mo-tion from the given proper mo-t
 ions. This as-sumes that [][]\OT1/zi4/m/it/10 pmra []\OT1/cmr/m/n/10 is [][]\OT
 1/zi4/m/it/10 pmra*cos(dec)[]\OT1/cmr/m/n/10 . 
  []
 
-[28] [29] [30] [31]
-Overfull \hbox (6.71774pt too wide) in paragraph at lines 1571--1572
+[32] [33] [34] [35]
+Overfull \hbox (6.88441pt too wide) in paragraph at lines 1737--1738
+[][][]\OT1/zi4/m/it/10 mwahpy.orbit_fitter_gc.fit_orbit(l, b, b_err, d, d_err, 
+vx=None, vy=None, vz=None, vgsr=None, 
+ []
+
+[36] [37]
+Overfull \hbox (6.71774pt too wide) in paragraph at lines 1883--1884
 [][][]\OT1/zi4/m/it/10 recenter []\OT1/cmr/m/n/10 (bool, op-tional: de-fault=Tr
 ue) : If [][]\OT1/zi4/m/it/10 True[]\OT1/cmr/m/n/10 , the data is re-cen-tered 
 (via [][]\OT1/zi4/m/it/10 Timestep.recenter()[]\OT1/cmr/m/n/10 )
  []
 
-[32]
-Overfull \hbox (3.52379pt too wide) in paragraph at lines 1671--1672
+[38]
+Overfull \hbox (3.52379pt too wide) in paragraph at lines 1983--1984
 [][][]\OT1/zi4/m/it/10 Timestep(id_val=[], x=[], y=[], z=[], vx = [], vy = [], 
 vz = [], mass=[], centerOfMass=[0, 0, 0], 
  []
 
-[33] [34] [35] [36]
-Overfull \hbox (35.29181pt too wide) in paragraph at lines 1906--1907
+[39] [40] [41] [42] [43]
+Overfull \hbox (35.29181pt too wide) in paragraph at lines 2218--2219
 \OT1/cmr/m/n/10 with [][]\OT1/zi4/m/it/10 numpy []\OT1/cmr/m/n/10 ar-rays. One 
 should al-ways try to use com-bi-na-tions of cuts and [][]\OT1/zi4/m/it/10 mwah
 py.timestep.append_timestep()
  []
 
-[37]
-Overfull \hbox (42.5408pt too wide) in paragraph at lines 1966--1967
+
+Overfull \hbox (42.5408pt too wide) in paragraph at lines 2278--2279
 []\OT1/cmr/m/n/10 Creates and op-tion-ally shows a 2D his-togram plot of the pa
 r-ti-cle data in the [][]\OT1/zi4/m/it/10 Timestep[]\OT1/cmr/m/n/10 . See [][]\
 OT1/zi4/m/it/10 mwahpy.plot.hist2d()
  []
 
-[38]
-Overfull \hbox (18.79181pt too wide) in paragraph at lines 2084--2085
+[44] [45]
+Overfull \hbox (18.79181pt too wide) in paragraph at lines 2396--2397
 []\OT1/cmr/m/n/10 Creates and op-tion-ally shows a scat-ter plot of the par-ti-
 cle data in the [][]\OT1/zi4/m/it/10 Timestep[]\OT1/cmr/m/n/10 . See [][]\OT1/z
 i4/m/it/10 mwahpy.plot.scatter()
  []
 
-[39]
-Overfull \hbox (6.45425pt too wide) in paragraph at lines 2124--2125
+
+Overfull \hbox (6.45425pt too wide) in paragraph at lines 2436--2437
 []\OT1/cmr/m/n/10 WARNING: Un-der some con-di-tions, Milky-Way@home can be-gin 
 in-dex-ing par-ti-cles in a Milky-Way@home
  []
 
-[40]
-Overfull \hbox (21.09988pt too wide) in paragraph at lines 2160--2161
+[46]
+Overfull \hbox (21.09988pt too wide) in paragraph at lines 2472--2473
 \OT1/cmr/m/n/10 mo-tion, a cut in line-of-sight ve-loc-ity, and a cut in dis-ta
 nce, you would write [][]\OT1/zi4/m/it/10 [\TS1/zi4/m/n/10 '\OT1/zi4/m/it/10 pm
 ra\TS1/zi4/m/n/10 '\OT1/zi4/m/it/10 , \TS1/zi4/m/n/10 '\OT1/zi4/m/it/10 vlos\TS
@@ -1440,19 +1462,19 @@ ra\TS1/zi4/m/n/10 '\OT1/zi4/m/it/10 , \TS1/zi4/m/n/10 '\OT1/zi4/m/it/10 vlos\TS
 /m/n/10 '\OT1/zi4/m/it/10 ][]\OT1/cmr/m/n/10 .
  []
 
-[41] [42] (./doc.aux)
+[47] [48] [49] (./doc.aux)
 
 LaTeX Font Warning: Some font shapes were not available, defaults substituted.
 
  ) 
 Here is how much of TeX's memory you used:
- 28856 strings out of 492982
- 601536 string characters out of 6134896
- 721760 words of memory out of 5000000
- 31943 multiletter control sequences out of 15000+600000
- 536069 words of font info for 42 fonts, out of 8000000 for 9000
+ 28895 strings out of 492982
+ 601986 string characters out of 6134896
+ 722760 words of memory out of 5000000
+ 31978 multiletter control sequences out of 15000+600000
+ 536688 words of font info for 44 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 63i,6n,101p,10486b,1368s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 63i,8n,101p,10486b,1368s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texlive/texmf-dist/fonts/enc/dvips/inconsolata/i4-ts1.enc}{/usr/s
 hare/texlive/texmf-dist/fonts/enc/dvips/inconsolata/i4-ot1-0.enc}{/usr/share/te
 xmf/fonts/enc/dvips/cm-super/cm-super-ts1.enc}</usr/share/texlive/texmf-dist/fo
@@ -1470,10 +1492,10 @@ sr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/sha
 re/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/share/texl
 ive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/share/texmf/font
 s/type1/public/cm-super/sfrm1000.pfb>
-Output written on doc.pdf (43 pages, 308471 bytes).
+Output written on doc.pdf (50 pages, 339041 bytes).
 PDF statistics:
- 249 PDF objects out of 1000 (max. 8388607)
- 163 compressed objects within 2 object streams
+ 271 PDF objects out of 1000 (max. 8388607)
+ 178 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
  157 words of extra memory for PDF output out of 10000 (max. 10000000)
 

@@ -98,14 +98,15 @@ MAJOR:
  - Expand plot capabilities
  - Finish refactoring coords.py
  - Finish unit testing of coordinate transformations
- - Refactor and polish orbit_fitting_gc.py
 
 MINOR:
 - Apparently there's a MW@h readout method with a different number of values or
   different values than normally used? Should probably support that.
 - Inverse (cut out within range) subset_circ() & subset_rect() options
+- Let subset_circ() and subset_rect() handle None as bounds
 - Implement better linear algebra to reduce the computation time of coords.get_rvpm()
 - Play around with turning off mwahpy_glob.verbose flag for some things to quiet unnecessary output
+- Add levels of verbosity, and make this changeable by running a command
 
 BUGS
 ========================================

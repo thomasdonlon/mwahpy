@@ -32,7 +32,7 @@
    \begin{center}
        \vspace*{5cm}
 
-       \huge\textbf{MilkyWay@home Python Package Documentation \\ (\textit{mwahpy} v1.3.5)}
+       \huge\textbf{MilkyWay@home Python Package Documentation \\ (\textit{mwahpy} v1.4.0)}
 
        \vspace{0.5cm}
         
@@ -312,7 +312,15 @@ Writing Timestep as N-body input to /path/to/my/file.in...
 done
 \end{codelisting}
 
-Note that a MilkyWay@home \verb!.in! file will only include the data about the 8 provided values, and not any of the other supported values. This is due to the format that MilkyWay@home requires readable files to be in. Any file that you generate with \verb!make_nbody_input! is immediately ready to be used as the manual body input for a MilkyWay@home $N$-body simulation. 
+Note that a MilkyWay@home \verb!.in! file will only include the data about the 8 provided values, and not any of the other supported values. This is due to the format that MilkyWay@home requires readable files to be in. Any file that you generate with \verb!make_nbody_input! is immediately ready to be used as the manual body input for a MilkyWay@home $N$-body simulation.
+
+\begin{warning}
+The MilkyWay@home N-body client has a bug that will cause crashes if it tries to read in a \verb!.in! file that includes any baryonic (\verb!typ == 0!) particles. If you plan on using a \verb!.in! file as a manual body file for the N-body client, you should run 
+
+\verb!t[typ] = np.array([1]*len(t))!
+
+before writing that timestep out to a \verb!.in! file. This will not change the physics of the simulation, although it is annoying for tracking certain types of particles. 
+\end{warning} 
 
 If a user wishes to suspend a \verb!Timestep! object for later use, I recommend the \verb!pickle! package (\url{https://docs.python.org/3/library/pickle.html}). The \verb!pickle! package allows for object serialization and saving out/reading in arbitrary objects as binary code.
 
@@ -602,17 +610,121 @@ This section will be added at a later date. The plotting capabilities of \mwahpy
 
 \section{Auxiliary Subpackages}
 
-The \mwahpy package comes with a few auxiliary subpackages with additional content that the typical user might find useful. While the \verb!mwahpy.orbit_fitting! and the \verb!mwahpy.orbit_fitting_gc! subpackages have been used in academic contexts, the packages have not yet been refactored for general use. After the packages have been made consistent with the rest of the \mwahpy code standards, then documentation for those subpackages will be released. 
+The \mwahpy package comes with a few auxiliary subpackages with additional content that the typical user might find useful. The \verb!mwahpy.orbit_fitter! and the \verb!mwahpy.orbit_fitter_gc! subpackages have been used in academic contexts, and are refactored for general use. The \verb!mwahpy.coords! subpackage contains a number of useful coordinate transforms that one might find handy when working with MilkyWay@home N-body data.
 
 \subsection{Coordinate Transformations}
 
 The coordinate transformation package \verb!mwahpy.coords! is made up of many first and second-order transformations for position, velocity, and other values. A complete list of the routines and functions provided in this package is given in Section \ref{sec:doc_coords}. 
 
-This subpackage contains most of the coordinate transformations that a typical person will need to do Galactic astronomy, excluding some common transformations (such as R.A., Dec. to $l$, $b$) that are implemented in the \verb!astropy! python package. 
+This subpackage contains most of the coordinate transformations that a typical person will need to do Galactic astronomy, excluding some common transformations (such as R.A., Dec. to $l$, $b$) that are implemented in the \verb!astropy! python package, among others. 
 
 \subsection{Orbit Fitting}
 
-The subpackages \verb!mwahpy.orbit_fitting! and \verb!mwahpy.orbit_fitting_gc! are both still under development. Once the code has been refactored and brought to an acceptable level of quality, the documentation for these subpackages will be provided. 
+At many times in studies of Galactic dynamics, given a collection of points in phase space, one may want to fit an orbit to them. Luckily, \mwahpy comes with two different orbit fitting routines to do just that. The first, \verb!mwahpy.orbit_fitter!, fits an orbit in a heliocentric frame, while the second, \verb!mwahpy.orbit_fitter_gc!, fits an orbit in a ``naturalized'' Galactocentric frame. They both have their uses: for many simple orbits \verb!mwahpy.orbit_fitter! will achieve a better goodness-of-fit in a shorter amount of time compared to \verb!mwahpy.orbit_fitter_gc!, but for complicated orbits the opposite is often true. 
+
+The math behind these routines was used in Donlon et al. (2019) to fit orbits to structures, and is discussed therein. For more information, I also refer the reader to Willett et al. (2009). 
+
+Remember -- orbit fitting is as much of an art as it is a science. Tweaking your ``errors'', timesteps, evolve times, and other parameters may all be necessary for you to obtain good orbit fits. Additionally, since differential evolution is a non-deterministic algorithm, it may be desirable to run several orbit fits of the same observed data in order to get a variety of fit orbits that you can choose your favorite from. This will also provide a good idea of the limitations of the orbit fitting algorithm and the errors in its fits for your data.
+
+\subsubsection{\textit{orbit\_fitter}}
+
+Given some observed data for a group of stars, one can calculate a naive orbit by simply taking the average of their positions and velocities. However, if these stars are at substantially different positions in their orbits (say, for example, in a stellar stream) then the velcoities of these stars also will vary as a function of position along the stream, and the average velocity is no longer expected to give a good estimate for the orbit of the stream at any given position. 
+
+In order to fit an orbit to this collection of stars, one can imagine generating a model orbit with your best guess of parameters. This orbit will differ from the actual positions and velocities of the star data by some measurable amount. In \mwahpy we use a goodness-of-fit ($GoF$) adapted from Willett et al. (2009) to compute the difference between the model orbit and the observed data, \[
+GoF = \sum_{i=1}^n \sum_{j=1}^m \left( \frac{\left( \theta_{i,j,model} - \theta_{i,j,obs} \right)}{\sigma_{i,j,obs}} \right)^2,
+\] where $i$ spans the $n$ number of data dimensions in the observed data ($l, b, d, v_x, v_y, v_z, v_{GSR}$), $j$ spans the $m$ number of datapoints (stars) observed, $\theta_{i,j}$ corresponds to the $i$th dimension of the $j$th observed datapoint, and $\sigma_{i,j}$ corresponds to the error measured in $\theta_{i,j}$. For example, $\theta_{d,7,model}$ corresponds to the heliocentric distance data in the model at the location of the observed 7th star. This approach generalizes the $GoF$ so that the orbit fitting routine can still measure a $GoF$ even if some or all of the velocity dimensions of the observed data are unavailable. 
+
+This $GoF$ is then minimized using the \verb!scipy.optimize.differential_evolution()! routine. Without going too deep into the math behind this algorithm, here are the basics: a population of possible orbits is generated, and their $GoF$s are measured. New ``child'' possible orbits are generated by randomly crossing the current population of possible orbits, and then their $GoF$s are evaluated. If any of the children's $GoF$s are improvements over their parents, then those improved child possible orbits are inserted into the population. The process is repeated until either a tolerance bound is reached or the maximum number of iterations has been achieved. The best orbit fit is the possible orbit model with the lowest $GoF$ value at the end of this process, which is then reported to the user as the optimized orbit. 
+
+This algorithm uses Galactic longitude as its orbital position parameter, which is why it does not ask for error in $l$, which is assumed to be zero.  If $l$ does not work well as your orbital parameter (for example, if your stars are all located in a tidal stream that is perpendicular to the Galactic plane from our line of sight, or is oriented radially away or towards our line of sight) then the \verb!orbit_fitter_gc! routine will probably do a better job fitting your orbit. 
+
+The $GoF$ also includes a cost based on orbital position and timestep resolution. Each degree separating an orbit in galactic longitude and a data point adds 1000 to the $GoF$. This is to prevent orbit fits that do not actually span the data, or that pass the data with poor timestep resolution. 
+
+Below is an example of an orbit fit using points generated from an actual orbit: 
+
+\begin{codelisting}{Fitting a Mock Orbit}
+>>> import numpy as np 
+>>> import matplotlib.pyplot as plt
+>>> import mwahpy.orbit_fitter as of
+
+>>> #parameters for the mock orbit
+>>> test_o_l = 90
+>>> test_o_b = 20
+>>> test_o_d = 25
+>>> test_o_vx = 150
+>>> test_o_vy = -200
+>>> test_o_vz = 100
+
+>>> #sample the mock orbit
+>>> ts = np.linspace(0, 0.25, 1000)*u.Gyr
+>>> sample = np.array([100, 250, 400, 500, 600, 750, 850])
+>>> o = of.make_orbit([test_o_l, test_o_b, test_o_d, test_o_vx, test_o_vy,
+ test_o_vz])
+ 
+>>> l = np.take(o.ll(ts), sample)
+>>> b = np.take(o.bb(ts), sample)
+>>> d = np.take(o.dist(ts), sample)
+   
+>>> plt.scatter(l, b, s=5) #plot the mock sky position data
+>>> plt.scatter(o.ll(ts), o.bb(ts), s=1)
+>>> plt.show()
+
+>>> plt.scatter(l, d, s=5) #plot the mock position/dist data
+>>> plt.scatter(o.ll(ts), o.dist(ts), s=1)
+>>> plt.show()
+    
+>>> print('Goodness-of-Fit of actual values:')
+>>> print(chi_squared([test_o_l, test_o_b, test_o_d, test_o_vx, test_o_vy,
+ test_o_vz], data=test_orbit_data))
+
+>>> params, x2 = of.fit_orbit(l, b, b_err, d, d_err) #the orbit fitting
+
+>>> of.plot_orbit_gal(l, b, d, params) #plots of the orbit fit
+>>> of.plot_orbit_icrs(l, b, d, params)
+        
+\end{codelisting}
+
+If you aren't interested in typing all this code in and running it yourself, that's fine. It's implemented as \verb!mwahpy.orbit_fitter.test()!, and computes a pretty good orbit fit in roughly 5 min on my machines. Depending on the number of cores available on your machine, this may take longer or shorter for you. 
+
+\subsubsection{\textit{orbit\_fitter\_gc}}
+
+Theoretically, all orbiting structures should lie along an orbital plane that passes through the Galactic center. This means that if one were to look out at something like a tidal stream from the Galactic center, that tidal stream would approximately trace out a great circle on the sky. 
+
+This orbit fitter takes advantage of that fact by performing the same process as \verb!mwahpy.orbit_fitter!, except instead of using Galactic longitude as the orbital position parameter (and therefore a heliocentric frame), this routine attempts to compute the orbital plane of the data, and then uses the longitudinal angle within that plane as its orbital parameter. This means that we are fitting the orbits in a Galactocentric frame, which is a more ``natural'' choice of coordinates for structures such as tidal streams. 
+
+The plane fitting is done via ordinary least squares (OLS, see the appendix of Newby et al. 2013); however, unlike in that work, we constrain our plane to pass through the Galactic center. This is done by finding an approximate solution to the system \[
+\mathbf{A} \vec{n} = \vec{b},
+\] where, in a slight abuse of notation, $\mathbf{A} = [ \;\vec{x}, \vec{y}\; ]^T$, and $\vec{b} = \vec{z}^T$. This approximate solution is found via the pseudo-inverse of $\mathbf{A}$, \[
+\vec{n} \approx \left( \left(\mathbf{A}^T \mathbf{A}\right)^{-1} \mathbf{A} \right) \vec{b} = \langle\;\; A,\;\; B, \;\; C \;\; \rangle.
+\] This solution minimizes the sum of the squares of distances between the data and a plane with equation \[
+A\hat{x} + B\hat{y} + C\hat{z} = 0,
+\].
+
+The OLS plane has a unit normal vector $\hat{n}$, \[
+\hat{n} = \frac{\langle \;\; A, \;\; B, \;\; C \;\; \rangle}{||\vec{n}||}
+\] which determines the direction of the new $Z'$ axis. We also choose an orthogonal ``point'' unit vector that is constrained to lie in the $X-Z$ plane, $\hat{p}$. This vector is defined as \[
+\hat{p} = \langle \;\; \left( (\hat{n}_x / \hat{n}_z) + 1 \right)^{-1/2},\;\; 0,\;\; -\hat{p}_x \hat{n}_x / \hat{n}_z \;\; \rangle,
+\] and corresponds to the direction of the new $X'$ axis. Finally we define a third unit vector $\hat{o} =  \hat{n} \times \hat{p}$, which corresponds to the direction of the $Y'$-axis. Then, the data is rotated into a new coordinate frame where the X'-Y' plane lies coincident with the OLS plane, and the Z'-axis is aligned along the normal vector to the OLS plane. This can be done easily through a change-of-basis matrix, which is how it is implemented in \mwahpy: \[
+\left[\begin{array}{r}
+x' \\
+y' \\
+z'
+\end{array}\right] = \left[\begin{array}{rrr}
+\hat{p}_x & \hat{p}_y & \hat{p}_z \\
+\hat{o}_x & \hat{o}_y & \hat{o}_z \\
+\hat{n}_x & \hat{n}_y & \hat{n}_z \\
+\end{array}\right] \left[\begin{array}{r}
+x \\
+y \\
+z
+\end{array}\right].
+\] Then, the new longitude and latitude for each star are defined as \[
+\Lambda = \arctan (y'/x')
+\]\[
+\beta = \arcsin (z'/r),
+\] where $r$ is the spherical Galactocentric radius of that star.
+
+Then, the same procedure as in the previous section is used to optimize an orbit to the data, except the values of $(\Lambda, \beta)$ are used instead of $(l, b)$. Similar to the above section, \verb!mwahpy.orbit_fitter_gc! also has a \verb!test()! routine that you can use to ensure that the orbit fitter works. 
 
 \newpage
 
@@ -849,6 +961,30 @@ Takes in Galactocentric Cartesian coordinates, the normal vector to a plane, and
 
 
 
+\item \verb!mwahpy.coords.cart_to_lonlat(x, y, z)!
+
+Takes in arbitrary Cartesian coordinates and returns longitude and latitude coordinates for that Cartesian coordinate system. The longitude (Lambda) increases counter-clockwise as viewed looking downwards on the plane from along the positive Z-axis, and the latitude (Beta) increases in the direction of the Z-axis and is zero in the plane.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!x! (float or array-like floats) : The Cartesian $X$ coordinate(s) of the data.
+
+\item \verb!y! (float or array-like floats) : The Cartesian $Y$ coordinate(s) of the data.
+
+\item \verb!z! (float or array-like floats) : The Cartesian $Z$ coordinate(s) of the data.
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize}
+
+\item \verb!Lam! (float or array-like floats) : The longitude coordinates of the points.
+
+\item \verb!Bet! (float or array-like floats) : The latitude coordinates of the points.
+
+\end{itemize}
+
+
+
 \item \verb!mwahpy.coords.cart_to_plane(x, y, z, normal, point)!
 
 Takes in Galactocentric Cartesian coordinates, the normal vector to a plane, and a point to suggest the new X-axis and returns shifted Cartesian coordinates with the X-Y plane orthogonal to the normal vector and the Z-axis along the normal vector. 
@@ -1039,7 +1175,35 @@ Takes in Galactic coordinates and returns Galactocentric cylindrical coordinates
 
 \item \verb!mwahpy.coords.gal_to_lambet(l, b, r, normal, point)!
 
-Takes in Galactic coordinates, the normal vector to a plane, and a point to suggest the new X-axis and returns longitude and latitude coordinates with the X-Y plane orthogonal to the normal vector and the Z-axis along the normal vector. The longitude (Lambda) increases counter-clockwise as viewed looking on the plane from along the positive Z-axis, and the latitude (Beta) increases in the direction of the normal vector and is zero in the plane.
+Takes in Galactic coordinates, the normal vector to a plane, and a point to suggest the new X-axis and returns longitude and latitude coordinates with the X-Y plane orthogonal to the normal vector and the Z-axis along the normal vector. The longitude (Lambda) increases counter-clockwise as viewed looking on the plane from along the positive Z-axis, and the latitude (Beta) increases in the direction of the normal vector and is zero in the plane. WARNING: This is heliocentric. 
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!l! (float or array-like floats) : The Galactic longitude coordinate(s) of the data, in degrees.
+
+\item \verb!b! (float or array-like floats) : The Galactic latitude coordinate(s) of the data, in degrees.
+
+\item \verb!r! (float or array-like floats) : The heliocentric distance(s) of the data.
+
+\item \verb!normal! (array-like of floats) : The three-vector Cartesian coordinates for the normal vector of the plane.
+
+\item \verb!point! (array-like of floats) : The three-vector Cartesian coordinates for the vector that suggests the new X-axis of the plane. Does not need to be orthogonal to the normal vector.
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize}
+
+\item \verb!Lam! (float or array-like floats) : The longitude coordinates of the points in the new planar coordinates.
+
+\item \verb!Bet! (float or array-like floats) : The latitude coordinates of the points in the new planar coordinates.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.coords.gal_to_lambet_galcentric(l, b, r, normal, point)!
+
+Takes in Galactic coordinates, the normal vector to a plane, and a point to suggest the new X-axis and returns longitude and latitude coordinates with the X-Y plane orthogonal to the normal vector and the Z-axis along the normal vector. This explicitly transforms $l,b,r$ into Galactocentric Cartesian coordinates before transforming it into longitude and latitude, which \verb!coords.gal_to_lambet! does not do. The longitude (Lambda) increases counter-clockwise as viewed looking on the plane from along the positive Z-axis, and the latitude (Beta) increases in the direction of the normal vector and is zero in the plane.
 
 \textit{Parameters}: \begin{itemize}
 
@@ -1484,6 +1648,154 @@ Takes in a longitude or array-like collection of longitudes and returns it in th
 
 \end{itemize}
 
+
+
+\subsection{\textit{orbit\_fitter}}
+
+\begin{itemize}
+
+\item \verb!mwahpy.orbit_fitter.fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None,!\\ \verb!vx_err=None, vy_err=None, vz_err=None, vgsr_err=None, max_it=100,!\\ \verb!bounds=[(0, 360), (-90, 90), (0, 100), (-500, 500), (-500, 500), (-500, 500)], t_len=None,!\\ \verb!**kwargs):!
+
+Given observed particle data, will fit an orbit to that data by minimizing a chi-squared-like sum of squares parameter between the orbit and the data. Minimization is done using the \\ \verb!scipy.optimize.differential_evolution()! routine.  Returns the best orbit fit parameters (a list of galactocentric longitude and latitude, heliocentric distance, and Galactocentric Cartesian velocities). Since differential evolution is not deterministic, a better idea of the best orbit fit may be obtained by running this routine several times on the dame data. Angles should be in degrees, distances in kpc, and velocities in km/s. The output is in these units. 
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!l! (array-like of floats) : The Galactic longitudes of the observed data. 
+
+\item \verb!b! (array-like of floats) : The Galactic latitudes of the observed data. 
+
+\item \verb!b_err! (array-like of floats) : The errors in Galactic latitudes of the observed data. 
+
+\item \verb!d! (array-like of floats) : The heliocentric distances of the observed data. 
+
+\item \verb!d_err! (array-like of floats) : The errors in heliocentric distances of the observed data. 
+
+\item \verb!vx! (optional, array-like of floats) : The galactocentric $X$ velocities of the observed data. If not \verb!None!, it is used for fitting. 
+
+\item \verb!vy! (optional, array-like of floats) : The galactocentric $Y$ velocities of the observed data. If not \verb!None!, it is used for fitting. 
+
+\item \verb!vz! (optional, array-like of floats) : The galactocentric $Z$ velocities of the observed data. If not \verb!None!, it is used for fitting. 
+
+\item \verb!vgsr! (optional, array-like of floats) : The galactic standard of rest line-of-sight velocities of the observed data. If not \verb!None!, it is used for fitting. 
+
+\item \verb!vx_err! (optional, array-like of floats) : The errors in galactocentric $X$ velocity of the observed data. If not \verb!None!, it is used for fitting. Must be included if \verb!vx! is included. 
+
+\item \verb!vy_err! (optional, array-like of floats) : The errors in galactocentric $Y$ velocity of the observed data. If not \verb!None!, it is used for fitting. Must be included if \verb!vy! is included. 
+
+\item \verb!vz! (optional, array-like of floats) : The errors in galactocentric $Z$ velocity of the observed data. If not \verb!None!, it is used for fitting. Must be included if \verb!vz! is included. 
+
+\item \verb!vgsr_err! (optional, array-like of floats) : The errors in galactic standard of rest line-of-sight velocity of the observed data. If not \verb!None!, it is used for fitting. Must be included if \verb!vgsr! is included.
+
+\item \verb!max_it! (optional, int) : The maximum number of iterations that the differential evolution algorithm will run. 
+
+\item \verb!bounds! (optional, list of tuples of floats) : The bounds for the parameters (\verb!l, b, d, vx, vy, vz)! of the data. 
+
+\item \verb!t_len! (optional, float) : The length that the test orbit will get evolved forwards and backwards in time, in Gyr. 
+
+\item \verb!**kwargs! (optional, keyword arguments) : Any additional keyword arguments will get passed to the \verb!scipy.optimize.differential_evolution! routine. 
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize} 
+
+\item \verb!params! (list of floats) : The [\verb!l, b, d, vx, vy, vz!] parameters for the calculated best orbit fit to the data.
+
+\item \verb!x2! (float) : The goodness-of-fit of the calculated best orbit fit to the data.
+
+\end{itemize}
+
+
+
+\item \verb!mwahpy.orbit_fitter.make_orbit(params, int_ts=None)!
+
+Makes a corrected galpy orbit (vx is negated). Useful if one doesn't want to remember all the syntax for setting up an orbit with the proper right-handed velocities and the solar motion corrections to place the orbit in a Galactocentric frame.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!params! (array-like of floats) : An array-like containing exactly six values: \verb!l, b, d, vx, vy, vz!. These are the phase space parameters for the orbit in a right-handed heliocentric coordinate system, and should be in units of \verb![deg, deg, kpc, km/s, km/s, km/s]!. 
+
+\item \verb!int_ts! (array-like of quantities) : The list of times that the orbit should be integrated forwards in time. Need to be quantities (preferably Gyr). 
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize} 
+
+\item \verb!o! (\verb!galpy.orbit.Orbit! object) : The orbit (integrated for 0.5 Gyr forwards in time) 
+
+\end{itemize}
+
+
+
+\end{itemize}
+
+
+
+\subsection{\textit{orbit\_fitter\_gc}}
+
+\begin{itemize}
+
+\item \verb!mwahpy.orbit_fitter_gc.fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None,!\\ \verb!vx_err=None, vy_err=None, vz_err=None, vgsr_err=None, max_it=100,!\\ \verb!bounds=[(0, 360), (-90, 90), (0, 100), (-500, 500), (-500, 500), (-500, 500)], t_len=None,!\\ \verb!**kwargs):!
+
+Given observed particle data, will fit an orbit to that data by minimizing a chi-squared-like sum of squares parameter between the orbit and the data. Minimization is done using the \\ \verb!scipy.optimize.differential_evolution()! routine.  Returns the best orbit fit parameters (a list of galactocentric longitude and latitude, heliocentric distance, and Galactocentric Cartesian velocities). Since differential evolution is not deterministic, a better idea of the best orbit fit may be obtained by running this routine several times on the dame data. Angles should be in degrees, distances in kpc, and velocities in km/s. The output is in these units. 
+
+The difference between this routine and the routine from \verb!mwahpy.orbit_fitter! of the same name is that this routine places the data in a Galactocentric frame, computes a best ordinary least squares fit of a plane to the data (to approximate the orbital plane of the data in the Galaxy), and then fits using the new longitude and latitude of that rotated planar coordinate system.
+
+\textit{Parameters}: \begin{itemize}
+
+\item \verb!l! (array-like of floats) : The Galactic longitudes of the observed data. 
+
+\item \verb!b! (array-like of floats) : The Galactic latitudes of the observed data. 
+
+\item \verb!b_err! (array-like of floats) : The errors in Galactic latitudes of the observed data. 
+
+\item \verb!d! (array-like of floats) : The heliocentric distances of the observed data. 
+
+\item \verb!d_err! (array-like of floats) : The errors in heliocentric distances of the observed data. 
+
+\item \verb!vx! (optional, array-like of floats) : The galactocentric $X$ velocities of the observed data. If not \verb!None!, it is used for fitting. 
+
+\item \verb!vy! (optional, array-like of floats) : The galactocentric $Y$ velocities of the observed data. If not \verb!None!, it is used for fitting. 
+
+\item \verb!vz! (optional, array-like of floats) : The galactocentric $Z$ velocities of the observed data. If not \verb!None!, it is used for fitting. 
+
+\item \verb!vgsr! (optional, array-like of floats) : The galactic standard of rest line-of-sight velocities of the observed data. If not \verb!None!, it is used for fitting. 
+
+\item \verb!vx_err! (optional, array-like of floats) : The errors in galactocentric $X$ velocity of the observed data. If not \verb!None!, it is used for fitting. Must be included if \verb!vx! is included. 
+
+\item \verb!vy_err! (optional, array-like of floats) : The errors in galactocentric $Y$ velocity of the observed data. If not \verb!None!, it is used for fitting. Must be included if \verb!vy! is included. 
+
+\item \verb!vz! (optional, array-like of floats) : The errors in galactocentric $Z$ velocity of the observed data. If not \verb!None!, it is used for fitting. Must be included if \verb!vz! is included. 
+
+\item \verb!vgsr_err! (optional, array-like of floats) : The errors in galactic standard of rest line-of-sight velocity of the observed data. If not \verb!None!, it is used for fitting. Must be included if \verb!vgsr! is included.
+
+\item \verb!max_it! (optional, int) : The maximum number of iterations that the differential evolution algorithm will run. 
+
+\item \verb!bounds! (optional, list of tuples of floats) : The bounds for the parameters (\verb!l, b, d, vx, vy, vz)! of the data. 
+
+\item \verb!t_len! (optional, float) : The length that the test orbit will get evolved forwards and backwards in time, in Gyr. 
+
+\item \verb!**kwargs! (optional, keyword arguments) : Any additional keyword arguments will get passed to the \verb!scipy.optimize.differential_evolution! routine. 
+
+\end{itemize}
+
+\textit{Returns}: \begin{itemize} 
+
+\item \verb!params! (list of floats) : The [\verb!l, b, d, vx, vy, vz!] parameters for the calculated best orbit fit to the data.
+
+\item \verb!normal! (3-tuple of floats) : The components of the normal vector to the best-fit plane in Galactocentric Cartesian coordinates. 
+
+\item \verb!point! (3-tuple of floats) : The components of the point vector to the best-fit plane in Galactocentric Cartesian coordinates  (Appriximately the new origin in the rotated frame). 
+
+\item \verb!x2! (float) : The goodness-of-fit of the calculated best orbit fit to the data.
+
+\end{itemize}
+
+
+
+\end{itemize}
+
+
+
 \subsection{\textit{nbody}}
 
 These functions and methods are all related to the \verb!Nbody! class, and are located in the \verb!mwahpy/nbody.py! file. The \verb!Nbody! class is meant to be used as a collection of \verb!Timestep! instances, as in reading an entire folder of MilkyWay@home .out files that are the data for different times in the same simulation. 
@@ -1524,11 +1836,11 @@ Replaces each key in the \verb!Nbody.ts! dictionary with a value multiplied by \
 
 \end{itemize}
 
-\subsection{\textit{orbit\_fitting}}
+\subsection{\textit{orbit\_fitter}}
 
 The subpackage \verb!mwahpy.orbit_fitting! is still in development. Once the code has been refactored and brought to an acceptable level of quality, the documentation for this subpackage will be provided. 
 
-\subsection{\textit{orbit\_fitting\_gc}}
+\subsection{\textit{orbit\_fitter\_gc}}
 
 The subpackage \verb!mwahpy.orbit_fitting_gc! is still in development. Once the code has been refactored and brought to an acceptable level of quality, the documentation for this subpackage will be provided.  
 

@@ -515,25 +515,23 @@ def get_plane_normal(params):
 #Newby 2013 et al, appendix
 def cart_to_plane(x, y, z, normal, point):
 
-    #ensure that normal and point are normalized
-    len_normal = (normal[0]**2 + normal[1]**2 + normal[2]**2)**0.5
-    normal = (normal[0]/len_normal, normal[1]/len_normal, normal[2]/len_normal)
-
-    len_point = (point[0]**2 + point[1]**2 + point[2]**2)**0.5
-    point = (point[0]/len_point, point[1]/len_point, point[2]/len_point)
-
-    #define new axes along the plane
-    z_plane = np.array(normal)
-    y_plane = np.cross(z_plane, np.array(point))
-    y_plane = y_plane / (y_plane[0]**2 + y_plane[1]**2 + y_plane[2]**2)**0.5 #normalize y_plane vector to prevent skewing
-    x_plane = np.cross(y_plane, z_plane)
-    x_plane = x_plane / (x_plane[0]**2 + x_plane[1]**2 + x_plane[2]**2)**0.5 #normalize x_plane vector to prevent skewing
-
-    #get new x, y, z through change of basis
+    #construct a 3D frame in the current long/lat frame
     xyz = np.array([x, y, z])
-    xyz = np.matmul(np.array([x_plane, y_plane, z_plane]), xyz)
 
-    return xyz[0], xyz[1], xyz[2]
+    #build the change of basis matrix
+    r_pole = np.array(list(normal))
+    r_origin = np.array(list(point))
+    r_newy = np.cross(r_pole, r_origin)
+
+    cob_mat = np.array([r_origin, r_newy, r_pole])
+
+    #compute the new values
+    xyz = np.matmul(cob_mat, xyz)
+    x = xyz[0]
+    y = xyz[1]
+    z = xyz[2]
+
+    return x, y, z
 
 #gal2plane: np.array(floats), np.array(floats), np.array(floats), (float, float, float), (float, float, float) --> np.array(floats), np.array(floats), np.array(floats)
 #takes in galactic coordinates for a star(s) and returns their x,y,z coordinates with respect to a rotated plane with the normal vector provided
@@ -547,10 +545,11 @@ def gal_to_plane(l, b, d, normal, point):
 
 #-------------------------------------------------------------------------------
 
-def gal_to_lambet(l, b, d, normal, point):
+#kind of a helper function for the gal_to_lambet and cart_to_lambet functions,
+#although it just finds longitude and latitude of any cartesian system
+def cart_to_lonlat(x, y, z):
+    Lam = np.arctan2(y, x)*180/np.pi #convert to degrees
 
-    x_prime, y_prime, z_prime = gal_to_plane(l, b, d, normal, point)
-    Lam = np.arctan2(y_prime, x_prime)*180/np.pi #convert to degrees
     #correct Lam to be between 0 and 360 instead of -180 to 180
     i = 0
     while i < len(Lam):
@@ -558,7 +557,27 @@ def gal_to_lambet(l, b, d, normal, point):
             Lam[i] += 360
         i += 1
 
-    Bet = np.arcsin(z_prime/(x_prime**2 + y_prime**2 + z_prime**2)**0.5)*180/np.pi #convert to degrees
+    Bet = np.arcsin(z/(x**2 + y**2 + z**2)**0.5)*180/np.pi #convert to degrees
+
+    return Lam, Bet
+
+#-------------------------------------------------------------------------------
+
+def gal_to_lambet(l, b, d, normal, point):
+
+    x_prime, y_prime, z_prime = gal_to_plane(l, b, d, normal, point)
+    Lam, Bet = cart_to_lonlat(x_prime, y_prime, z_prime)
+
+    return Lam, Bet
+
+#-------------------------------------------------------------------------------
+
+#this may just go away. Not sure how useful it really is 
+def gal_to_lambet_galcentric(l, b, d, normal, point):
+
+    galcx, galcy, galcz = gal_to_cart(l, b, d)
+    x_prime, y_prime, z_prime = cart_to_plane(galcx, galcy, galcz, normal, point)
+    Lam, Bet = cart_to_lonlat(x_prime, y_prime, z_prime)
 
     return Lam, Bet
 
@@ -567,15 +586,7 @@ def gal_to_lambet(l, b, d, normal, point):
 def cart_to_lambet(x,y,z, normal, point):
 
     x_prime, y_prime, z_prime = cart_to_plane(x,y,z, normal=normal, point=point)
-    Lam = np.arctan2(y_prime, x_prime)*180/np.pi #convert to degrees
-    #correct Lam to be between 0 and 360 instead of -180 to 180
-    i = 0
-    while i < len(Lam):
-        if Lam[i] < 0:
-            Lam[i] += 360
-        i += 1
-
-    Bet = np.arcsin(z_prime/(x_prime**2 + y_prime**2 + z_prime**2)**0.5)*180/np.pi #convert to degrees
+    Lam, Bet = cart_to_lonlat(x_prime, y_prime, z_prime)
 
     return Lam, Bet
 

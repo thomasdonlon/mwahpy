@@ -20,6 +20,7 @@ from galpy.orbit import Orbit
 
 from .flags import verbose
 from .pot import mwahpy_default_pot
+from .coords import cart_to_lambet
 
 '''
 ================================================================================
@@ -45,13 +46,13 @@ t_length = 0.5 #Gyr
 resolution = 1000
 ts = np.linspace(0, t_length, num=resolution)*u.Gyr
 
-punishment = 1000 #multiplier for every degree that the lambda fitting function is off
+deg_sep_pun = 1000 #multiplier for every degree that the lambda fitting function is off
 #this can be tweaked based on how many degrees of freedom you have - fewer DOF
 #means punishment can/should be smaller
 
 '''
 ================================================================================
- HELPER FUNCTIONS FOR OPTIMIZATION
+ CLASSES
 ================================================================================
 '''
 
@@ -73,9 +74,11 @@ class OrbitData():
         self.vz_err = vz_err
         self.vgsr_err = vgsr_err
 
-        self.x = self.d*np.cos(np.pi/180*self.l)*np.cos(np.pi/180*self.b) - 8
-        self.y = self.d*np.sin(np.pi/180*self.l)*np.cos(np.pi/180*self.b)
-        self.z = self.d*np.sin(np.pi/180*self.b)
+        self.x = self.d*np.cos(self.l*np.pi/180)*np.cos(self.b*np.pi/180) - 8
+        self.y = self.d*np.sin(self.l*np.pi/180)*np.cos(self.b*np.pi/180)
+        self.z = self.d*np.sin(self.b*np.pi/180)
+
+        self.r = (self.x**2 + self.y**2 + self.z**2)**0.5
 
     #add the icrs converted coordinates to this data instance
     def icrs(self):
@@ -84,37 +87,68 @@ class OrbitData():
         self.ra = s.ra
         self.dec = s.dec
 
-    #gets the orbit with the correct vgsr values
-    #since you can't just multiply vgsr by -1 to get the correct value along an orbit
-    #this needs to be run to compare the vgsr of reverse orbits
-    def correctVgsr(self):
-        self.vgsr = ((self.x + 8) * self.vx + self.y * self.vy + self.z * self.vz)/self.d
+    #compute the lat/long for an arbitrary plane, given by its normal vector and rough origin point. \
+    #used in orbit_fitter_gc
+    def calc_lam_bet(self, normal, point):
+        #normal: the normal vector to the plane of the Great Circle we are estimating for the orbit
+        #point: parameter for the axis generation of the Great Circle coordinates
+        self.L, self.B = cart_to_lambet(self.x, self.y, self.z, normal, point)
+        self.B_err = self.b_err #should be error propogated (Newby et al. 2013) but is not yet
+
+'''
+================================================================================
+ HELPER FUNCTIONS FOR OPTIMIZATION
+================================================================================
+'''
+
+#do this in one place so it's uniform across the file and easily changeable
+def make_orbit(params, int_ts=None):
+
+    #negate the x velocity because galpy is in left-handed frame and we aren't barbarians
+    o = Orbit(vxvv=[params[0]*u.deg, params[1]*u.deg, params[2]*u.kpc, -1*params[3]*u.km/u.s, params[4]*u.km/u.s, params[5]*u.km/u.s], uvw=True, lb=True, ro=8., vo=220., zo=0., solarmotion=[0, -220, 0])
+
+    if int_ts: #use the global ts unless explicitly provided with a different ts
+        o.integrate(int_ts, mwahpy_default_pot)
+    else:
+        o.integrate(ts, mwahpy_default_pot)
+
+    return o
+
+#-------------------------------------------------------------------------------
 
 #this function just makes a few places in the code cleaner
-def getOrbitDataFromOrbit(o, o_rev):
+def get_OrbitData_from_orbit(o, o_rev):
     #o: the orbit
     #o: the reversed orbit
     #both of these should be integrated prior to calling this function
 
+    #don't think that the velocities need obs=[8., 0., etc] except the vlos (to make it vgsr)
     data_orbit = OrbitData(np.array(o.ll(ts)), np.array(o.bb(ts)), np.array(o.dist(ts)), np.array(o.vx(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o.vy(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o.vz(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o.vlos(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]))
-    data_orbit_rev = OrbitData(np.array(o_rev.ll(ts)), np.array(o_rev.bb(ts)), np.array(o_rev.dist(ts)), np.array(o_rev.vx(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o_rev.vy(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o_rev.vz(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]))
-    data_orbit_rev.correctVgsr()
+    data_orbit_rev = OrbitData(np.array(o_rev.ll(ts)), np.array(o_rev.bb(ts)), np.array(o_rev.dist(ts)), np.array(o_rev.vx(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o_rev.vy(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o_rev.vz(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o.vlos(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]))
 
     return data_orbit, data_orbit_rev
 
-def getClosestIndex(val, Lam):
-    L = np.abs(Lam - val)
-    m = np.min(L)
-    ind = np.where(L == m)
+#-------------------------------------------------------------------------------
 
-    return ind[0], m*punishment
-
-#getPointList: np.array([]), np.array([]), int, int -> np.array([])
 #given the full list of Lambdas, outputs the indices of the points within that list closest to our data's Lambdas
 #(while keeping in mind that it may wrap from 0 to 360 degrees and vice versa)
-def getPointList(vals, Lam):
+def get_point_list(vals, Lam):
     #vals: the Lambda values that you want to find the closest indices to
     #Lam: the array of Lambda values that you are searching through
+
+    #---------------------------------------------------------------------------
+    #grabs the index of the value in Lam with the closest value to val
+    def get_closest_index(val, Lam):
+        Lam = np.abs(Lam - val)
+        m = np.min(Lam)
+
+        try: #another race condition?
+            ind = np.where(Lam == m)[0][0]
+        except IndexError:
+            ind = -1
+
+        return ind, m*deg_sep_pun
+    #---------------------------------------------------------------------------
 
     point_list = []
     Lam_list = []
@@ -123,7 +157,7 @@ def getPointList(vals, Lam):
     for val in vals:
 
         #within that segment, find the index which produces the value closest to val
-        point, c = getClosestIndex(val, Lam)
+        point, c = get_closest_index(val, Lam)
         costs += c
 
         #toss it in the list
@@ -132,28 +166,28 @@ def getPointList(vals, Lam):
 
     return point_list, costs
 
-#getModelFromOrbit: data, orbit, vector, vector -> list(int) x3
+#get_model_from_orbit: data, orbit, vector, vector -> list(int) x3
 #take in data, orbit, and plane info: Output model data corresponding to each data point
-def getModelFromOrbit(data, o):
+def get_model_from_orbit(data, params):
     #data: the data that the orbit is being fit to
     #o: the test orbit that we are calculating the goodness-of-fit of
     #normal: the normal vector to the plane of the Great Circle we are estimating for the orbit
     #point: parameter for the axis generation of the Great Circle coordinates
 
-    #initialize the orbit we are fitting --
+    #initialize the orbit we are fitting
+    o = make_orbit(params)
+
     #we flip it around so that we are fitting both the forwards and the backwards orbit
-    ts = np.linspace(0, t_length, num=resolution)*u.Gyr
     o_rev = o.flip()
     o_rev.integrate(ts, mwahpy_default_pot)
 
-    #sign swap on vx because galpy is left-handed, and we are inputting data in a right-handed coordinate system
-    data_orbit, data_orbit_rev = getOrbitDataFromOrbit(o, o_rev)
+    data_orbit, data_orbit_rev = get_OrbitData_from_orbit(o, o_rev)
 
     #grab full lists so that we can select the closest points once we get a list
     Lam = np.append(np.flip(data_orbit_rev.l), data_orbit.l)
 
     #get the list of points closest to each data point in Lambda
-    point_list, costs = getPointList(data.l, Lam)
+    point_list, costs = get_point_list(data.l, Lam)
 
     #grab the model points from the point list we grabbed
     Bet = np.append(np.flip(data_orbit_rev.b), data_orbit.b)
@@ -190,16 +224,13 @@ def getModelFromOrbit(data, o):
 
 #chi_squared: data, galpy.Orbit() --> float
 #takes in the observed data and a test orbit and calculates the goodness-of-fit using a chi-squared method
-def chiSquared(params, data=[]):
+def chi_squared(params, data=[]):
     #data: the data that the orbit is being fit to
     #o: the test orbit that we are calculating the goodness-of-fit of
     #normal: the normal vector to the plane of the Great Circle we are estimating for the orbit
     #point: parameter for the axis generation of the Great Circle coordinates
 
-    o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4]-220, params[5]], uvw=True, lb=True, ro=8., vo=220., zo=0.) #generate the orbit
-    o.integrate(ts, mwahpy_default_pot) #integrate the orbit
-
-    B_model, d_model, vx_model, vy_model, vz_model, vgsr_model, costs = getModelFromOrbit(data, o) #get model data from orbit
+    B_model, d_model, vx_model, vy_model, vz_model, vgsr_model, costs = get_model_from_orbit(data, params) #get model data from orbit
 
     #B_model sometimes has different length than data.b, no idea why
     #I think it might be a race condition
@@ -210,26 +241,27 @@ def chiSquared(params, data=[]):
     x2_B = sum(((B_model - data.b)/data.b_err)**2)
     x2_d = sum(((d_model - data.d)/data.d_err)**2)
 
+    #this is the main chi squared that we are minimizing
+    #it's not a "chi-squared" anymore, but multiplying by a constant seems dumb
+    x2 = x2_B + x2_d + costs #Willett et al. 2009, give or take
+
     if vx_flag:
         x2_vx = sum(((vx_model - data.vx)/data.vx_err)**2)
-    else:
-        x2_vx = 0
+        x2 += x2_vx
 
     if vy_flag:
         x2_vy = sum(((vy_model - data.vy)/data.vy_err)**2)
-    else:
-        x2_vy = 0
+        x2 += x2_vy
 
     if vz_flag:
         x2_vz = sum(((vz_model - data.vz)/data.vz_err)**2)
-    else:
-        x2_vz = 0
+        x2 += x2_vz
 
     if vgsr_flag:
         x2_vgsr = sum(((vgsr_model - data.vgsr)/data.vgsr_err)**2)
-    else:
-        x2_vgsr = 0
+        x2 += x2_vgsr
 
+    '''
     #get normalization factor
     N = len(data.l) #number of data points
     n = 5 #number of parameters
@@ -238,6 +270,7 @@ def chiSquared(params, data=[]):
         eta = 1 #if you use fewer data points than needed to constrain the problem, then this will still work but it won't be normalized correctly
 
     x2 = (1/eta) * (x2_B + x2_d + x2_vx + x2_vy + x2_vz + x2_vgsr) + costs #Willett et al. 2009, give or take
+    '''
 
     #there's a weird edge case where occasionally x2 is a short array of floats
     #this bit prevents scipy from throwing an error
@@ -245,8 +278,8 @@ def chiSquared(params, data=[]):
     if type(x2) == type(np.array([])):
         x2 = x2[0]
 
-    if flags.verbose:
-        print('X^2: ' + str(x2))
+    if verbose:
+        print('GoF: ' + str(x2))
 
     return x2
 
@@ -267,10 +300,10 @@ def optimize(data_opt, max_it, bounds, **kwargs):
     ============================================================================
     '''
 
-    params = scopt.differential_evolution(chiSquared, bounds, args=(data_opt,), strategy='rand1bin', maxiter=max_it, popsize=pop_size, mutation=diff_scaling_factor, recombination=crossover_rate, workers=-1, disp=not(flags.verbose), **kwargs).x
+    params = scopt.differential_evolution(chi_squared, bounds, args=(data_opt,), maxiter=max_it, popsize=pop_size, mutation=diff_scaling_factor, recombination=crossover_rate, workers=-1, disp=not(verbose), **kwargs).x
     #'''
 
-    x2 = chiSquared(params, data_opt)
+    x2 = chi_squared(params, data_opt)
 
     return params, x2
 
@@ -281,38 +314,41 @@ def optimize(data_opt, max_it, bounds, **kwargs):
 '''
 
 def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
-              vx_err=None, vy_err=None, vz_err=None, vgsr_err=None, max_it=20, \
+              vx_err=None, vy_err=None, vz_err=None, vgsr_err=None, max_it=100, \
               bounds=[(0, 360), (-90, 90), (0, 100), (-500, 500), (-500, 500), (-500, 500)], \
               t_len=None, **kwargs):
 
     #construct data
     #set proper flags based on input data
-    if type(vx) == type(np.array([])):
+    if vx:
         global vx_flag
         vx_flag = 1
-    if type(vy) == type(np.array([])):
+    if vy:
         global vy_flag
         vy_flag = 1
-    if type(vz) == type(np.array([])):
+    if vz:
         global vz_flag
         vz_flag = 1
-    if type(vgsr) == type(np.array([])):
+    if vgsr:
         global vgsr_flag
         vgsr_flag = 1
 
     #update t_length if necessary
-    if t_len != None:
+    if t_len:
         global t_length
         t_length = t_len
         global ts
         ts = np.linspace(0, t_length, num=resolution)*u.Gyr
 
-    if flags.verbose:
+    if verbose:
+        print('Building orbit data...')
+
+    data_opt = OrbitData(l, b, d, vx, vy, vz, vgsr, b_err, d_err, vx_err, vy_err, vz_err, vgsr_err)
+
+    if verbose:
         print('===================================')
         print('Optimizing:')
         print('===================================')
-
-    data_opt = OrbitData(l, b, d, vx, vy, vz, vgsr, b_err, d_err, vx_err, vy_err, vz_err, vgsr_err)
 
     #optimization
     params, x2 = optimize(data_opt, max_it, bounds, **kwargs)
@@ -321,7 +357,7 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
     print('Params: l, b, d, vx, vy, vz')
     print(params)
     print()
-    print('Chi Squared:')
+    print('Goodness-of-Fit:')
     print(x2)
     print('===================================')
 
@@ -333,46 +369,18 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
 ================================================================================
 '''
 
-#TODO: Implement unwrap in a way that actually makes sense
-#splits every array in the list of arrays, a, every time that the position wraps
-#from 0 to 360 or vice versa in a[0]
-#therefore, a[0] should be the parameter you are trying to unwrap (longitude)
-#returns a list of lists of the unwrapped arrays
-def unwrap(a, threshold=10):
-    #t: difference in position needed to trigger a split
-    split = np.nonzero(np.abs(a[0][:-1] - a[0][1:]) > threshold)[0] + 1
+def plot_orbit_gal(l, b, d, params):
 
-    out = []
-    for arr in a:
-        if len(split) > 0:
-            out.append(np.split(arr, split))
-        else:
-            out.append(np.array([arr])) #didn't find a place to split on
-
-    return out
-
-#TODO: Expand this and plotOrbiticrs to allow other velocities
-#possibly make them the same function with a switch
-#TODO: Split values so wrapping lines don't happen
-
-def plotOrbitgal(l, b, d, params, vgsr=None):
-    o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4] - 220, params[5]], uvw=True, lb=True, ro=8., vo=220.) #generate the orbit
-    o.integrate(ts, mwahpy_default_pot) #integrate the orbit
+    o = make_orbit(params)
 
     o_rev = o.flip()
     o_rev.integrate(ts, mwahpy_default_pot)
 
-    #sign swap on vx because galpy is left-handed, and we are inputting data in a right-handed coordinate system
-    data_orbit, data_orbit_rev = getOrbitDataFromOrbit(o, o_rev)
+    data_orbit, data_orbit_rev = get_OrbitData_from_orbit(o, o_rev)
 
-    fig = plt.figure(figsize=(24, 6))
-    nplots = 2
-    if type(vgsr) == type(np.array([])):
-        nplots += 1
-    ax1 = fig.add_subplot(1, nplots, 1)
-    ax2 = fig.add_subplot(1, nplots, 2)
-    if type(vgsr) == type(np.array([])):
-        ax3 = fig.add_subplot(1, nplots, 3)
+    fig = plt.figure(figsize=(18, 8))
+    ax1 = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122)
 
     ax1.plot(data_orbit.l, data_orbit.b, c='b')
     ax1.plot(data_orbit_rev.l, data_orbit_rev.b, c='r')
@@ -391,80 +399,44 @@ def plotOrbitgal(l, b, d, params, vgsr=None):
     ax2.set_xlabel('l')
     ax2.set_ylabel('d (helio)')
 
-    if type(vgsr) == type(np.array([])):
-        ax3.plot(data_orbit.l, data_orbit.vgsr, c='b')
-        ax3.plot(data_orbit_rev.l, data_orbit_rev.vgsr, c='r')
-        ax3.scatter(l, vgsr, c='k')
-
-        ax3.set_xlim(0, 360)
-        ax3.set_xlabel('l')
-        ax3.set_ylabel('vgsr (km/s)')
-
     plt.show()
 
-def plotOrbiticrs(l, b, d, params, vgsr=None):
+def plot_orbit_icrs(l, b, d, params):
 
     s = SkyCoord(l, b, frame='galactic', unit=(u.deg, u.deg))
     s = s.transform_to('icrs')
     ra = s.ra
     dec = s.dec
 
-    o = Orbit(vxvv=[params[0], params[1], params[2], params[3], params[4] - 220, params[5]], uvw=True, lb=True, ro=8., vo=220.) #generate the orbit
-    o.integrate(ts, mwahpy_default_pot) #integrate the orbit
+    o = make_orbit(params)
 
     o_rev = o.flip()
     o_rev.integrate(ts, mwahpy_default_pot)
 
-    #sign swap on vx because galpy is left-handed, and we are inputting data in a right-handed coordinate system
-    data_orbit, data_orbit_rev = getOrbitDataFromOrbit(o, o_rev)
-
-    fig = plt.figure(figsize=(24, 6))
-    nplots=2
-    if type(vgsr) == type(np.array([])):
-        nplots += 1
-    ax1 = fig.add_subplot(1,nplots,1)
-    ax2 = fig.add_subplot(1,nplots,2)
-    if type(vgsr) == type(np.array([])):
-        ax3 = fig.add_subplot(1,nplots,3)
-
+    data_orbit, data_orbit_rev = get_OrbitData_from_orbit(o, o_rev)
     data_orbit.icrs()
     data_orbit_rev.icrs()
-    #TODO: This will break if vgsr isn't used
-    #TODO: Unwrap should really be a orbit data method
-    o_unwrapped = unwrap([data_orbit.ra, data_orbit.dec, data_orbit.d, data_orbit.vgsr])
-    o_rev_unwrapped = unwrap([data_orbit_rev.ra, data_orbit_rev.dec, data_orbit_rev.d, data_orbit_rev.vgsr])
 
-    for o_ra, o_dec in zip(o_unwrapped[0], o_unwrapped[1]):
-        ax1.plot(o_ra, o_dec, c='b')
-    for o_ra, o_dec in zip(o_rev_unwrapped[0], o_rev_unwrapped[1]):
-        ax1.plot(o_ra, o_dec, c='r')
+    fig = plt.figure(figsize=(18, 8))
+    ax1 = fig.add_subplot(121)
+    ax2 = fig.add_subplot(122)
+
+    ax1.plot(data_orbit.ra, data_orbit.dec, c='b')
+    ax1.plot(data_orbit_rev.ra, data_orbit_rev.dec, c='r')
     ax1.scatter(ra, dec, c='k')
 
-    ax1.set_xlim(360, 0)
+    ax1.set_xlim(0, 360)
     ax1.set_ylim(-90, 90)
-    ax1.set_xlabel('ra')
-    ax1.set_ylabel('dec')
+    ax1.set_xlabel('l')
+    ax1.set_ylabel('b')
 
-    for o_ra, o_d in zip(o_unwrapped[0], o_unwrapped[2]):
-        ax2.plot(o_ra, o_d, c='b')
-    for o_ra, o_d in zip(o_rev_unwrapped[0], o_rev_unwrapped[2]):
-        ax2.plot(o_ra, o_d, c='r')
+    ax2.plot(data_orbit.ra, data_orbit.d, c='b')
+    ax2.plot(data_orbit_rev.ra, data_orbit_rev.d, c='r')
     ax2.scatter(ra, d, c='k')
 
-    ax2.set_xlim(360, 0)
-    ax2.set_xlabel('ra')
+    ax2.set_xlim(0, 360)
+    ax2.set_xlabel('l')
     ax2.set_ylabel('d (helio)')
-
-    if type(vgsr) == type(np.array([])):
-        for o_ra, o_vgsr in zip(o_unwrapped[0], o_unwrapped[-1]):
-            ax1.plot(o_ra, o_vgsr, c='b')
-        for o_ra, o_vgsr in zip(o_rev_unwrapped[0], o_rev_unwrapped[-1]):
-            ax1.plot(o_ra, o_vgsr, c='r')
-        ax3.scatter(ra, d, c='k')
-
-        ax3.set_xlim(360, 0)
-        ax3.set_xlabel('ra')
-        ax3.set_ylabel('vgsr (km/s)')
 
     plt.show()
 
@@ -473,15 +445,43 @@ def plotOrbiticrs(l, b, d, params, vgsr=None):
  TESTING
 ================================================================================
 '''
+
 def test():
-    l = np.array([0, 20, 40, 60, 80, 100, 120, 140, 160, 180])
-    b = np.array([0, 10, 20, 10, 0, -10, -20, -10, 0, 10])
-    b_err = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
-    d = np.array([20, 18, 15, 12, 10, 12, 15, 18, 20, 23])
-    d_err = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
+    test_o_l = 90
+    test_o_b = 20
+    test_o_d = 25
+    test_o_vx = 150
+    test_o_vy = -200
+    test_o_vz = 100
+
+    ts = np.linspace(0, 0.25, 1000)*u.Gyr
+    sample = np.array([100, 250, 400, 500, 600, 750, 850])
+
+    o = make_orbit([test_o_l, test_o_b, test_o_d, test_o_vx, test_o_vy, test_o_vz])
+
+    l = np.take(o.ll(ts), sample)
+    b = np.take(o.bb(ts), sample)
+    d = np.take(o.dist(ts), sample)
+
+    plt.scatter(l, b, s=5)
+    plt.scatter(o.ll(ts), o.bb(ts), s=1)
+    plt.show()
+
+    plt.scatter(l, d, s=5)
+    plt.scatter(o.ll(ts), o.dist(ts), s=1)
+    plt.show()
+
+    b_err = np.zeros(len(b)) + 0.05
+    d_err = np.zeros(len(d)) + 1
+
+    test_orbit_data = OrbitData(l, b, d, None, None, None, None, b_err, d_err, None, None, None, None)
+
+    print('Goodness-of-Fit of actual values:')
+    print(chi_squared([test_o_l, test_o_b, test_o_d, test_o_vx, test_o_vy, test_o_vz], data=test_orbit_data))
 
     params, x2 = fit_orbit(l, b, b_err, d, d_err)
-    plotOrbitgal(l, b, d, params)
+    plot_orbit_gal(l, b, d, params)
+    plot_orbit_icrs(l, b, d, params)
 
 '''
 ================================================================================

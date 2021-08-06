@@ -1,3 +1,13 @@
+v1.4.0
+ - renamed orbit_fitting and orbit_fitting_gc to orbit_fitter and orbit_fitter_gc
+ - refactored and fixed orbit_fitter
+ - added documentation for orbit_fitter and orbit_fitter_gc
+ - added documentation for changes since v1.3.5
+ - functions that were re-used between orbit_fitter and orbit_fitter_gc are now
+   all located in orbit_fitter
+ - it's not really a chi-squared, so now it's just a goodness-of-fit in the orbit
+   fitting packages
+
 v1.3.8
  - refactored and fixed orbit_fitting_gc
  - better way to do coords.cart_to_plane()
