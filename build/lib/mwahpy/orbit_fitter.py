@@ -1,5 +1,8 @@
 '''
 This is a self-contained orbit fitting routine.
+
+This orbit fitter is unique compared to other common orbit fitters in that it
+uses a galactocentric generalized plane coordinate system when fitting data
 '''
 
 #TODO: Allow fitting on b, ra, or dec instead of l

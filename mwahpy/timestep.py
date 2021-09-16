@@ -18,7 +18,7 @@ import random
 import galpy.potential
 
 #mwahpy imports
-from .mwahpy_glob import struct_to_sol
+from .mwahpy_glob import struct_to_sol, progress_bar
 from .flags import auto_update, verbose
 from .plot import scatter, hist2d
 from .pot import mwahpy_default_pot, energy_offset
@@ -681,12 +681,15 @@ def get_self_energies(t):
     pot_energies = []
 
     #compute the self gravitational potential energy of each particle
+    i = 0 #tracking
     for x1, y1, z1 in zip(t.x, t.y, t.z):
-        pe = 0
-        for x2, y2, z2, m in zip(t.x, t.y, t.z, t.mass):
-            r = ((x1 - x2)**2 + (y1 - y2)**2 + (z1 - z2)**2)**0.5
-            pe -= gc * m / r #potential energy is negative
+        progress_bar(i, len(t.x))
+        i += 1
+
+        r = ((x1 - t.x)**2 + (y1 - t.y)**2 + (z1 - t.z)**2)**0.5
+        pe = np.sum(-1 * gc * t.mass[r != 0] / r[r != 0]) #potential energy is negative, remove where r == 0
         pot_energies.append(pe)
+
     pot_energies = np.array(pot_energies) #do it this way because np.append is horrendously slow
 
     #compute the kinetic energy of each particle (within reference frame of

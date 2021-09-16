@@ -494,7 +494,7 @@ def plane_OLS(x,y,z, print_distances=False):
 #get_plane_normal: [float, float, float, float] --> np.array([float, float, float])
 #takes in parameters that define a plane in 3D and returns a normalized normal vector to that plane
 def get_plane_normal(params):
-    #params ([a, b, c, d]) corresponding to the equation for a plane ax + by + cz + d = 0
+    #params ([a, b, c]) corresponding to the equation for a plane ax + by + cz = 0
     #comes from the plan fitting method above
 
     #definition of a normal vector, given equation of a plane
@@ -572,7 +572,7 @@ def gal_to_lambet(l, b, d, normal, point):
 
 #-------------------------------------------------------------------------------
 
-#this may just go away. Not sure how useful it really is 
+#this may just go away. Not sure how useful it really is
 def gal_to_lambet_galcentric(l, b, d, normal, point):
 
     galcx, galcy, galcz = gal_to_cart(l, b, d)

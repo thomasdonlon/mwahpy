@@ -19,8 +19,8 @@ mwahpy/coords.py
 mwahpy/flags.py
 mwahpy/mwahpy_glob.py
 mwahpy/nbody.py
-mwahpy/orbit_fitting.py
-mwahpy/orbit_fitting_gc.py
+mwahpy/orbit_fitter.py
+mwahpy/orbit_fitter_gc.py
 mwahpy/output_handler.py
 mwahpy/plot.py
 mwahpy/pot.py
@@ -42,6 +42,8 @@ mwahpy/__pycache__/mwahpy_glob.cpython-35.pyc
 mwahpy/__pycache__/mwahpy_glob.cpython-36.pyc
 mwahpy/__pycache__/mwahpy_global.cpython-35.pyc
 mwahpy/__pycache__/nbody.cpython-36.pyc
+mwahpy/__pycache__/orbit_fitter.cpython-36.pyc
+mwahpy/__pycache__/orbit_fitter_gc.cpython-36.pyc
 mwahpy/__pycache__/orbit_fitting.cpython-36.pyc
 mwahpy/__pycache__/orbit_fitting_gc.cpython-36.pyc
 mwahpy/__pycache__/orbit_fitting_gc_new.cpython-36.pyc

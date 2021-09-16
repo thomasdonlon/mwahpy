@@ -25,6 +25,19 @@ struct_to_sol = 222288.47 #this many solar masses make up one structural nass un
 kms_to_kpcgyr = 1.023 #1 km/s is 1.023 kpc/Gyr
 kpcgyr_to_kms = 0.978 #1 kpc/Gyr is 0.978 km/s
 
+#define transformations from heliocentric -> galactocentric frame
+#by defining heliocentric frame here
+
+#right-handed coordinate frame(!)
+helio_x = -8
+helio_y = 0
+helio_z = 0
+
+#Hogg et al. (2005)
+helio_vx = 10.1
+helio_vy = 224.0
+helio_vz = 6.7
+
 #===============================================================================
 # FUNCTIONS
 #===============================================================================

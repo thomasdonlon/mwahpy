@@ -50,6 +50,7 @@ def read_output(f, start=None, stop=None):
     #start (optional): the line to actually start reading in data
     #stop (optional): the line to stop reading in data
 
+    flen = 0 #allows this to be used outside of the next if statement's scope
     if progress_bars:
         flen = file_len(f)
         #properly adjust for length change based on start and stop points
@@ -80,6 +81,7 @@ def read_output(f, start=None, stop=None):
 
     j = 0 #reset line counter for progress bar
     for line in f:
+
         line = line.strip().split(',')
         i = 0
         while i < len(line) - 1: #this grabs l, b, r data even though that is calculated from x, y, z in the Timestep class implementation
@@ -88,13 +90,16 @@ def read_output(f, start=None, stop=None):
             i += 1
         j += 1
 
+        if progress_bars:
+            progress_bar(j, flen)
+
         #stop reading in lines if we're past the stop setting
         if stop:
             if j >= stop:
                 break
-
-        if progress_bars:
-            progress_bar(j, flen)
+        else:
+            continue  # only executed if the inner loop did NOT break
+        break #only executed if the inner loop DID break
 
     #return the Timestep class using the array dictionary we built
     if verbose:

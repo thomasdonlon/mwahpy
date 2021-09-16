@@ -1,4 +1,12 @@
-v1.4.0
+v1.4.1:
+ - fixed divide-by-zero error in timestep.get_self_energies()
+ - phase space of the Sun is now a constant in mwahpy_glob and should be accessed
+   from there instead of hard-coded
+ - fixed bug in coords.rot_around_arb_axis() that was slowing it down slightly
+ - fixed bug in output_handler.read_output() where the progress bar would not
+   go from 0 to 100% if the stop keyword was used
+
+v1.4.0:
  - renamed orbit_fitting and orbit_fitting_gc to orbit_fitter and orbit_fitter_gc
  - refactored and fixed orbit_fitter
  - added documentation for orbit_fitter and orbit_fitter_gc
@@ -8,7 +16,7 @@ v1.4.0
  - it's not really a chi-squared, so now it's just a goodness-of-fit in the orbit
    fitting packages
 
-v1.3.8
+v1.3.8:
  - refactored and fixed orbit_fitting_gc
  - better way to do coords.cart_to_plane()
  - added coords.cart_to_lonlat()
