@@ -4,7 +4,9 @@ v1.4.1:
    from there instead of hard-coded
  - fixed bug in coords.rot_around_arb_axis() that was slowing it down slightly
  - fixed bug in output_handler.read_output() where the progress bar would not
-   go from 0 to 100% if the stop keyword was used
+   go from 0 to 100% if the 'stop' keyword was used
+ - progress bars do not show up in jupyter notebooks now, to prevent lagging out
+   the client
 
 v1.4.0:
  - renamed orbit_fitting and orbit_fitting_gc to orbit_fitter and orbit_fitter_gc

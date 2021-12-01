@@ -98,6 +98,7 @@ MAJOR:
  - Expand plot capabilities
  - Finish refactoring coords.py
  - Finish unit testing of coordinate transformations
+ - Redo the orbit fitters in gala instead of galpy (galpy flips handedness and it's problematic)
 
 MINOR:
 - Apparently there's a MW@h readout method with a different number of values or
