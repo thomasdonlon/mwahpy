@@ -20,7 +20,7 @@ import galpy.potential
 #mwahpy imports
 from .mwahpy_glob import struct_to_sol, progress_bar
 from .flags import auto_update, verbose
-from .plot import scatter, hist2d
+from .plot import scatter, trace_particle, hist, hist2d, fancy_plot
 from .pot import mwahpy_default_pot, energy_offset
 from .coords import get_rvpm
 
@@ -549,8 +549,18 @@ class Timestep():
     def scatter(self, x, y, **kwargs):
         scatter(self, x, y, **kwargs)
 
+    def trace_particle(self, id, x, y, **kwargs):
+        trace_particle(self, id, x, y, **kwargs)
+
+    def hist(self, x, **kwargs):
+        hist(self, x, **kwargs)
+
     def hist2d(self, x, y, **kwargs):
         hist2d(self, x, y, **kwargs)
+
+    #uses kwargs for plt.plot()
+    def fancy_plot(self, x, y, **kwargs):
+        fancy_plot(self, x, y, **kwargs)
 
     #---------------------------------------------------------------------------
     # MISCELLANEOUS

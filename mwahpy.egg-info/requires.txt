@@ -1,5 +1,5 @@
-numpy
+astropy
 galpy
 matplotlib
-astropy
+numpy
 scipy

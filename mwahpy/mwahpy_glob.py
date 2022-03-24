@@ -11,7 +11,6 @@ that are widely used throughout mwahpy.
 # IMPORTS
 #===============================================================================
 
-import sys
 import astropy.units as u
 
 #===============================================================================
@@ -22,7 +21,8 @@ G = 6.674e-11*u.m**3/(u.kg*u.s**2)
 
 struct_to_sol = 222288.47 #this many solar masses make up one structural nass unit (the output of mwah)
 
-kms_to_kpcgyr = 1.023 #1 km/s is 1.023 kpc/Gyr
+kms_to_kpcgyr = 1.023 #1 km/s is 1.023 kpc/Gyrb
+
 kpcgyr_to_kms = 0.978 #1 kpc/Gyr is 0.978 km/s
 
 #define transformations from heliocentric -> galactocentric frame
@@ -50,8 +50,7 @@ def progress_bar(value, endvalue, bar_length=20):
     arrow = '-' * int(round(percent * bar_length)-1) + '>'
     spaces = ' ' * (bar_length - len(arrow))
 
-    sys.stdout.write("\r[{0}] {1}%".format(arrow + spaces, int(round(percent * 100))))
-    sys.stdout.flush()
+    print('\r[{0}] {1}%'.format(arrow + spaces, int(round(percent * 100))), end='')
 
 #get length of a file (in lines), given the filename
 def file_len(f):

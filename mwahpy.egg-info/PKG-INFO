@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: mwahpy
-Version: 1.4.0
+Version: 1.4.1
 Summary: A python package for easily parsing and processing data from MilkyWay@home
 Home-page: https://github.com/thomasdonlon/mwahpy
 Author: Tom Donlon
@@ -106,6 +106,7 @@ Description:  MILKYWAY@HOME PYTHON PACKAGE (MWAHPY)
          - Expand plot capabilities
          - Finish refactoring coords.py
          - Finish unit testing of coordinate transformations
+         - Redo the orbit fitters in gala instead of galpy (galpy flips handedness and it's problematic)
         
         MINOR:
         - Apparently there's a MW@h readout method with a different number of values or
@@ -126,5 +127,5 @@ Platform: UNKNOWN
 Classifier: Programming Language :: Python :: 3
 Classifier: License :: OSI Approved :: MIT License
 Classifier: Operating System :: OS Independent
-Requires-Python: >=3.2.3
+Requires-Python: >=3.6.0
 Description-Content-Type: text/markdown

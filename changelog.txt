@@ -1,12 +1,29 @@
 v1.4.1:
- - fixed divide-by-zero error in timestep.get_self_energies()
+ MAJOR CHANGES:
+ - now require python v3.6.0 or above due to installation problems with older
+   versions of python.
+ - fixed bug in orbit_fitter and orbit_fitter_gc where using numpy arrays for
+   velocity data would not properly set flags, but lists would crash the program
+ - progress bars do not show up in jupyter notebooks now, to prevent lagging out
+   the client
+ - global flags are now instances of the Flag class (located in flags.py), which
+   can be switched on or off globally with "myflag.switch(<bool>)". They can still
+   be treated with default boolean comparisons, e.g. "if myflag:".
+ MINOR CHANGES:
  - phase space of the Sun is now a constant in mwahpy_glob and should be accessed
    from there instead of hard-coded
+ - added fancy_plot() in .plot, can call as timestep.fancy_plot(<...>)
+ - changed coords.rv_to_vgsr() to coords.vlos_to_vgsr() (trying to avoid overloading
+   "radial velocity")
+ - added coords.vgsr_to_vlos()
+ - didn't need to be importing or utilizing sys
+ BUG FIXES:
+ - fixed divide-by-zero error in timestep.get_self_energies()
  - fixed bug in coords.rot_around_arb_axis() that was slowing it down slightly
  - fixed bug in output_handler.read_output() where the progress bar would not
    go from 0 to 100% if the 'stop' keyword was used
- - progress bars do not show up in jupyter notebooks now, to prevent lagging out
-   the client
+ - coords.remove_sol_mot_from_pm() no longer modifies the pmra and pmdec input
+   arrays in place
 
 v1.4.0:
  - renamed orbit_fitting and orbit_fitting_gc to orbit_fitter and orbit_fitter_gc

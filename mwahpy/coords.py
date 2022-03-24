@@ -394,10 +394,11 @@ def remove_sol_mot_from_pm(ra, dec, dist, pmra, pmdec):
 
     rv, mura, mudec = get_rvpm(ra, dec, dist, vx, vy, vz)
 
-    pmra -= mura
-    pmdec -= mudec
+    #don't directly modify pmra and pmdec
+    pmra_new = pmra - mura
+    pmdec_new = pmdec - mudec
 
-    return pmra, pmdec
+    return pmra_new, pmdec_new
 
 #-------------------------------------------------------------------------------
 
@@ -430,7 +431,8 @@ def get_uvw_errors(dist, ra, dec, pmra, pmdec, err_pmra, err_pmdec, err_rv, err_
 
     return err_u, err_v, err_w
 
-def rv_to_vgsr(l, b, rv):
+#remove solar reflex motion from line of sight velocity
+def vlos_to_vgsr(l, b, vlos):
     #TODO: Allow ra, dec as inputs
 
     use_array = True
@@ -438,17 +440,38 @@ def rv_to_vgsr(l, b, rv):
         use_array = False
         l = np.array([l])
         b = np.array([b])
-        rv = np.array([rv])
+        vlos = np.array([rv])
 
     l = l * np.pi/180
     b = b * np.pi/180
 
-    vgsr = rv + mwahpy_glob.helio_vx*np.cos(l)*np.cos(b) + mwahpy_glob.helio_vy*np.sin(l)*np.cos(b) + mwahpy_glob.helio_vz*np.sin(b)
+    vgsr = vlos + mwahpy_glob.helio_vx*np.cos(l)*np.cos(b) + mwahpy_glob.helio_vy*np.sin(l)*np.cos(b) + mwahpy_glob.helio_vz*np.sin(b)
 
     if not use_array:
         vgsr = vgsr[0]
 
     return vgsr
+
+#add solar reflex motion back into GSR line of sight velocity
+def vgsr_to_vlos(l, b, vgsr):
+    #TODO: Allow ra, dec as inputs
+
+    use_array = True
+    if type(l) != type(np.array([])):
+        use_array = False
+        l = np.array([l])
+        b = np.array([b])
+        vgsr = np.array([vgsr])
+
+    l = l * np.pi/180
+    b = b * np.pi/180
+
+    vlos = vgsr - mwahpy_glob.helio_vx*np.cos(l)*np.cos(b) - mwahpy_glob.helio_vy*np.sin(l)*np.cos(b) - mwahpy_glob.helio_vz*np.sin(b)
+
+    if not use_array:
+        vlos = vlos[0]
+
+    return vlos
 
 #=====================================
 #MISC TOOLS

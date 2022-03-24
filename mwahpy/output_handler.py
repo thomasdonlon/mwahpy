@@ -8,7 +8,6 @@ as well as write data out in a variety of formats
 #===============================================================================
 
 import numpy as np
-import sys
 from pathlib import Path
 
 from .flags import verbose, progress_bars
@@ -54,9 +53,9 @@ def read_output(f, start=None, stop=None):
     if progress_bars:
         flen = file_len(f)
         #properly adjust for length change based on start and stop points
-        if start:
+        if start is not None:
             flen -= start
-        if stop:
+        if stop is not None:
             flen -= stop
     if verbose:
         print('\nReading in data from ' + str(f) + '...')
@@ -74,7 +73,7 @@ def read_output(f, start=None, stop=None):
 
     #if start is specified,
     #skip lines until we're at the starting line
-    if start:
+    if start is not None:
         while j < start:
             f.readline()
             j += 1
@@ -94,7 +93,7 @@ def read_output(f, start=None, stop=None):
             progress_bar(j, flen)
 
         #stop reading in lines if we're past the stop setting
-        if stop:
+        if stop is not None:
             if j >= stop:
                 break
         else:
@@ -104,10 +103,10 @@ def read_output(f, start=None, stop=None):
     #return the Timestep class using the array dictionary we built
     if verbose:
         print('\n'+ str(len(array_dict[1])) + ' objects read in')
-        sys.stdout.write('\rConverting data...')
+        print('\rConverting data...', end='')
     d = Timestep(typ=array_dict[0], id_val=array_dict[1], x=array_dict[2], y=array_dict[3], z=array_dict[4], vx=array_dict[8], vy=array_dict[9], vz=array_dict[10], mass=array_dict[11], center_of_mass=comass, center_of_momentum=comom)
     if verbose:
-        sys.stdout.write('done\n')
+        print('done')
 
     f.close()
 
@@ -146,10 +145,10 @@ def read_input(f):
     #return the Timestep class using the array dictionary we built
     if verbose:
         print('\n'+ str(len(array_dict[1])) + ' objects read in')
-        sys.stdout.write('\rConverting data...')
+        print('\rConverting data...', end='')
     d = Timestep(typ=array_dict[0], id_val=array_dict[1], x=array_dict[2], y=array_dict[3], z=array_dict[4], vx=array_dict[5], vy=array_dict[6], vz=array_dict[7], mass=array_dict[8], center_of_mass=[0,0,0], center_of_momentum=[0,0,0])
     if verbose:
-        sys.stdout.write('done\n')
+        print('done')
 
     f.close()
 

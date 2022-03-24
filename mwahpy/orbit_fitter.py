@@ -28,10 +28,10 @@ from .coords import cart_to_lambet
 #-------------------------------------------------------------------------------
 #DO NOT TOUCH
 #Any routine meant to be used by an end user will configure this from input data
-vx_flag = 0
-vy_flag = 0
-vz_flag = 0
-vgsr_flag = 0
+vx_flag = False
+vy_flag = False
+vz_flag = False
+vgsr_flag = False
 #-------------------------------------------------------------------------------
 
 '''
@@ -317,21 +317,21 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
 
     #construct data
     #set proper flags based on input data
-    if vx:
+    if vx is not None:
         global vx_flag
-        vx_flag = 1
-    if vy:
+        vx_flag = True
+    if vy is not None:
         global vy_flag
-        vy_flag = 1
-    if vz:
+        vy_flag = True
+    if vz is not None:
         global vz_flag
-        vz_flag = 1
-    if vgsr:
+        vz_flag = True
+    if vgsr is not None:
         global vgsr_flag
-        vgsr_flag = 1
+        vgsr_flag = True
 
     #update t_length if necessary
-    if t_len:
+    if t_len is not None:
         global t_length
         t_length = t_len
         global ts

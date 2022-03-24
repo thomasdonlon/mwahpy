@@ -3,6 +3,25 @@ This file is a place to store flags that affect the operation of mwahpy
 '''
 
 #===============================================================================
+# CLASSES
+#===============================================================================
+
+#allows for things like switching flags globally
+class Flag():
+
+    #should just be used within this file
+    def __init__(self, default):
+        self.val = default
+
+    #allows you to use "if myflag:" to test for whether the flag is set
+    def __bool__(self):
+        return self.val
+
+    #can externally switch flags on or off
+    def switch(self, val):
+        self.val = val
+
+#===============================================================================
 # FUNCTIONS
 #===============================================================================
 
@@ -13,22 +32,22 @@ def isnotebook():
     try:
         shell = get_ipython().__class__.__name__
         if shell == 'ZMQInteractiveShell':
-            return 1   # Jupyter notebook or qtconsole
+            return True   # Jupyter notebook or qtconsole
         elif shell == 'TerminalInteractiveShell':
-            return 0  # Terminal running IPython
+            return False  # Terminal running IPython
         else:
-            return 0  # Other type (?)
+            return False  # Other type (?)
     except NameError:
-        return 0      # Probably standard Python interpreter
+        return False      # Probably standard Python interpreter
 
 #===============================================================================
-# CONSTANTS
+# FLAGS
 #===============================================================================
 
-verbose=1 #If on, functions are a lot noisier
+verbose = Flag(True) #If on, functions are a lot noisier
 #will slow things down slightly, but it may be helpful for debugging
 
-progress_bars = int(not(isnotebook())) #Display progress bars, on by default
+progress_bars = Flag(not(isnotebook())) #Display progress bars, on by default
 #slows down a program somewhat, but is useful for making sure that
 #a long program is running, as well as for debugging
 
@@ -36,7 +55,7 @@ progress_bars = int(not(isnotebook())) #Display progress bars, on by default
 #since the current implementation of progres bars clog up the client
 #and lag out jupyter notebook
 
-auto_update=1 #update all Timestep objects immediately when necessary
+auto_update = Flag(True) #update all Timestep objects immediately when necessary
 #this will keep things like center of mass, center of momentum, etc.
 #accurate for the Timestep class, but will reduce performance somewhat.
 #Should only be turned off if you REALLY know what you're doing, and you're sure
