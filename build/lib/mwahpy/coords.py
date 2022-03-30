@@ -4,8 +4,6 @@ import scipy as sc
 
 #TODO: Make sure all transformations have inverse transformations
 #TODO: Make sure all transormations have unit tests
-#TODO: Comment out the code
-#TODO: Standardize function naming conventions
 #TODO: (low priority) Allow certain quantities (like galactocentric phi/theta) to be expressed/input in radians
 #TODO: (low priority) add left-handed versions to all galactic cartesian transformations
 
@@ -49,7 +47,7 @@ def rot_around_arb_axis(x, y, z, ux, uy, uz, theta):
 
     #make sure that u is normalized
     norm_u = (ux**2 + uy**2 + uz**2)**0.5
-    if round(norm_u, 8 != 1.):
+    if round(norm_u, 8) != 1.:
         ux /= norm_u
         uy /= norm_u
         uz /= norm_u
@@ -133,10 +131,10 @@ def cart_to_gal(x, y, z, left_handed=False):
         z = np.array([z])
 
     if left_handed:
-        r = ((x-8)**2 + y**2 + z**2)**0.5
+        r = ((x+mwahpy_glob.helio_x)**2 + y**2 + z**2)**0.5
         l = np.arctan2(y,-1*(x-8))*180/np.pi
     else:
-        r = ((x+8)**2 + y**2 + z**2)**0.5
+        r = ((x-mwahpy_glob.helio_x)**2 + y**2 + z**2)**0.5
         l = np.arctan2(y,(x+8))*180/np.pi
     b = np.arcsin(z/r)*180/np.pi
 
@@ -164,10 +162,10 @@ def gal_to_cart(l, b, r, left_handed=False, rad=False):
 
     if left_handed:
         #left-handed
-        x = 8 - r*np.cos(l)*np.cos(b)
+        x = -1*mwahpy_glob.helio_x - r*np.cos(l)*np.cos(b)
     else:
         #right-handed
-        x = r*np.cos(l)*np.cos(b) - 8
+        x = r*np.cos(l)*np.cos(b) + mwahpy_glob.helio_x
 
     y = r*np.sin(l)*np.cos(b)
     z = r*np.sin(b)
@@ -328,10 +326,10 @@ def get_vxvyvz(ra, dec, dist, rv, pmra, pmde):
 
     U, V, W = get_uvw(ra, dec, dist, rv, pmra, pmde)
 
-    # Sun's velocity is (10.1, 224.0, 6.7)_GSR
-    vx = U + 10.1
-    vy = V + 224.0
-    vz = W + 6.7
+    # add Sun's velocity
+    vx = U + mwahpy_glob.helio_vx
+    vy = V + mwahpy_glob.helio_vy
+    vz = W + mwahpy_glob.helio_vz
 
     return vx, vy, vz
 
@@ -390,16 +388,17 @@ def get_rvpm(ra, dec, dist, U, V, W):
 
 #inputs must be arrays, even if just of length 1
 def remove_sol_mot_from_pm(ra, dec, dist, pmra, pmdec):
-    vx = np.array([-10] * len(ra))
-    vy = np.array([-224] * len(ra))
-    vz = np.array([-7] * len(ra))
+    vx = np.array([-mwahpy_glob.helio_vx] * len(ra))
+    vy = np.array([-mwahpy_glob.helio_vy] * len(ra))
+    vz = np.array([-mwahpy_glob.helio_vz] * len(ra))
 
     rv, mura, mudec = get_rvpm(ra, dec, dist, vx, vy, vz)
 
-    pmra -= mura
-    pmdec -= mudec
+    #don't directly modify pmra and pmdec
+    pmra_new = pmra - mura
+    pmdec_new = pmdec - mudec
 
-    return pmra, pmdec
+    return pmra_new, pmdec_new
 
 #-------------------------------------------------------------------------------
 
@@ -432,7 +431,8 @@ def get_uvw_errors(dist, ra, dec, pmra, pmdec, err_pmra, err_pmdec, err_rv, err_
 
     return err_u, err_v, err_w
 
-def rv_to_vgsr(l, b, rv):
+#remove solar reflex motion from line of sight velocity
+def vlos_to_vgsr(l, b, vlos):
     #TODO: Allow ra, dec as inputs
 
     use_array = True
@@ -440,17 +440,38 @@ def rv_to_vgsr(l, b, rv):
         use_array = False
         l = np.array([l])
         b = np.array([b])
-        rv = np.array([rv])
+        vlos = np.array([rv])
 
     l = l * np.pi/180
     b = b * np.pi/180
 
-    vgsr = rv + 10.1*np.cos(l)*np.cos(b) + 224*np.sin(l)*np.cos(b) + 6.7*np.sin(b)
+    vgsr = vlos + mwahpy_glob.helio_vx*np.cos(l)*np.cos(b) + mwahpy_glob.helio_vy*np.sin(l)*np.cos(b) + mwahpy_glob.helio_vz*np.sin(b)
 
     if not use_array:
         vgsr = vgsr[0]
 
     return vgsr
+
+#add solar reflex motion back into GSR line of sight velocity
+def vgsr_to_vlos(l, b, vgsr):
+    #TODO: Allow ra, dec as inputs
+
+    use_array = True
+    if type(l) != type(np.array([])):
+        use_array = False
+        l = np.array([l])
+        b = np.array([b])
+        vgsr = np.array([vgsr])
+
+    l = l * np.pi/180
+    b = b * np.pi/180
+
+    vlos = vgsr - mwahpy_glob.helio_vx*np.cos(l)*np.cos(b) - mwahpy_glob.helio_vy*np.sin(l)*np.cos(b) - mwahpy_glob.helio_vz*np.sin(b)
+
+    if not use_array:
+        vlos = vlos[0]
+
+    return vlos
 
 #=====================================
 #MISC TOOLS
@@ -594,7 +615,7 @@ def cart_to_lambet(x,y,z, normal, point):
 
 def cart_to_sgr(x,y,z):
 
-    x_prime = x_prime + 8
+    x_prime = x_prime - mwahpy_glob.helio_x
     xyz = np.array([x, y, z])
 
     #Euler rotation matrix from Solar frame into Sgr
@@ -777,123 +798,6 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
         Bet = Bet[0]
 
     return Lam, Bet
-
-'''
-#sky_to_pole: array(float), array(float), tuple(float, float), tuple(float, float) -> array(float), array(float)
-#rotate the positions on the sky (sky1, sky2) into a new frame determined by
-#the pole of the new frame (pole1, pole2) and the origin of the new frame (origin1, origin2)
-#The output is the longitude and latitude in the new coordinate frame
-
-#NOTE: Inputs can be any spherical geometry, as long as the pole & origin arguments
-#are in the same coordinate system as the (sky1, sky2) coordinates.
-#e.g. if sky1 is a list of RAs and sky2 is a list of Decs, then
-#the pole and origin arguments must also be specified in RA Dec.
-def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
-    #sky1, sky2: positions of the data on the sky (e.g. sky1 = array(RA), sky2 = array(Dec), etc.)
-    #pole: position of the pole of the new coordinate system, tuple
-    #origin: position of the origin of the new coordinate system, tuple
-    #wrap: if True, Lam is constrained to only positive values. Otherwise, Lam is in [-180,180]
-    #rad: is True, ALL inputs are in radians. ALL inputs should be in degrees if rad=False
-
-    use_array = True
-    if type(sky1) != type(np.array([])):
-        use_array = False
-        sky1 = np.array([sky1])
-        sky2 = np.array([sky2])
-
-    sky1 = sky1.copy() #fix aliasing
-    sky2 = sky2.copy()
-    pole1 = pole[0] #separate tuples for readability
-    pole2 = pole[1] #and easy scalability
-    origin1 = origin[0]
-    origin2 = origin[1]
-
-    if not rad:
-        sky1 *= np.pi/180
-        sky2 *= np.pi/180
-        pole1 *= np.pi/180
-        pole2 *= np.pi/180
-        origin1 *= np.pi/180
-        origin2 *= np.pi/180
-
-    rx, ry, rz = long_lat_to_unit_vec(pole1, pole2, rad=True)
-    rpole = np.array([rx, ry, rz]).T
-    rx, ry, rz = long_lat_to_unit_vec(origin1, origin2, rad=True)
-    rorigin = np.array([rx, ry, rz]).T
-
-    #if pole and origin aren't exactly orthogonal, there's an offset generated in Lambda and Beta.
-    #we subtract this from both and then things are happy.
-    offset = np.arccos(np.dot(rpole, rorigin)) - np.pi/2
-
-    #--------------------
-    #calculate latitude
-    #--------------------
-    #simplified dot product using only the latitude and longitudes
-    udotv = np.cos(sky1 - pole1)*np.cos(sky2)*np.cos(pole2) + np.sin(sky2)*np.sin(pole2)
-    #^^^ can be simplified to run only 3 trig functions instead of 5
-    #using product-to-sum formulas
-
-    #regardless, the longitude half of this function is much longer than this half
-    #so optimize that first
-
-    Bet = np.pi/2 - np.arccos(udotv) + offset
-
-    #--------------------
-    #calculate longitude
-    #--------------------
-    #this is the simplest way I could figure out how to do this without rotation matrices
-    #and Euler angles. Was having problems with those because all of the literature
-    #mixes notations and there are a lot of different conventions
-
-    #unit vectors from cartesian origin to pole and new polar origin
-    nx, ny, nz = long_lat_to_unit_vec(pole1, pole2, rad=True)
-    Ox, Oy, Oz = long_lat_to_unit_vec(origin1, origin2, rad=True)
-
-    n = np.array([nx, ny, nz]).T
-    O = np.array([Ox, Oy, Oz]).T
-
-    #Use this to determine hemisphere of point
-    Oprime = np.cross(n, O) #should be magnitude = 1, or close to it
-    Oprime /= (Oprime[0]**2 + Oprime[1]**2 + Oprime[2]**2)**0.5 #normalize it just in case
-    #if a bad origin is defined (not on equator) this will not unit length unless normalized
-
-    #unit vectors to the points:
-    px, py, pz = long_lat_to_unit_vec(sky1, sky2, rad=True)
-    p = np.array([px, py, pz]).T
-
-    #convert p into rejection on the pole vector (project into new equator plane)
-    pdotn = comp_wise_dot(p, n)
-    pdotnxn = p.copy()
-    for i in range(len(pdotn)):
-        pdotnxn[i] = pdotn[i]*n
-
-    rejnp = p - pdotnxn
-
-    #construct arrays for the angle between the new polar origin vector and the point
-    #and also the array to tell you which hemisphere the point is in
-    Lam = np.arccos(comp_wise_dot(rejnp, O, normalize=True)) - offset
-    hemi = comp_wise_dot(rejnp, Oprime)
-
-    #correct angles on the far hemisphere
-    for i in range(len(Lam)):
-        if hemi[i] < 0:
-            Lam[i] = 0 - Lam[i]
-
-    #---------------------------
-
-    if not rad:
-        Lam *= 180/np.pi
-        Bet *= 180/np.pi
-
-    if wrap:
-        Lam = wrap_long(Lam)
-
-    if not use_array:
-        Lam = Lam[0]
-        Bet = Bet[0]
-
-    return Lam, Bet
-'''
 
 #===============================================================================
 # RUNTIME

@@ -14,6 +14,30 @@ that are widely used throughout mwahpy.
 import astropy.units as u
 
 #===============================================================================
+# CLASSES
+#===============================================================================
+
+#currently just used for the position of the Sun, but could be more useful in other places
+class PhaseSpace():
+
+    def __init__(self, ps):
+        self.x = ps[0]
+        self.y = ps[1]
+        self.z = ps[2]
+        self.vx = ps[3]
+        self.vy = ps[4]
+        self.vz = ps[5]
+
+    #this way you can change the phase space used for the Sun within the entire package
+    def update(self, ps):
+        self.x = ps[0]
+        self.y = ps[1]
+        self.z = ps[2]
+        self.vx = ps[3]
+        self.vy = ps[4]
+        self.vz = ps[5]
+
+#===============================================================================
 # CONSTANTS
 #===============================================================================
 
@@ -29,14 +53,8 @@ kpcgyr_to_kms = 0.978 #1 kpc/Gyr is 0.978 km/s
 #by defining heliocentric frame here
 
 #right-handed coordinate frame(!)
-helio_x = -8
-helio_y = 0
-helio_z = 0
-
 #Hogg et al. (2005)
-helio_vx = 10.1
-helio_vy = 224.0
-helio_vz = 6.7
+solar_ps = PhaseSpace([-8., 0., 0., 10.1, 224.0, 6.7])
 
 #===============================================================================
 # FUNCTIONS

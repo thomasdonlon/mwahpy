@@ -1,3 +1,15 @@
+v1.4.2: (MINOR PATCH)
+ - Now using python's built-in Warning class instead of manually checking flags
+   and printing warning statements
+ - orbit_fitter and orbit_fitter_gc now have two modes: 'de' (differential evolution)
+   and 'gd' (gradient descent). Mode 'de' requires bounds, and mode 'gd' requires
+   an initial guess. These are selected with the 'mode' keyword in
+   orbit_fitter.fit_orbit() and orbit_fitter_gc.fit_orbit().
+ - the phase space coordinates of the Sun are now a PhaseSpace class, which can be
+   updated throughout the package with mwahpy_glob.solar_ps.update(<[x, y, z, vx, vy, vz]>).
+   To access the x velocity of the phase space coordinate, for example, you now use
+   mwahpy_glob.solar_ps.vx.
+
 v1.4.1:
  MAJOR CHANGES:
  - now require python v3.6.0 or above due to installation problems with older

@@ -1,6 +1,8 @@
-import numpy as np
+solar_ps.import numpy as np
 from numpy import linalg
 import scipy as sc
+
+from .mwahpy_glob import solar_ps
 
 #TODO: Make sure all transformations have inverse transformations
 #TODO: Make sure all transormations have unit tests
@@ -131,10 +133,10 @@ def cart_to_gal(x, y, z, left_handed=False):
         z = np.array([z])
 
     if left_handed:
-        r = ((x+mwahpy_glob.helio_x)**2 + y**2 + z**2)**0.5
+        r = ((x+solar_ps.x)**2 + y**2 + z**2)**0.5
         l = np.arctan2(y,-1*(x-8))*180/np.pi
     else:
-        r = ((x-mwahpy_glob.helio_x)**2 + y**2 + z**2)**0.5
+        r = ((x-solar_ps.x)**2 + y**2 + z**2)**0.5
         l = np.arctan2(y,(x+8))*180/np.pi
     b = np.arcsin(z/r)*180/np.pi
 
@@ -162,10 +164,10 @@ def gal_to_cart(l, b, r, left_handed=False, rad=False):
 
     if left_handed:
         #left-handed
-        x = -1*mwahpy_glob.helio_x - r*np.cos(l)*np.cos(b)
+        x = -1*solar_ps.x - r*np.cos(l)*np.cos(b)
     else:
         #right-handed
-        x = r*np.cos(l)*np.cos(b) + mwahpy_glob.helio_x
+        x = r*np.cos(l)*np.cos(b) + solar_ps.x
 
     y = r*np.sin(l)*np.cos(b)
     z = r*np.sin(b)
@@ -327,9 +329,9 @@ def get_vxvyvz(ra, dec, dist, rv, pmra, pmde):
     U, V, W = get_uvw(ra, dec, dist, rv, pmra, pmde)
 
     # add Sun's velocity
-    vx = U + mwahpy_glob.helio_vx
-    vy = V + mwahpy_glob.helio_vy
-    vz = W + mwahpy_glob.helio_vz
+    vx = U + solar_ps.vx
+    vy = V + solar_ps.vy
+    vz = W + solar_ps.vz
 
     return vx, vy, vz
 
@@ -388,9 +390,9 @@ def get_rvpm(ra, dec, dist, U, V, W):
 
 #inputs must be arrays, even if just of length 1
 def remove_sol_mot_from_pm(ra, dec, dist, pmra, pmdec):
-    vx = np.array([-mwahpy_glob.helio_vx] * len(ra))
-    vy = np.array([-mwahpy_glob.helio_vy] * len(ra))
-    vz = np.array([-mwahpy_glob.helio_vz] * len(ra))
+    vx = np.array([-solar_ps.vx] * len(ra))
+    vy = np.array([-solar_ps.vy] * len(ra))
+    vz = np.array([-solar_ps.vz] * len(ra))
 
     rv, mura, mudec = get_rvpm(ra, dec, dist, vx, vy, vz)
 
@@ -445,7 +447,7 @@ def vlos_to_vgsr(l, b, vlos):
     l = l * np.pi/180
     b = b * np.pi/180
 
-    vgsr = vlos + mwahpy_glob.helio_vx*np.cos(l)*np.cos(b) + mwahpy_glob.helio_vy*np.sin(l)*np.cos(b) + mwahpy_glob.helio_vz*np.sin(b)
+    vgsr = vlos + solar_ps.vx*np.cos(l)*np.cos(b) + solar_ps.vy*np.sin(l)*np.cos(b) + solar_ps.vz*np.sin(b)
 
     if not use_array:
         vgsr = vgsr[0]
@@ -466,7 +468,7 @@ def vgsr_to_vlos(l, b, vgsr):
     l = l * np.pi/180
     b = b * np.pi/180
 
-    vlos = vgsr - mwahpy_glob.helio_vx*np.cos(l)*np.cos(b) - mwahpy_glob.helio_vy*np.sin(l)*np.cos(b) - mwahpy_glob.helio_vz*np.sin(b)
+    vlos = vgsr - solar_ps.vx*np.cos(l)*np.cos(b) - solar_ps.vy*np.sin(l)*np.cos(b) - solar_ps.vz*np.sin(b)
 
     if not use_array:
         vlos = vlos[0]
@@ -615,7 +617,7 @@ def cart_to_lambet(x,y,z, normal, point):
 
 def cart_to_sgr(x,y,z):
 
-    x_prime = x_prime - mwahpy_glob.helio_x
+    x_prime = x_prime - solar_ps.x
     xyz = np.array([x, y, z])
 
     #Euler rotation matrix from Solar frame into Sgr

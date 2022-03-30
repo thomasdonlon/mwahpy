@@ -151,7 +151,7 @@ def chi_squared(params, data=[], normal=(0, 0, 0), point=(1, 0, 0)):
 
 #takes in data, then fits a Great Circle to that data and
 #minimizes the chi_squared to fit an orbit to the data
-def optimize(data_opt, max_it, bounds, **kwargs):
+def optimize(data_opt, max_it, bounds, guess, mode, **kwargs)
 
     #compute the preferred galactocentric spherical frame to fit this orbit in
     #(should be close to the orbital plane of the observed data)
@@ -178,7 +178,28 @@ def optimize(data_opt, max_it, bounds, **kwargs):
     '''
 
     #the actual bulk of the optimization
-    params = scopt.differential_evolution(chi_squared, bounds, args=(data_opt, normal, point), maxiter=max_it, popsize=pop_size, mutation=diff_scaling_factor, recombination=crossover_rate, workers=-1, disp=not(verbose), **kwargs).x
+    if mode == 'de': #do differential evolution
+
+        if bounds is None:
+            raise RuntimeWarning('Keyword `guess` was not provided in `fit_orbit()` (required for differential evolution): using default bounds of [(0, 360), (-90, 90), (0, 100), (-1000, 1000), (-1000, 1000), (-1000, 1000)].')
+            bounds = [(0, 360), (-90, 90), (0, 100), (-1000, 1000), (-1000, 1000), (-1000, 1000)]
+
+        params = scopt.differential_evolution(chi_squared, bounds, args=(data_opt, normal, point,), maxiter=max_it, popsize=pop_size, mutation=diff_scaling_factor, recombination=crossover_rate, workers=-1, disp=not(verbose), **kwargs).x
+
+    elif mode == 'gd': #do gradient descent
+
+        if guess is None:
+            raise RuntimeWarning('Keyword `guess` was not provided in `fit_orbit()` (required for gradient descent): using default guess of [0, 0, 0, 0, 0, 0].')
+            guess = [0, 0, 0, 0, 0, 0]
+
+        #have to do it this way because you can't pass 'bounds' as a kwarg
+        if bounds is not None:
+            params = scopt.minimize(chi_squared, guess, args=(data_opt, normal, point,), bounds=bounds, options={'maxiter':max_it, 'disp':verbose}, **kwargs).x
+        else:
+            params = scopt.minimize(chi_squared, guess, args=(data_opt, normal, point,), options={'maxiter':max_it, 'disp':verbose}, **kwargs).x
+
+    else:
+        raise BaseException('`mode` for `fit_orbit()` must be either `de` for differential evolution, or `gd` for gradient descent.')
 
     x2 = chi_squared(params, data_opt, normal, point)
 
@@ -198,8 +219,7 @@ def optimize(data_opt, max_it, bounds, **kwargs):
 #additional kwargs are passed to scipy.optimize.differential_evolution()
 def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
               vx_err=None, vy_err=None, vz_err=None, vgsr_err=None, max_it=100, \
-              bounds=[(0, 360), (-90, 90), (0, 100), (-1000, 1000), (-1000, 1000), (-1000, 1000)], \
-              t_len=None, **kwargs):
+              bounds=None, guess=None, t_len=None, mode='de', **kwargs):
 
     #construct data
     #set proper flags based on input data
@@ -234,7 +254,7 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
         print('===================================')
 
     #optimization
-    params, normal, point, x2 = optimize(data_opt, max_it, bounds, **kwargs)
+    params, normal, point, x2 = optimize(data_opt, max_it, bounds, guess, mode, **kwargs)
 
     if verbose:
         print('===================================')
