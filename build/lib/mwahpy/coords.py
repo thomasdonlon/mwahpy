@@ -1,4 +1,4 @@
-solar_ps.import numpy as np
+import numpy as np
 from numpy import linalg
 import scipy as sc
 

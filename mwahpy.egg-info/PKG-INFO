@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: mwahpy
-Version: 1.4.2
+Version: 1.4.3
 Summary: A python package for easily parsing and processing data from MilkyWay@home
 Home-page: https://github.com/thomasdonlon/mwahpy
 Author: Tom Donlon

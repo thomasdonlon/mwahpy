@@ -181,7 +181,7 @@ def optimize(data_opt, max_it, bounds, guess, mode, **kwargs)
     if mode == 'de': #do differential evolution
 
         if bounds is None:
-            raise RuntimeWarning('Keyword `guess` was not provided in `fit_orbit()` (required for differential evolution): using default bounds of [(0, 360), (-90, 90), (0, 100), (-1000, 1000), (-1000, 1000), (-1000, 1000)].')
+            print(RuntimeWarning('Keyword `guess` was not provided in `fit_orbit()` (required for differential evolution): using default bounds of [(0, 360), (-90, 90), (0, 100), (-1000, 1000), (-1000, 1000), (-1000, 1000)].'))
             bounds = [(0, 360), (-90, 90), (0, 100), (-1000, 1000), (-1000, 1000), (-1000, 1000)]
 
         params = scopt.differential_evolution(chi_squared, bounds, args=(data_opt, normal, point,), maxiter=max_it, popsize=pop_size, mutation=diff_scaling_factor, recombination=crossover_rate, workers=-1, disp=not(verbose), **kwargs).x
@@ -189,7 +189,7 @@ def optimize(data_opt, max_it, bounds, guess, mode, **kwargs)
     elif mode == 'gd': #do gradient descent
 
         if guess is None:
-            raise RuntimeWarning('Keyword `guess` was not provided in `fit_orbit()` (required for gradient descent): using default guess of [0, 0, 0, 0, 0, 0].')
+            print(RuntimeWarning('Keyword `guess` was not provided in `fit_orbit()` (required for gradient descent): using default guess of [0, 0, 0, 0, 0, 0].'))
             guess = [0, 0, 0, 0, 0, 0]
 
         #have to do it this way because you can't pass 'bounds' as a kwarg

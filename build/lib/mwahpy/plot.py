@@ -24,9 +24,7 @@ import matplotlib.pyplot as plt
 default_fancy_background_url = 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/NGC_5170_HST_9766_R814B435.png/2560px-NGC_5170_HST_9766_R814B435.png'
 
 #the licensing warning given when the user uses fancy plot
-licensing_warning = 'WARNING: The fancy_plot() routine uses an image that has been licensed by Rensselaer Polytechnic Institute (RPI). \
-                     If you are not associated with RPI, then public usage of the default background image is not allowed. \
-                     Please provide another URL for the background image with the `bg_url` keyword.'
+licensing_warning = "WARNING: The fancy_plot() routine uses an image that has been licensed by Rensselaer Polytechnic Institute (RPI). If you are not affiliated with RPI, then public usage of the default background image is not allowed. Please provide another URL for the background image with the `bg_url` keyword."
 
 #===============================================================================
 # FUNCTIONS
@@ -84,9 +82,12 @@ def trace_particle(t, id, x, y, vx=None, vy=None, vscale=0.02, show=False, s=50.
 
 #plots a histogram of the Timestep
 #see np.hist for usage
-def hist(t, x, show=False, *args, **kwargs):
+def hist(t, x, show=False, range=None, bins=10, *args, **kwargs):
     #t (Timestep): the Timestep object being plotted
     #x (str): the axis parameter
+
+    if range is None: #default range
+        range = (min(t[x]), max(t[x]))
 
     h = plt.hist(t[x], range=range, bins=bins, *args, **kwargs)
 
@@ -131,8 +132,8 @@ def fancy_plot(t, ax1, ax2, show=False, ax=None, bg_url=default_fancy_background
     #out: returns the active pyplot axis, so that you can alter the image as needed
 
     #print the licensing warning if this is the first time that the user has made a fancy plot
-    if bg_url == default_fancy_background_url)
-        raise UserWarning(licensing_warning)
+    if bg_url == default_fancy_background_url:
+        print(UserWarning(licensing_warning))
 
     # First set up the figure (if we have to)
     if ax is None:
@@ -148,7 +149,7 @@ def fancy_plot(t, ax1, ax2, show=False, ax=None, bg_url=default_fancy_background
     #bottom right text
     if bg_url == default_fancy_background_url:
         ax.text(extent[0] + 0.05*(extent[1] - extent[0]), extent[2] + 0.05*(extent[3] - extent[2]), 'Background image credit: ESA/NASA', color='w',
-                fontsize=20, zorder=1000, horizontalaligmnent='left', verticalalignment='bottom')
+                fontsize=20, zorder=1000, horizontalalignment='left', verticalalignment='bottom')
 
     #split up into dark and baryonic matter
     bm_indx = (t.typ == 0)
@@ -170,11 +171,14 @@ def fancy_plot(t, ax1, ax2, show=False, ax=None, bg_url=default_fancy_background
     #plot dark matter
     if len(x_dm) > 0:
         size_mult = 1.2
-        dm_points, = ax.plot(x[dm_indx], y[dm_indx], color=(238/256,130/256,238/256, 1), marker='o', linestyle='', ms=1.*size_mult, zorder=95, **kwargs)
-        dm_points2, = ax.plot(x[dm_indx], y[dm_indx], color=(221/256,160/256,221/256, 0.8), marker='o', linestyle='', ms=2.*size_mult, zorder=94, **kwargs)
-        dm_points3, = ax.plot(x[dm_indx], y[dm_indx], color=(186/256,85/256,211/256, 0.6), marker='o', linestyle='', ms=4.*size_mult, zorder=93, **kwargs)
-        dm_points4, = ax.plot(x[dm_indx], y[dm_indx], color=(148/256,0/256,211/256, 0.4), marker='o', linestyle='', ms=8.*size_mult, zorder=92, **kwargs)
-        dm_points5, = ax.plot(x[dm_indx], y[dm_indx], color=(139/256,0/256,139/256, 0.2), marker='o', linestyle='', ms=16.*size_mult, zorder=91, **kwargs)
+        dm_points, = ax.plot(x_dm, y_dm, color=(238/256,130/256,238/256, 1), marker='o', linestyle='', ms=1.*size_mult, zorder=95, **kwargs)
+        dm_points2, = ax.plot(x_dm, y_dm, color=(221/256,160/256,221/256, 0.8), marker='o', linestyle='', ms=2.*size_mult, zorder=94, **kwargs)
+        dm_points3, = ax.plot(x_dm, y_dm, color=(186/256,85/256,211/256, 0.6), marker='o', linestyle='', ms=4.*size_mult, zorder=93, **kwargs)
+        dm_points4, = ax.plot(x_dm, y_dm, color=(148/256,0/256,211/256, 0.4), marker='o', linestyle='', ms=8.*size_mult, zorder=92, **kwargs)
+        dm_points5, = ax.plot(x_dm, y_dm, color=(139/256,0/256,139/256, 0.2), marker='o', linestyle='', ms=16.*size_mult, zorder=91, **kwargs)
+
+    ax.set_xlim(extent[0], extent[1])
+    ax.set_ylim(extent[2], extent[3])
 
     if no_axes:
         ax.get_xaxis().set_visible(False)
