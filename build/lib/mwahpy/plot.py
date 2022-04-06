@@ -28,10 +28,6 @@ licensing_warning = 'WARNING: The fancy_plot() routine uses an image that has be
                      If you are not associated with RPI, then public usage of the default background image is not allowed. \
                      Please provide another URL for the background image with the `bg_url` keyword.'
 
-#tracks whether the user has seen the warning about the licensed image that
-#  fancy plot uses for its background
-fp_warning_flag = False
-
 #===============================================================================
 # FUNCTIONS
 #===============================================================================
@@ -135,10 +131,8 @@ def fancy_plot(t, ax1, ax2, show=False, ax=None, bg_url=default_fancy_background
     #out: returns the active pyplot axis, so that you can alter the image as needed
 
     #print the licensing warning if this is the first time that the user has made a fancy plot
-    global fp_warning_flag
-    if (not fp_warning_flag) and (bg_url == default_fancy_background_url):
-        print(licensing_warning)
-        fp_warning_flag = True #only trigger the warning the first time you make a fancy plot
+    if bg_url == default_fancy_background_url)
+        raise UserWarning(licensing_warning)
 
     # First set up the figure (if we have to)
     if ax is None:

@@ -29,7 +29,7 @@ from .coords import get_rvpm
 #===============================================================================
 
 basic_quantity_list = ['msol', 'l', 'b', 'ra', 'dec', 'phi', 'theta', 'dist', 'lx', 'ly', 'lz', 'lperp', 'ltot', 'r', 'R', 'vlos', 'vgsr', 'vrad', 'vrot', 'vR', 'dist_from_com']
-rvpm_quantity_list = ['rv', 'pmra', 'pmdec',  'pmtot', 'vtan']
+rvpm_quantity_list = ['pmra', 'pmdec',  'pmtot', 'vtan']
 energy_quantity_list = ['PE', 'KE', 'energy']
 
 #===============================================================================
@@ -217,6 +217,9 @@ class Timestep():
     def update(self, force=False):
         #only update the necessary attributes based on what changed
         #if force==True, then force updating everything. Should be only rarely needed
+        if verbose:
+            print('Updating data for new frame...')
+
         if force:
             self.changed_pos = True
             self.changed_vel = True
@@ -238,6 +241,9 @@ class Timestep():
         #(since we just updated)
         changed_pos = False
         changed_vel = False
+
+        if verbose:
+            print('Done updating')
 
     #creates a deep copy of the Timestep object
     #this can't be done by iterating over the object, since comass etc. have to be copied as well
@@ -471,6 +477,9 @@ class Timestep():
     #   overall velocities when they relax from unstable virial equilibrium ICs
     #Conserves the physics of the system under a change of reference frame
     def recenter(self):
+        if verbose:
+            print('Recentering the data on the centers of mass and momentum...', end='')
+
         #center the positions of the particles
         self.x = self.x - self.center_of_mass[0]
         self.y = self.y - self.center_of_mass[1]
@@ -480,6 +489,9 @@ class Timestep():
         self.vx = self.vx - self.center_of_momentum[0]
         self.vy = self.vy - self.center_of_momentum[1]
         self.vz = self.vz - self.center_of_momentum[2]
+
+        if verbose:
+            print('done')
 
         if auto_update:
             self.update()

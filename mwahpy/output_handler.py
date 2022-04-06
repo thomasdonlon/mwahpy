@@ -197,7 +197,7 @@ def make_nbody_input(t, f, recenter=True):
     i = 0
 
     while i < len(t):
-        f.write('\n{} {} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {:.6f} {} '.format(1, t.id[i], t.x[i], t.y[i], t.z[i], t.vx[i], t.vy[i], t.vz[i], t.mass[i]))
+        f.write('\n{}\t{}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{:.6f}\t{} '.format(1, t.id[i], t.x[i], t.y[i], t.z[i], t.vx[i], t.vy[i], t.vz[i], t.mass[i]))
         #f.write('\n'+str(1)+' '+str(t.id[i])+' '+str(t.x[i])+' '+str(t.y[i])+' '+str(t.z[i])+' '+\
         #        str(t.vx[i])+' '+str(t.vy[i])+' '+str(t.vz[i])+' '+str(t.mass[i]))
         if progress_bars:

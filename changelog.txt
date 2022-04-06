@@ -1,3 +1,14 @@
+v1.4.3: (BUG FIX)
+ - fixed some typos that would prevent the package from initializing correctly
+ - fixed plot.hist()
+ - fixed print_particle()
+ - calc_rvpm() was adding an additional unnecessary (unsupported) key to the
+   timestep object
+ - made timestep.recenter() and timestep.update() more verbose
+ - warnings are now printed, not raised as errors
+ - typos in plot.fancy_plot()
+ - fixed incorrect sizing of plot.fancy_plot()
+
 v1.4.2: (MINOR PATCH)
  - Now using python's built-in Warning class instead of manually checking flags
    and printing warning statements
