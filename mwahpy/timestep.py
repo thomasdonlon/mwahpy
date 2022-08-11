@@ -716,7 +716,7 @@ def get_self_energies(t):
 
     #compute the kinetic energy of each particle (within reference frame of
     #the COM's of the particles)
-    kin_energies = t.vx**2 + t.vy**2 + t.vz**2
+    kin_energies = 0.5*(t.vx**2 + t.vy**2 + t.vz**2)
 
     energies = pot_energies + kin_energies
 

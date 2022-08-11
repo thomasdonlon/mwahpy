@@ -1,3 +1,9 @@
+v1.4.4: (MINOR PATCH)
+ - orbit_fitter gradient descent now uses Nelder-Mead optimizer by default, BFGS
+   was terminating the optimization early
+ - fixed bug in calc_self_energies where KE was 2x as large as it should be
+ - added ability to change galaxy potential in orbit_fitter.py
+
 v1.4.3: (BUG FIX)
  - fixed some typos that would prevent the package from initializing correctly
  - fixed plot.hist()
