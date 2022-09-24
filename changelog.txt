@@ -1,3 +1,15 @@
+v1.4.5: (MINOR PATCH)
+ - fixed bug where orbit fitter plots would use the mwahpy default potential even
+   if another was provided
+ - output_handler.read_output() now works for files with the <bodies> </bodies> tags format
+ - changed name of sky_to_pole() to pole_rotation(), because it was confusing. 
+   sky_to_pole() is now an alias for pole_rotation() and causes a DeprecationWarning
+ - added pole_rotation_inv() function
+ - timestep.scatter() now has a 'cbar' keyword to turn on a colorbar & shade particles appropriately
+ - improved how .coords was checking types
+ - added eq_to_OC() transformation from ra/dec to Orphan-Chenab lambda/beta, 
+   and OC_to_eq() inverse transformation
+
 v1.4.4: (MINOR PATCH)
  - orbit_fitter gradient descent now uses Nelder-Mead optimizer by default, BFGS
    was terminating the optimization early

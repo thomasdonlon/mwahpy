@@ -99,15 +99,15 @@ class OrbitData():
 '''
 
 #do this in one place so it's uniform across the file and easily changeable
-def make_orbit(params, int_ts=None):
+def make_orbit(params, int_ts=None, pot=None):
 
     #negate the x velocity because galpy is in left-handed frame and we aren't barbarians
     o = Orbit(vxvv=[params[0]*u.deg, params[1]*u.deg, params[2]*u.kpc, -1*params[3]*u.km/u.s, params[4]*u.km/u.s, params[5]*u.km/u.s], uvw=True, lb=True, ro=8., vo=220., zo=0., solarmotion=[0, -220, 0])
 
     if int_ts: #use the global ts unless explicitly provided with a different ts
-        o.integrate(int_ts, mwahpy_default_pot)
+        o.integrate(int_ts, pot)
     else:
-        o.integrate(ts, mwahpy_default_pot)
+        o.integrate(ts, pot)
 
     return o
 
@@ -165,14 +165,14 @@ def get_point_list(vals, Lam):
 
 #get_model_from_orbit: data, orbit, vector, vector -> list(int) x3
 #take in data, orbit, and plane info: Output model data corresponding to each data point
-def get_model_from_orbit(data, params):
+def get_model_from_orbit(data, params, pot=None):
     #data: the data that the orbit is being fit to
     #o: the test orbit that we are calculating the goodness-of-fit of
     #normal: the normal vector to the plane of the Great Circle we are estimating for the orbit
     #point: parameter for the axis generation of the Great Circle coordinates
 
     #initialize the orbit we are fitting
-    o = make_orbit(params)
+    o = make_orbit(params, pot=pot)
 
     #we flip it around so that we are fitting both the forwards and the backwards orbit
     o_rev = o.flip()
@@ -221,13 +221,13 @@ def get_model_from_orbit(data, params):
 
 #chi_squared: data, galpy.Orbit() --> float
 #takes in the observed data and a test orbit and calculates the goodness-of-fit using a chi-squared method
-def chi_squared(params, data=[]):
+def chi_squared(params, data=[], pot=None):
     #data: the data that the orbit is being fit to
     #o: the test orbit that we are calculating the goodness-of-fit of
     #normal: the normal vector to the plane of the Great Circle we are estimating for the orbit
     #point: parameter for the axis generation of the Great Circle coordinates
 
-    B_model, d_model, vx_model, vy_model, vz_model, vgsr_model, costs = get_model_from_orbit(data, params) #get model data from orbit
+    B_model, d_model, vx_model, vy_model, vz_model, vgsr_model, costs = get_model_from_orbit(data, params, pot=pot) #get model data from orbit
 
     #B_model sometimes has different length than data.b, no idea why
     #I think it might be a race condition
@@ -282,7 +282,7 @@ def chi_squared(params, data=[]):
 
 #optimize: data -> [float, float, float, float, float], (float, float, float), (float, float, float)
 #takes in data, then fits a Great Circle to that data and minimizes the chi_squared to fit an orbit to the data
-def optimize(data_opt, max_it, bounds, guess, mode, **kwargs):
+def optimize(data_opt, max_it, bounds, guess, mode, method='Nelder-Mead', pot=None, **kwargs):
 
     '''
     ============================================================================
@@ -303,7 +303,7 @@ def optimize(data_opt, max_it, bounds, guess, mode, **kwargs):
             print(RuntimeWarning('Keyword `bounds` was not provided in `fit_orbit()` (required for differential evolution): using default bounds of [(0, 360), (-90, 90), (0, 100), (-500, 500), (-500, 500), (-500, 500)].'))
             bounds = [(0, 360), (-90, 90), (0, 100), (-500, 500), (-500, 500), (-500, 500)]
 
-        params = scopt.differential_evolution(chi_squared, bounds, args=(data_opt,), maxiter=max_it, popsize=pop_size, mutation=diff_scaling_factor, recombination=crossover_rate, workers=-1, disp=not(verbose), **kwargs).x
+        params = scopt.differential_evolution(chi_squared, bounds, args=(data_opt, pot,), maxiter=max_it, popsize=pop_size, mutation=diff_scaling_factor, recombination=crossover_rate, workers=-1, disp=not(verbose), **kwargs).x
 
     elif mode == 'gd': #do gradient descent
 
@@ -313,14 +313,14 @@ def optimize(data_opt, max_it, bounds, guess, mode, **kwargs):
 
         #have to do it this way because you can't pass 'bounds' as a kwarg
         if bounds is not None:
-            params = scopt.minimize(chi_squared, guess, args=(data_opt,), bounds=bounds, options={'maxiter':max_it, 'disp':verbose}, **kwargs).x
+            params = scopt.minimize(chi_squared, guess, args=(data_opt, pot,), bounds=bounds, options={'maxiter':max_it, 'disp':verbose}, method=method, **kwargs).x
         else:
-            params = scopt.minimize(chi_squared, guess, args=(data_opt,), options={'maxiter':max_it, 'disp':verbose}, **kwargs).x
+            params = scopt.minimize(chi_squared, guess, args=(data_opt, pot,), options={'maxiter':max_it, 'disp':verbose}, method=method, **kwargs).x
 
     else:
         raise BaseException('`mode` for `fit_orbit()` must be either `de` for differential evolution, or `gd` for gradient descent.')
 
-    x2 = chi_squared(params, data_opt)
+    x2 = chi_squared(params, data=data_opt, pot=pot)
 
     return params, x2
 
@@ -332,7 +332,11 @@ def optimize(data_opt, max_it, bounds, guess, mode, **kwargs):
 
 def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
                  vx_err=None, vy_err=None, vz_err=None, vgsr_err=None, max_it=100, \
-                 bounds=None, guess=None, t_len=None, mode='de', **kwargs):
+                 bounds=None, guess=None, t_len=None, mode='de', pot=None, **kwargs):
+
+    if pot is None:
+        print(RuntimeWarning("Didn't provide potential for constructing orbits! Using mwahpy_default_pot for potential model."))
+        pot = mwahpy_default_pot
 
     #construct data
     #set proper flags based on input data
@@ -367,7 +371,7 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
         print('===================================')
 
     #optimization
-    params, x2 = optimize(data_opt, max_it, bounds, guess, mode, **kwargs)
+    params, x2 = optimize(data_opt, max_it, bounds, guess, mode, pot=pot, **kwargs)
 
     print('===================================')
     print('Params: l, b, d, vx, vy, vz')
@@ -385,9 +389,9 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
 ================================================================================
 '''
 
-def plot_orbit_gal(l, b, d, params):
+def plot_orbit_gal(l, b, d, params, pot=None):
 
-    o = make_orbit(params)
+    o = make_orbit(params, pot=pot)
 
     o_rev = o.flip()
     o_rev.integrate(ts, mwahpy_default_pot)
@@ -417,14 +421,14 @@ def plot_orbit_gal(l, b, d, params):
 
     plt.show()
 
-def plot_orbit_icrs(l, b, d, params):
+def plot_orbit_icrs(l, b, d, params, pot=None):
 
     s = SkyCoord(l, b, frame='galactic', unit=(u.deg, u.deg))
     s = s.transform_to('icrs')
     ra = s.ra
     dec = s.dec
 
-    o = make_orbit(params)
+    o = make_orbit(params, pot=pot)
 
     o_rev = o.flip()
     o_rev.integrate(ts, mwahpy_default_pot)
@@ -473,7 +477,7 @@ def test():
     ts = np.linspace(0, 0.25, 1000)*u.Gyr
     sample = np.array([100, 250, 400, 500, 600, 750, 850])
 
-    o = make_orbit([test_o_l, test_o_b, test_o_d, test_o_vx, test_o_vy, test_o_vz])
+    o = make_orbit([test_o_l, test_o_b, test_o_d, test_o_vx, test_o_vy, test_o_vz], pot=mwahpy_default_pot)
 
     l = np.take(o.ll(ts), sample)
     b = np.take(o.bb(ts), sample)
@@ -493,11 +497,11 @@ def test():
     test_orbit_data = OrbitData(l, b, d, None, None, None, None, b_err, d_err, None, None, None, None)
 
     print('Goodness-of-Fit of actual values:')
-    print(chi_squared([test_o_l, test_o_b, test_o_d, test_o_vx, test_o_vy, test_o_vz], data=test_orbit_data))
+    print(chi_squared([test_o_l, test_o_b, test_o_d, test_o_vx, test_o_vy, test_o_vz], data=test_orbit_data, pot=mwahpy_default_pot))
 
-    params, x2 = fit_orbit(l, b, b_err, d, d_err)
-    plot_orbit_gal(l, b, d, params)
-    plot_orbit_icrs(l, b, d, params)
+    params, x2 = fit_orbit(l, b, b_err, d, d_err, pot=mwahpy_default_pot)
+    plot_orbit_gal(l, b, d, params, pot=mwahpy_default_pot)
+    plot_orbit_icrs(l, b, d, params, pot=mwahpy_default_pot)
 
 '''
 ================================================================================

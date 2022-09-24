@@ -389,12 +389,12 @@ def fit_orbit(l, b, b_err, d, d_err, vx=None, vy=None, vz=None, vgsr=None, \
 ================================================================================
 '''
 
-def plot_orbit_gal(l, b, d, params, pot=None):
+def plot_orbit_gal(l, b, d, params, pot=mwahpy_default_pot):
 
     o = make_orbit(params, pot=pot)
 
     o_rev = o.flip()
-    o_rev.integrate(ts, mwahpy_default_pot)
+    o_rev.integrate(ts, pot)
 
     data_orbit, data_orbit_rev = get_OrbitData_from_orbit(o, o_rev)
 
@@ -421,7 +421,7 @@ def plot_orbit_gal(l, b, d, params, pot=None):
 
     plt.show()
 
-def plot_orbit_icrs(l, b, d, params, pot=None):
+def plot_orbit_icrs(l, b, d, params, pot=mwahpy_default_pot):
 
     s = SkyCoord(l, b, frame='galactic', unit=(u.deg, u.deg))
     s = s.transform_to('icrs')
@@ -431,7 +431,7 @@ def plot_orbit_icrs(l, b, d, params, pot=None):
     o = make_orbit(params, pot=pot)
 
     o_rev = o.flip()
-    o_rev.integrate(ts, mwahpy_default_pot)
+    o_rev.integrate(ts, pot)
 
     data_orbit, data_orbit_rev = get_OrbitData_from_orbit(o, o_rev)
     data_orbit.icrs()

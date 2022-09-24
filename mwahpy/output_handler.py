@@ -26,11 +26,19 @@ from .nbody import Nbody
 def remove_header(f):
     #f (open file): the milkyway ".out" file
 
+    has_bodies_tag = False #tracks if there are leading and trailing <bodies>/</bodies> tags in the .out file
+
     comass = []
     comom = []
 
-    #first 3 lines are junk
-    for i in range(0, 3):
+    #first few lines are junk
+    line = f.readline()
+    if line.strip() == '<bodies>': #exactly how many lines to skip depends on if we have the tags or not
+        n_skip = 3
+        has_bodies_tag = True
+    else:
+        n_skip = 2
+    for i in range(n_skip):
         f.readline()
 
     #next line has COM info
@@ -41,7 +49,7 @@ def remove_header(f):
     comass = [float(line[0]), float(line[1]), float(line[2])]
     comom = [float(line[3]), float(line[4]), float(line[5])]
 
-    return comass, comom
+    return comass, comom, has_bodies_tag
 
 #parses a milkyway ".out" file and returns a Timestep class structure
 def read_output(f, start=None, stop=None):
@@ -58,12 +66,17 @@ def read_output(f, start=None, stop=None):
         if stop is not None:
             flen -= stop
     if verbose:
-        print('\nReading in data from ' + str(f) + '...')
+        print(f"\nReading in data from {f}...")
 
     f = open(f, 'r')
 
     #remove the header, get relevant info from header
-    comass, comom = remove_header(f)
+    comass, comom, has_bodies_tag = remove_header(f)
+
+    if has_bodies_tag: #have to account for the </bodies> tag at the end of the file
+        if stop is not None: #if stop is given, then you assume it cuts off before the end of the file
+            stop = flen - 1
+            flen -= 1
 
     #store the data here temporarily
     array_dict = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[], 9:[], 10:[], 11:[]}
@@ -102,7 +115,7 @@ def read_output(f, start=None, stop=None):
 
     #return the Timestep class using the array dictionary we built
     if verbose:
-        print('\n'+ str(len(array_dict[1])) + ' objects read in')
+        print(f"\n{len(array_dict[1])} objects read in")
         print('\rConverting data...', end='')
     d = Timestep(typ=array_dict[0], id_val=array_dict[1], x=array_dict[2], y=array_dict[3], z=array_dict[4], vx=array_dict[8], vy=array_dict[9], vz=array_dict[10], mass=array_dict[11], center_of_mass=comass, center_of_momentum=comom)
     if verbose:
