@@ -531,7 +531,7 @@ class Timestep():
         #find indices of particles with typ==1
         ind = []
         for i, t in zip(range(len(self.typ)), self.typ): #ugly but fast I think
-            if t==0:
+            if t==1:
                 ind.append(i)
 
         #cut the data
