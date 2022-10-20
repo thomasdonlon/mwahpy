@@ -517,25 +517,13 @@ class Timestep():
 
     #cut the Timestep so only baryons (typ==0) remain
     def only_baryons(self):
-        #find indices of particles with typ==0
-        ind = []
-        for i, t in zip(range(len(self.typ)), self.typ): #ugly but fast I think
-            if t==0:
-                ind.append(i)
-
-        #cut the data
-        self.take(ind)
+        #nasty one liner
+        self.take(np.nonzero((self.typ == 0).astype(int))[0])
 
     #cut the Timestep so only dark matter particles (typ==1) remain
     def only_dark_matter(self):
-        #find indices of particles with typ==1
-        ind = []
-        for i, t in zip(range(len(self.typ)), self.typ): #ugly but fast I think
-            if t==0:
-                ind.append(i)
-
-        #cut the data
-        self.take(ind)
+        #nasty one liner
+        self.take(np.nonzero((self.typ == 1).astype(int))[0])
 
     #---------------------------------------------------------------------------
     # OUTPUT
