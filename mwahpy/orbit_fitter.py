@@ -99,15 +99,13 @@ class OrbitData():
 '''
 
 #do this in one place so it's uniform across the file and easily changeable
-def make_orbit(params, int_ts=None, pot=None):
+def make_orbit(params, pot=None):
 
     #negate the x velocity because galpy is in left-handed frame and we aren't barbarians
-    o = Orbit(vxvv=[params[0]*u.deg, params[1]*u.deg, params[2]*u.kpc, -1*params[3]*u.km/u.s, params[4]*u.km/u.s, params[5]*u.km/u.s], uvw=True, lb=True, ro=8., vo=220., zo=0., solarmotion=[0, -220, 0])
+    o = Orbit(vxvv=[params[0]*u.deg, params[1]*u.deg, params[2]*u.kpc, -1*params[3]*u.km/u.s, params[4]*u.km/u.s, params[5]*u.km/u.s], 
+              uvw=True, lb=True, ro=8., vo=220., zo=0., solarmotion=[0, -220, 0])
 
-    if int_ts: #use the global ts unless explicitly provided with a different ts
-        o.integrate(int_ts, pot)
-    else:
-        o.integrate(ts, pot)
+    o.integrate(ts, pot)
 
     return o
 
@@ -119,9 +117,34 @@ def get_OrbitData_from_orbit(o, o_rev):
     #o: the reversed orbit
     #both of these should be integrated prior to calling this function
 
-    #don't think that the velocities need obs=[8., 0., etc] except the vlos (to make it vgsr)
-    data_orbit = OrbitData(np.array(o.ll(ts)), np.array(o.bb(ts)), np.array(o.dist(ts)), np.array(o.vx(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o.vy(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o.vz(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o.vlos(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]))
-    data_orbit_rev = OrbitData(np.array(o_rev.ll(ts)), np.array(o_rev.bb(ts)), np.array(o_rev.dist(ts)), np.array(o_rev.vx(ts, obs=[8., 0., 0., 0., 0., 0.])), np.array(o_rev.vy(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o_rev.vz(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array(o_rev.vlos(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, np.array([]), np.array([]), np.array([]), np.array([]), np.array([]), np.array([]))
+    #negate x to correct frame (make it right-handed)
+    #obs=[8., 0., etc] on vlos (to make it vgsr)
+    data_orbit = OrbitData(np.array(o.ll(ts)), 
+                           np.array(o.bb(ts)), 
+                           np.array(o.dist(ts)), 
+                           np.array(o.vx(ts))*-1, 
+                           np.array(o.vy(ts)), 
+                           np.array(o.vz(ts)), 
+                           np.array(o.vlos(ts, obs=[8., 0., 0., 0., 0., 0.])), 
+                           np.array([]), 
+                           np.array([]), 
+                           np.array([]), 
+                           np.array([]), 
+                           np.array([]), 
+                           np.array([]))
+    data_orbit_rev = OrbitData(np.array(o_rev.ll(ts)), 
+                               np.array(o_rev.bb(ts)), 
+                               np.array(o_rev.dist(ts)), 
+                               np.array(o_rev.vx(ts)), 
+                               np.array(o_rev.vy(ts))*-1, 
+                               np.array(o_rev.vz(ts))*-1, 
+                               np.array(o_rev.vlos(ts, obs=[8., 0., 0., 0., 0., 0.]))*-1, 
+                               np.array([]), 
+                               np.array([]), 
+                               np.array([]), 
+                               np.array([]), 
+                               np.array([]), 
+                               np.array([]))
 
     return data_orbit, data_orbit_rev
 

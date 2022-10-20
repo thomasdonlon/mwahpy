@@ -15,29 +15,29 @@ from .mwahpy_glob import solar_ps
 #These functions aren't meant to be accessed by outside files or by end users,
 #and as such they are not well documented, named, or tested
 
-def wrap_long(long, rad=False):
+def wrap_long(lon, rad=False):
 
     if rad:
-        long = long * 180/np.pi
+        lon = lon * 180/np.pi
 
     use_array = True
-    if type(long) != type(np.array([])):
+    if not(isinstance(lon, np.ndarray)):
         use_array = False
-        long = np.array([long])
+        lon = np.array([lon])
 
-    for i in range(len(long)):
-        if long[i] < 0:
-            long[i] += 360
-        elif long[i] > 360:
-            long[i] -= 360
+    for i in range(len(lon)):
+        if lon[i] < 0:
+            lon[i] += 360
+        elif lon[i] > 360:
+            lon[i] -= 360
 
     if rad:
-        long = long * np.pi/180
+        lon = lon * np.pi/180
 
     if not use_array:
-        long = long[0]
+        lon = lon[0]
 
-    return long
+    return lon
 
 #rotate the given data around the provided axis
 #TODO: Allow array-like input
@@ -72,7 +72,7 @@ def rot_around_arb_axis(x, y, z, ux, uy, uz, theta):
 def long_lat_to_unit_vec(l, b, left_handed=False, rad=False):
 
     use_array = True
-    if type(l) != type(np.array([])):
+    if not(isinstance(l, np.ndarray)):
         use_array = False
         l = np.array([l])
         b = np.array([b])
@@ -126,7 +126,7 @@ def comp_wise_dot(M, v, normalize=False):
 def cart_to_gal(x, y, z, left_handed=False):
     #get l, b, r (helio) from galactocentric X, Y, Z coords
     use_array = True
-    if type(x) != type(np.array([])):
+    if not(isinstance(x, np.ndarray)):
         use_array = False
         x = np.array([x])
         y = np.array([y])
@@ -152,7 +152,7 @@ def cart_to_gal(x, y, z, left_handed=False):
 def gal_to_cart(l, b, r, left_handed=False, rad=False):
 
     use_array = True
-    if type(l) != type(np.array([])):
+    if not(isinstance(l, np.ndarray)):
         use_array = False
         l = np.array([l])
         b = np.array([b])
@@ -187,7 +187,7 @@ def gal_to_cart(l, b, r, left_handed=False, rad=False):
 def cart_to_cyl(x, y, z):
 
     use_array = True
-    if type(x) != type(np.array([])):
+    if not(isinstance(x, np.ndarray)):
         use_array = False
         x = np.array([x])
         y = np.array([y])
@@ -206,7 +206,7 @@ def cart_to_cyl(x, y, z):
 def cyl_to_cart(R, z, phi):
 
     use_array = True
-    if type(R) != type(np.array([])):
+    if not(isinstance(R, np.ndarray)):
         use_array = False
         R = np.array([R])
         phi = np.array([phi])
@@ -227,7 +227,7 @@ def cyl_to_cart(R, z, phi):
 def cart_to_sph(x, y, z):
 
     use_array = True
-    if type(x) != type(np.array([])):
+    if not(isinstance(x, np.ndarray)):
         use_array = False
         x = np.array([x])
         y = np.array([y])
@@ -250,7 +250,7 @@ def cart_to_sph(x, y, z):
 def sph_to_cart(phi, theta, r):
 
     use_array = True
-    if type(phi) != type(np.array([])):
+    if not(isinstance(phi, np.ndarray)):
         use_array = False
         phi = np.array([phi])
         theta = np.array([theta])
@@ -343,7 +343,7 @@ def get_vxvyvz(ra, dec, dist, rv, pmra, pmde):
 def get_rvpm(ra, dec, dist, U, V, W):
 
     use_array = True
-    if type(ra) != type(np.array([])):
+    if not(isinstance(ra, np.ndarray)):
         use_array = False
         ra = np.array([ra])
         dec = np.array([dec])
@@ -438,7 +438,7 @@ def vlos_to_vgsr(l, b, vlos):
     #TODO: Allow ra, dec as inputs
 
     use_array = True
-    if type(l) != type(np.array([])):
+    if not(isinstance(l, np.ndarray)):
         use_array = False
         l = np.array([l])
         b = np.array([b])
@@ -459,7 +459,7 @@ def vgsr_to_vlos(l, b, vgsr):
     #TODO: Allow ra, dec as inputs
 
     use_array = True
-    if type(l) != type(np.array([])):
+    if not(isinstance(l, np.ndarray)):
         use_array = False
         l = np.array([l])
         b = np.array([b])
@@ -724,7 +724,7 @@ def sgr_to_gal(Lam, Bet):
 
 #-------------------------------------------------------------------------------
 
-#sky_to_pole: array(float), array(float), tuple(float, float), tuple(float, float) -> array(float), array(float)
+#pole_rotation: array(float), array(float), tuple(float, float), tuple(float, float) -> array(float), array(float)
 #rotate the positions on the sky (sky1, sky2) into a new frame determined by
 #the pole of the new frame (pole1, pole2) and the origin of the new frame (origin1, origin2)
 #The output is the longitude and latitude in the new coordinate frame
@@ -734,7 +734,9 @@ def sgr_to_gal(Lam, Bet):
 #e.g. if sky1 is a list of RAs and sky2 is a list of Decs, then
 #the pole and origin arguments must also be specified in RA Dec.
 
-def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
+#sky_to_pole() is deprecated but it is an alias of this function
+
+def pole_rotation(sky1, sky2, pole, origin, wrap=False, rad=False):
     #sky1, sky2: positions of the data on the sky (e.g. sky1 = array(RA), sky2 = array(Dec), etc.)
     #pole: position of the pole of the new coordinate system, tuple
     #origin: position of the origin of the new coordinate system, tuple
@@ -800,6 +802,36 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
         Bet = Bet[0]
 
     return Lam, Bet
+
+#given the origin and pole for a pole_rotation (in Eq, galactic, etc.), and the new Lambda/Beta,
+#returns the sky coordinates in whatever coordinates pole and origin were specified in
+def pole_rotation_inv(Lam, Bet, pole, origin, **kwargs):
+
+    new_lon, new_lat = pole_rotation(np.array([0, 0]), np.array([90, 0]), pole, origin, **kwargs)
+    new_pole = (new_lon[0], new_lat[0])
+    new_origin = (new_lon[1], new_lat[1])
+    sky1, sky2 = pole_rotation(Lam, Bet, new_pole, new_origin, **kwargs)
+
+    return sky1, sky2
+
+def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
+
+    print(DeprecationWarning('sky_to_pole() is deprecated as of mwahpy v1.4.5. Please use pole_rotation() instead (sky_to_pole is now an alias for this). In future updates, this function may be removed.'))
+
+    return pole_rotation(sky1, sky2, pole, origin, wrap=False, rad=False)
+
+#-------------------------------------------------------------------------------
+#hard-coded pole_rotation transformations
+
+oc_pole = (72, -14) #koposov et al. (2019) orphan-chenab stream transformation (ra, dec)
+oc_origin = (191.10487, 62.86084)
+
+def eq_to_OC(ra, dec, **kwargs):
+    return pole_rotation(ra, dec, oc_pole, oc_origin, **kwargs)
+
+def OC_to_eq(Lam, Bet, **kwargs):
+    return pole_rotation_inv(Lam, Bet, oc_pole, oc_origin, **kwargs)
+
 
 #===============================================================================
 # RUNTIME

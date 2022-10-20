@@ -1,3 +1,10 @@
+v1.4.6: (BUG FIX)
+ - the reverse orbit in orbit_fitter.get_OrbitData_from_orbit() was using the forwards
+   orbit to calculate vgsr. Fixed
+ - timestep.only_dark_matter() had a typo that made it identical to only_baryons(). Fixed
+ - did some refactoring of orbit_fitter to make it easier to read and more consistent with
+   things like changing the timestep and potential
+
 v1.4.5: (MINOR PATCH)
  - fixed bug where orbit fitter plots would use the mwahpy default potential even
    if another was provided

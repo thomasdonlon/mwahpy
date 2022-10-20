@@ -31,12 +31,22 @@ licensing_warning = "WARNING: The fancy_plot() routine uses an image that has be
 #===============================================================================
 
 #generates a scatter plot of your Timestep object
-def scatter(t, x, y, show=False, s=5.0, color='k', marker='o', **kwargs):
+def scatter(t, x, y, cbar=None, show=False, s=5.0, color=None, marker='o', **kwargs):
     #t: the Timestep object to plot
     #x: the x-axis parameter
     #y: the y-axis parameter
 
-    plt.scatter(t[x], t[y], s=s, c=color, marker=marker, **kwargs)
+    if (cbar is not None) and (color is not None):
+        print(UserWarning("Provided both 'cbar' and 'color' argument. Using cbar argument for this plot."))
+
+    if color is None:
+        color = 'k' #default set to black, but this can't be assigned in the def line because we need to check if a user set it
+
+    if cbar is not None:
+        plt.scatter(t[x], t[y], s=s, c=t[cbar], marker=marker, **kwargs)
+        plt.colorbar()
+    else:
+        plt.scatter(t[x], t[y], s=s, c=color, marker=marker, **kwargs)
 
     if show:
         plt.xlabel(x)
