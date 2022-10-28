@@ -199,7 +199,7 @@ def get_model_from_orbit(data, params, pot=None):
 
     #we flip it around so that we are fitting both the forwards and the backwards orbit
     o_rev = o.flip()
-    o_rev.integrate(ts, mwahpy_default_pot)
+    o_rev.integrate(ts, pot=pot)
 
     data_orbit, data_orbit_rev = get_OrbitData_from_orbit(o, o_rev)
 
@@ -264,22 +264,29 @@ def chi_squared(params, data=[], pot=None):
     #this is the main chi squared that we are minimizing
     #it's not a "chi-squared" anymore, but multiplying by a constant seems dumb
     x2 = x2_B + x2_d + costs #Willett et al. 2009, give or take
+    N_params = len(data.l) + len(data.b) + len(data.d)
 
     if vx_flag:
         x2_vx = sum(((vx_model - data.vx)/data.vx_err)**2)
         x2 += x2_vx
+        N_params += len(data.vx)
 
     if vy_flag:
         x2_vy = sum(((vy_model - data.vy)/data.vy_err)**2)
         x2 += x2_vy
+        N_params += len(data.vy)
 
     if vz_flag:
         x2_vz = sum(((vz_model - data.vz)/data.vz_err)**2)
         x2 += x2_vz
+        N_params += len(data.vz)
 
     if vgsr_flag:
         x2_vgsr = sum(((vgsr_model - data.vgsr)/data.vgsr_err)**2)
         x2 += x2_vgsr
+        N_params += len(data.vgsr)
+
+    x2 /= (N_params - 7) #always has 6 params
 
     '''
     #get normalization factor
