@@ -1,5 +1,7 @@
 v1.4.7:
  - made the goodness-of-fit in orbit_fitter an actual chi-squared
+ - fixed type mismatch in coords.pole_rotation_inv
+ - added timestep.get_bound_mass()
 
 v1.4.6: (BUG FIX)
  - the reverse orbit in orbit_fitter.get_OrbitData_from_orbit() was using the forwards

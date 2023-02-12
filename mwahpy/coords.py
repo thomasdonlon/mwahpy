@@ -807,7 +807,7 @@ def pole_rotation(sky1, sky2, pole, origin, wrap=False, rad=False):
 #returns the sky coordinates in whatever coordinates pole and origin were specified in
 def pole_rotation_inv(Lam, Bet, pole, origin, **kwargs):
 
-    new_lon, new_lat = pole_rotation(np.array([0, 0]), np.array([90, 0]), pole, origin, **kwargs)
+    new_lon, new_lat = pole_rotation(np.array([0., 0.]), np.array([90., 0.]), pole, origin, **kwargs)
     new_pole = (new_lon[0], new_lat[0])
     new_origin = (new_lon[1], new_lat[1])
     sky1, sky2 = pole_rotation(Lam, Bet, new_pole, new_origin, **kwargs)
