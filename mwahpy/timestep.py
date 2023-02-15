@@ -799,3 +799,35 @@ def get_bound_mass(t):
     dm = (t.typ == 1)
 
     return np.sum(t.mass[bound]), np.sum(t.mass[bound*bary]), np.sum(t.mass[bound*dm])
+
+
+#checks the level of incest in each particle and provides a dict of all
+#particles with incest at least the specified level, and their counterparts
+#(incest is when two particles share at least one Cartesian position. I didn't
+# come up with the name)
+
+#the dict has the format {id: [list, of, all, incestuous, ids]}
+
+#heads up this runs as O(n) so if you have a very large timestep, be ready to wait around for a while
+
+def check_for_incest(t, lvl=1):
+    #lvl: how many cartesian coordinates need to be shared for the program to include a particle as incestuous
+
+    out_dict = {}
+
+    for i in range(len(t)):
+        dx = t.x - t.x[i]
+        dy = t.y - t.y[i]
+        dz = t.z - t.z[i]
+
+        tot_lvl = (dx == 0).astype(int) + (dy == 0).astype(int) + (dz == 0).astype(int)
+        inds = np.where(tot_lvl > lvl)[0]
+
+        if len(inds) > 0:
+            out_dict[i] = inds 
+
+    if verbose:
+        print(f'{len(out_dict)} particles were incestuous in at least {lvl} coordinates')
+
+    return out_dict
+
