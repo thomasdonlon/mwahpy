@@ -428,11 +428,12 @@ class Timestep():
 
     #splits the Timestep into a list of new Timestep structures,
     #where the Timestep is split every time ID wraps back to zero
-    #TODO: the dwarf id start at 1, not 0
-    def split_at_id_wrap(self):
+    def split_at_id_wrap(self, val=1):
+        #val [int]: the index that is looked for when splitting the timesteps
+        #           (this will almost always be 1 but the toggle is here now just in case)
 
         outlist = []
-        indices = np.where(self.id==0)[0] #1D list of arrays
+        indices = np.where(self.id==val)[0] #1D list of arrays
 
         Timestep2 = self.copy()
         i = 1

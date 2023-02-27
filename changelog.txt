@@ -4,6 +4,8 @@ v1.4.7:
  - added timestep.get_bound_mass()
  - added timestep.check_for_incest()
  - edited github readme
+ - split_at_id_wrap works again for new Nbody formatting, added a toggle for user-inputted 
+   values for backwards compatability
 
 v1.4.6: (BUG FIX)
  - the reverse orbit in orbit_fitter.get_OrbitData_from_orbit() was using the forwards
