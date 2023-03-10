@@ -6,6 +6,9 @@ v1.4.7:
  - edited github readme
  - split_at_id_wrap works again for new Nbody formatting, added a toggle for user-inputted 
    values for backwards compatability
+ - added plot.scatter_multiple() to plot lists of timesteps (like those made by split_at_id_wrap)
+ - added a few paper&stream-specific transformations (gal_to_lambet_newberg2010(), 
+   lambet_to_gal_newberg2010(), and eq_to_OC_koposov2019())
 
 v1.4.6: (BUG FIX)
  - the reverse orbit in orbit_fitter.get_OrbitData_from_orbit() was using the forwards

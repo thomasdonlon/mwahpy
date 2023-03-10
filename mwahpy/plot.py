@@ -121,6 +121,22 @@ def hist2d(t, x, y, show=False, *args, **kwargs):
 
     return h
 
+#constructs a scatter plot of a list of timesteps
+#(like the output from split_on_id_wrap)
+#can pass anything you would pass to scatter
+def scatter_multiple(alot, x, y, show=False, *args, **kwargs):
+    #alot (a list of Timesteps): the Timesteps being plotted
+    #x (str): the x-axis parameter
+    #y (str): the y-axis parameter
+
+    for t in alot:
+        scatter(t, x, y, show=False, *args, **kwargs)
+
+    if show:
+        plt.xlabel(x)
+        plt.ylabel(y)
+        plt.show()
+
 #-------------------------------------------------------------------------------
 # fancy plots
 #-------------------------------------------------------------------------------
