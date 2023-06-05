@@ -1,4 +1,12 @@
-v1.4.7:
+v1.4.8:
+ - fixed bug in computing vgsr and vr for simulated data
+ - corrected rotation matrix and typo in coords.eq_to_OC_koposov2019()
+ - added inverse coords.OC_to_eq_koposov2019()
+ - added @fix_arrays decorator to coords that makes it a lot easier to implement flexible 
+   array & non-array inputs
+ - added some flexible array/non-array inputs to various coords functions
+
+v1.4.7: (MINOR PATCH)
  - made the goodness-of-fit in orbit_fitter an actual chi-squared
  - fixed type mismatch in coords.pole_rotation_inv
  - added timestep.get_bound_mass()

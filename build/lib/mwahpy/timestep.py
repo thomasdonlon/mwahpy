@@ -428,11 +428,12 @@ class Timestep():
 
     #splits the Timestep into a list of new Timestep structures,
     #where the Timestep is split every time ID wraps back to zero
-    #TODO: the dwarf id start at 1, not 0
-    def split_at_id_wrap(self):
+    def split_at_id_wrap(self, val=1):
+        #val [int]: the index that is looked for when splitting the timesteps
+        #           (this will almost always be 1 but the toggle is here now just in case)
 
         outlist = []
-        indices = np.where(self.id==0)[0] #1D list of arrays
+        indices = np.where(self.id==val)[0] #1D list of arrays
 
         Timestep2 = self.copy()
         i = 1
@@ -782,3 +783,52 @@ def find_progenitor(t, ran=100.):
     pos = [x_val,y_val,z_val]
 
     return pos
+
+#computes the amount of bound mass (split up by DM and baryons) around a dwarf
+#assumes that all of the particles in the timestep belong to the dwarf
+#adapted from code written by Hiroka Warren
+
+#output = total bound mass, baryon bound mass, DM bound mass (in structure masses)
+
+def get_bound_mass(t):
+    #t: the timestep
+
+    self_energies = get_self_energies(t)
+
+    bound = (self_energies < 0)
+    bary = (t.typ == 0)
+    dm = (t.typ == 1)
+
+    return np.sum(t.mass[bound]), np.sum(t.mass[bound*bary]), np.sum(t.mass[bound*dm])
+
+
+#checks the level of incest in each particle and provides a dict of all
+#particles with incest at least the specified level, and their counterparts
+#(incest is when two particles share at least one Cartesian position. I didn't
+# come up with the name)
+
+#the dict has the format {id: [list, of, all, incestuous, ids]}
+
+#heads up this runs as O(n) so if you have a very large timestep, be ready to wait around for a while
+
+def check_for_incest(t, lvl=1):
+    #lvl: how many cartesian coordinates need to be shared for the program to include a particle as incestuous
+
+    out_dict = {}
+
+    for i in range(len(t)):
+        dx = t.x - t.x[i]
+        dy = t.y - t.y[i]
+        dz = t.z - t.z[i]
+
+        tot_lvl = (dx == 0).astype(int) + (dy == 0).astype(int) + (dz == 0).astype(int)
+        inds = np.where(tot_lvl > lvl)[0]
+
+        if len(inds) > 0:
+            out_dict[i] = inds 
+
+    if verbose:
+        print(f'{len(out_dict)} particles were incestuous in at least {lvl} coordinates')
+
+    return out_dict
+

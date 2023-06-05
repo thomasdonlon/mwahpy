@@ -744,7 +744,7 @@ def pole_rotation(sky1, sky2, pole, origin, wrap=False, rad=False):
     #rad: is True, ALL inputs are in radians. ALL inputs should be in degrees if rad=False
 
     use_array = True
-    if type(sky1) != type(np.array([])):
+    if not(isinstance(sky1, np.ndarray)):
         use_array = False
         sky1 = np.array([sky1])
         sky2 = np.array([sky2])
@@ -807,7 +807,7 @@ def pole_rotation(sky1, sky2, pole, origin, wrap=False, rad=False):
 #returns the sky coordinates in whatever coordinates pole and origin were specified in
 def pole_rotation_inv(Lam, Bet, pole, origin, **kwargs):
 
-    new_lon, new_lat = pole_rotation(np.array([0, 0]), np.array([90, 0]), pole, origin, **kwargs)
+    new_lon, new_lat = pole_rotation(np.array([0., 0.]), np.array([90., 0.]), pole, origin, **kwargs)
     new_pole = (new_lon[0], new_lat[0])
     new_origin = (new_lon[1], new_lat[1])
     sky1, sky2 = pole_rotation(Lam, Bet, new_pole, new_origin, **kwargs)
@@ -820,10 +820,126 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
 
     return pole_rotation(sky1, sky2, pole, origin, wrap=False, rad=False)
 
+#===============================================================================
+#EXTRA UTILITIES
+#===============================================================================
+
+#euler angle rotation matrix
+#too long to format like I normally would
+#out here because it's used for the transform and inverse transform
+phi = 128.79*np.pi/180
+theta = 54.39*np.pi/180
+psi = 90.70*np.pi/180
+
+newberg2010_ERM = np.array([[(np.cos(psi)*np.cos(phi))-(np.cos(theta)*np.sin(phi)*np.sin(psi)),
+                             (np.cos(psi)*np.sin(phi))+(np.cos(theta)*np.cos(phi)*np.sin(psi)),
+                             np.sin(psi)*np.sin(theta)],
+                            [(-np.sin(psi)*np.cos(phi))-(np.cos(theta)*np.sin(phi)*np.cos(psi)),
+                             (-np.sin(psi)*np.sin(phi))+(np.cos(theta)*np.cos(phi)*np.cos(psi)),
+                             np.cos(psi)*np.sin(theta)],
+                            [np.sin(theta)*np.sin(phi),
+                             -np.sin(theta)*np.cos(phi),
+                             np.cos(theta)]])
+
+#-------------------------------------------------------------------------------
+
+#coordinate transform from (l,b) to Orphan-Chenab Stream (Lambda,Beta) from Newberg et al. (2010)
+#adapted from code by Hiroka Warren
+def gal_to_lambet_newberg2010(l, b):
+
+    use_array = True
+    if not(isinstance(l, np.ndarray)):
+        use_array = False
+        l = np.array([l])
+        b = np.array([b])
+
+    l_rad = l*np.pi/180
+    b_rad = b*np.pi/180
+
+    M2 = np.array([np.cos(b_rad)*np.cos(l_rad),
+                   np.cos(b_rad)*np.sin(l_rad),
+                   np.sin(b_rad)])
+
+    M3 = np.matmul(newberg2010_ERM,M2)
+
+    lam = np.arctan2(M3[1], M3[0])*180/np.pi
+    bet = np.arcsin(M3[2])*180/np.pi
+
+    if not use_array:
+        lam = lam[0]
+        bet = bet[0]
+
+    return lam, bet
+
+#-------------------------------------------------------------------------------
+
+#(inverse) coordinate transform from Orphan-Chenab Stream (Lambda,Beta) to (l,b) from Newberg et al. (2010)
+#adapted from code by Hiroka Warren
+def lambet_to_gal_newberg2010(lam, bet):
+
+    use_array = True
+    if not(isinstance(lam, np.ndarray)):
+        use_array = False
+        lam = np.array([lam])
+        bet = np.array([bet])
+
+    inv_M1 = np.linalg.inv(newberg2010_ERM)
+
+    lam_rad = lam*np.pi/180
+    bet_rad = bet*np.pi/180
+
+    M2 = np.array([np.cos(bet_rad)*np.cos(lam_rad),
+                   np.cos(bet_rad)*np.sin(lam_rad),
+                   np.sin(bet_rad)])
+
+    M3 = np.matmul(inv_M1,M2)
+
+    l = np.arctan2(M3[1],M3[0])*180/np.pi
+    b = np.arcsin(M3[2])*180/np.pi
+
+    if not use_array:
+        l = l[0]
+        b = b[0]
+
+    return l, b
+
+#-------------------------------------------------------------------------------
+
+#Conversion from (ra, dec) to (phi1, phi2) for Orphan-Chenab stream as per Koposov et al. (2019)
+def eq_to_OC_koposov2019(ra, dec):
+
+    use_array = True
+    if not(isinstance(ra, np.ndarray)):
+        use_array = False
+        ra = np.array([ra])
+        dec = np.array([dec])
+
+    M1 = np.array([[ 0.455572, -0.165815, -0.874620],
+                   [-0.184451,  0.943594, -0.274968],
+                   [ 0.870880,  0.286592,  0.399290]])
+
+    ra_rad = ra*np.pi/180
+    dec_rad = dec*np.pi/180
+
+    M2 = np.array([np.cos(ra_rad)*np.cos(dec_rad),
+                   np.sin(ra_rad)*np.cos(dec_rad),
+                   np.sin(dec_rad)])
+
+    M3 = np.matmul(M1,M2)
+
+    phi1 = np.arctan2(M3[1],M3[2])*180/np.pi
+    phi2 = np.arcsin(M3[2])*180/np.pi
+
+    if not use_array:
+        phi1 = phi1[0]
+        phi2 = phi2[0]
+
+    return phi1, phi2
+
 #-------------------------------------------------------------------------------
 #hard-coded pole_rotation transformations
 
-oc_pole = (72, -14) #koposov et al. (2019) orphan-chenab stream transformation (ra, dec)
+oc_pole = (72, -14) #koposov et al. (2019) Orphan-Chenab stream transformation (ra, dec)
 oc_origin = (191.10487, 62.86084)
 
 def eq_to_OC(ra, dec, **kwargs):
@@ -831,7 +947,6 @@ def eq_to_OC(ra, dec, **kwargs):
 
 def OC_to_eq(Lam, Bet, **kwargs):
     return pole_rotation_inv(Lam, Bet, oc_pole, oc_origin, **kwargs)
-
 
 #===============================================================================
 # RUNTIME

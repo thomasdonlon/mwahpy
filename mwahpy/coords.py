@@ -10,20 +10,41 @@ from .mwahpy_glob import solar_ps
 #TODO: (low priority) add left-handed versions to all galactic cartesian transformations
 
 #===============================================================================
+#TEMPLATE
+#===============================================================================
+#this generically allows functions to take in either arrays or single values
+# and turns everything into arrays behind the scenes
+
+def fix_arrays(func, *args, **kwargs):
+    def wrapper(*args, **kwargs):
+
+        use_array = True
+        if not(isinstance(args[0], np.ndarray)): #check whether the first input is an array (assume all inputs are symmetric)
+            use_array = False
+            args = tuple([np.array([args[i]]) for i in range(len(args))]) #if they aren't, convert the args to arrays
+
+        ret = func(*args) #catches the output from the function
+
+        if not use_array: #convert them back if necessary
+            if not(isinstance(ret, tuple)): #check whether we can actually iterate on the returned values (i.e. whether the func returns a single value or multiple)
+                ret = ret[0]
+            else:
+                ret = tuple([ret[i][0] for i in range(len(ret))])
+
+        return ret
+    return wrapper
+
+#===============================================================================
 #HELPER FUNCTIONS
 #===============================================================================
 #These functions aren't meant to be accessed by outside files or by end users,
 #and as such they are not well documented, named, or tested
 
+@fix_arrays
 def wrap_long(lon, rad=False):
 
     if rad:
         lon = lon * 180/np.pi
-
-    use_array = True
-    if not(isinstance(lon, np.ndarray)):
-        use_array = False
-        lon = np.array([lon])
 
     for i in range(len(lon)):
         if lon[i] < 0:
@@ -33,9 +54,6 @@ def wrap_long(lon, rad=False):
 
     if rad:
         lon = lon * np.pi/180
-
-    if not use_array:
-        lon = lon[0]
 
     return lon
 
@@ -69,13 +87,8 @@ def rot_around_arb_axis(x, y, z, ux, uy, uz, theta):
 
     return x, y, z
 
+@fix_arrays
 def long_lat_to_unit_vec(l, b, left_handed=False, rad=False):
-
-    use_array = True
-    if not(isinstance(l, np.ndarray)):
-        use_array = False
-        l = np.array([l])
-        b = np.array([b])
 
     if not rad:
         l = l*np.pi/180
@@ -90,11 +103,6 @@ def long_lat_to_unit_vec(l, b, left_handed=False, rad=False):
 
     y = np.sin(l)*np.cos(b)
     z = np.sin(b)
-
-    if not use_array:
-        x = x[0]
-        y = y[0]
-        z = z[0]
 
     return x, y, z
 
@@ -123,14 +131,9 @@ def comp_wise_dot(M, v, normalize=False):
 #FIRST ORDER COORDINATE/POSITION TRANSFORMATIONS
 #===============================================================================
 
+@fix_arrays
 def cart_to_gal(x, y, z, left_handed=False):
     #get l, b, r (helio) from galactocentric X, Y, Z coords
-    use_array = True
-    if not(isinstance(x, np.ndarray)):
-        use_array = False
-        x = np.array([x])
-        y = np.array([y])
-        z = np.array([z])
 
     if left_handed:
         r = ((x+solar_ps.x)**2 + y**2 + z**2)**0.5
@@ -140,23 +143,12 @@ def cart_to_gal(x, y, z, left_handed=False):
         l = np.arctan2(y,(x+8))*180/np.pi
     b = np.arcsin(z/r)*180/np.pi
 
-    if not use_array:
-        l = l[0]
-        b = b[0]
-        r = r[0]
-
     return l, b, r
 
 #-------------------------------------------------------------------------------
 
+@fix_arrays
 def gal_to_cart(l, b, r, left_handed=False, rad=False):
-
-    use_array = True
-    if not(isinstance(l, np.ndarray)):
-        use_array = False
-        l = np.array([l])
-        b = np.array([b])
-        r = np.array([r])
 
     if not rad:
         l = l*np.pi/180
@@ -172,11 +164,6 @@ def gal_to_cart(l, b, r, left_handed=False, rad=False):
     y = r*np.sin(l)*np.cos(b)
     z = r*np.sin(b)
 
-    if not use_array:
-        x = x[0]
-        y = y[0]
-        z = z[0]
-
     return x, y, z
 
 #-------------------------------------------------------------------------------
@@ -184,77 +171,42 @@ def gal_to_cart(l, b, r, left_handed=False, rad=False):
 #input: x[kpc], y[kpc], z[kpc]
 #output: Cylindrical coordinates (R, [kpc], Z [kpc], Phi [deg])
 #phi = 0 when oriented along the positive x-axis
+@fix_arrays
 def cart_to_cyl(x, y, z):
-
-    use_array = True
-    if not(isinstance(x, np.ndarray)):
-        use_array = False
-        x = np.array([x])
-        y = np.array([y])
 
     R = (x**2 + y**2)**0.5
     phi = np.arctan2(y, x)*180/np.pi
-
-    if not use_array:
-        R = R[0]
-        phi = phi[0]
 
     return R, z, phi
 
 #-------------------------------------------------------------------------------
 
+@fix_arrays
 def cyl_to_cart(R, z, phi):
-
-    use_array = True
-    if not(isinstance(R, np.ndarray)):
-        use_array = False
-        R = np.array([R])
-        phi = np.array([phi])
 
     phi = phi*np.pi/180
 
     x = R*np.cos(phi)
     y = R*np.sin(phi)
 
-    if not use_array:
-        x = x[0]
-        y = y[0]
-
     return x, y, z
 
 #-------------------------------------------------------------------------------
 
+@fix_arrays
 def cart_to_sph(x, y, z):
-
-    use_array = True
-    if not(isinstance(x, np.ndarray)):
-        use_array = False
-        x = np.array([x])
-        y = np.array([y])
-        z = np.array([z])
 
     r = (x**2 + y**2 + z**2)**0.5
 
     phi = np.arctan2(y, x)*180/np.pi
     theta = np.arcsin(z/r)*180/np.pi
 
-    if not use_array:
-        phi = phi[0]
-        theta = theta[0]
-        r = r[0]
-
     return phi, theta, r
 
 #-------------------------------------------------------------------------------
 
+@fix_arrays
 def sph_to_cart(phi, theta, r):
-
-    use_array = True
-    if not(isinstance(phi, np.ndarray)):
-        use_array = False
-        phi = np.array([phi])
-        theta = np.array([theta])
-        r = np.array([r])
 
     phi = phi*np.pi/180
     theta = theta*np.pi/180
@@ -263,17 +215,13 @@ def sph_to_cart(phi, theta, r):
     y = r*np.sin(phi)*np.cos(theta)
     z = r*np.sin(theta)
 
-    if not use_array:
-        x = x[0]
-        y = y[0]
-        z = z[0]
-
     return x, y, z
 
 #===============================================================================
 #SECOND ORDER COORDINATE/POSITION TRANSFORMATIONS
 #===============================================================================
 
+@fix_arrays
 def cyl_to_gal(R, z, phi):
     x, y, z = cyl_to_cart(R, z, phi)
     l, b, r = cart_to_gal(x, y, z)
@@ -281,6 +229,7 @@ def cyl_to_gal(R, z, phi):
 
 #-------------------------------------------------------------------------------
 
+@fix_arrays
 def gal_to_cyl(l, b, r):
     x, y, z = gal_to_cart(l, b, r)
     R, z, phi = cart_to_cyl(x, y, z)
@@ -293,8 +242,8 @@ def gal_to_cyl(l, b, r):
 # Input: distance [kpc], radial velocity [km/s], RA/DEC [degrees], and pmRA/pmDEC [mas/yr]
 # Returns: Galactic vx, vy, vz velocities [km/s]
 # NOTE: pmRA = d/dt(RA) * cos(DEC)
-# Arguments should be numpy arrays for most efficient usage
 # Adapted from code written by Alan Pearl
+@fix_arrays
 def get_uvw(ra, dec, dist, rv, pmra, pmde):
 
     # Conversion from Equatorial (J2000) Cartesian to Galactic Cartesian
@@ -324,6 +273,7 @@ def get_uvw(ra, dec, dist, rv, pmra, pmde):
 
 #-------------------------------------------------------------------------------
 
+@fix_arrays
 def get_vxvyvz(ra, dec, dist, rv, pmra, pmde):
 
     U, V, W = get_uvw(ra, dec, dist, rv, pmra, pmde)
@@ -339,18 +289,8 @@ def get_vxvyvz(ra, dec, dist, rv, pmra, pmde):
 
 #TODO: Do the linear algebra to avoid a inv calculation, since that's huge time waste
 #solar reflex motion will be already removed if UVW are galactocentric
-#inputs must be arrays, even if just of length 1
+@fix_arrays
 def get_rvpm(ra, dec, dist, U, V, W):
-
-    use_array = True
-    if not(isinstance(ra, np.ndarray)):
-        use_array = False
-        ra = np.array([ra])
-        dec = np.array([dec])
-        dist = np.array([dist])
-        U = np.array([U])
-        V = np.array([V])
-        W = np.array([W])
 
     k = 4.74057
     rv = np.array([0.0]*len(ra))
@@ -379,17 +319,13 @@ def get_rvpm(ra, dec, dist, U, V, W):
 
         i += 1
 
-    if not use_array:
-        rv = rv[0]
-        pmra = pmra[0]
-        pmdec = pmdec[0]
-
     return rv, pmra, pmdec
 
 #-------------------------------------------------------------------------------
 
-#inputs must be arrays, even if just of length 1
+@fix_arrays
 def remove_sol_mot_from_pm(ra, dec, dist, pmra, pmdec):
+
     vx = np.array([-solar_ps.vx] * len(ra))
     vy = np.array([-solar_ps.vy] * len(ra))
     vz = np.array([-solar_ps.vz] * len(ra))
@@ -404,8 +340,24 @@ def remove_sol_mot_from_pm(ra, dec, dist, pmra, pmdec):
 
 #-------------------------------------------------------------------------------
 
-#does not work for arrays!
-#TODO: make work with arrays
+@fix_arrays
+def add_sol_mot_to_pm(ra, dec, dist, pmra, pmdec):
+
+    vx = np.array([-solar_ps.vx] * len(ra))
+    vy = np.array([-solar_ps.vy] * len(ra))
+    vz = np.array([-solar_ps.vz] * len(ra))
+
+    rv, mura, mudec = get_rvpm(ra, dec, dist, vx, vy, vz)
+
+    #don't directly modify pmra and pmdec
+    pmra_new = pmra + mura
+    pmdec_new = pmdec + mudec
+
+    return pmra_new, pmdec_new
+
+#-------------------------------------------------------------------------------
+
+@fix_arrays
 def get_uvw_errors(dist, ra, dec, pmra, pmdec, err_pmra, err_pmdec, err_rv, err_dist):
     #distance in pc
     k = 4.74057
@@ -434,44 +386,26 @@ def get_uvw_errors(dist, ra, dec, pmra, pmdec, err_pmra, err_pmdec, err_rv, err_
     return err_u, err_v, err_w
 
 #remove solar reflex motion from line of sight velocity
+@fix_arrays
 def vlos_to_vgsr(l, b, vlos):
     #TODO: Allow ra, dec as inputs
-
-    use_array = True
-    if not(isinstance(l, np.ndarray)):
-        use_array = False
-        l = np.array([l])
-        b = np.array([b])
-        vlos = np.array([rv])
 
     l = l * np.pi/180
     b = b * np.pi/180
 
     vgsr = vlos + solar_ps.vx*np.cos(l)*np.cos(b) + solar_ps.vy*np.sin(l)*np.cos(b) + solar_ps.vz*np.sin(b)
 
-    if not use_array:
-        vgsr = vgsr[0]
-
     return vgsr
 
 #add solar reflex motion back into GSR line of sight velocity
+@fix_arrays
 def vgsr_to_vlos(l, b, vgsr):
     #TODO: Allow ra, dec as inputs
-
-    use_array = True
-    if not(isinstance(l, np.ndarray)):
-        use_array = False
-        l = np.array([l])
-        b = np.array([b])
-        vgsr = np.array([vgsr])
 
     l = l * np.pi/180
     b = b * np.pi/180
 
     vlos = vgsr - solar_ps.vx*np.cos(l)*np.cos(b) - solar_ps.vy*np.sin(l)*np.cos(b) - solar_ps.vz*np.sin(b)
-
-    if not use_array:
-        vlos = vlos[0]
 
     return vlos
 
@@ -570,6 +504,7 @@ def gal_to_plane(l, b, d, normal, point):
 
 #kind of a helper function for the gal_to_lambet and cart_to_lambet functions,
 #although it just finds longitude and latitude of any cartesian system
+@fix_arrays
 def cart_to_lonlat(x, y, z):
     Lam = np.arctan2(y, x)*180/np.pi #convert to degrees
 
@@ -615,6 +550,7 @@ def cart_to_lambet(x,y,z, normal, point):
 
 #-------------------------------------------------------------------------------
 
+# I believe x, y, z can be arrays
 def cart_to_sgr(x,y,z):
 
     x_prime = x_prime - solar_ps.x
@@ -647,8 +583,7 @@ def cart_to_sgr(x,y,z):
 
 #-------------------------------------------------------------------------------
 
-#gal2plane: np.array(floats), np.array(floats), np.array(floats), (float, float, float), (float, float, float) --> np.array(floats), np.array(floats)
-#takes in galactic coordinates for a star(s) and returns their Lamba, Beta coordinates with respect to the Sgr stream plane
+#takes in galactic coordinates for a star(s) and returns their Lambda, Beta coordinates with respect to the Sgr stream plane
 def gal_to_sgr(l, b):
     #l, b: Galactic coordinates (can be arrays)
 
@@ -684,12 +619,8 @@ def gal_to_sgr(l, b):
 
 #-------------------------------------------------------------------------------
 
-#gal2plane: np.array(floats), np.array(floats), np.array(floats), (float, float, float), (float, float, float) --> np.array(floats), np.array(floats)
-#takes in galactic coordinates for a star(s) and returns their Lamba, Beta coordinates with respect to a rotated plane with the normal vector provided
+#takes in Lambda, Beta coordinates for a star(s) and returns their Galactic coordinates with respect to the Sgr stream plane
 def sgr_to_gal(Lam, Bet):
-    #x, y, z: galactocentric x, y, z coordinates
-    #normal: 3-vector providing the orientation of the plane to rotate into
-    #point: 3-vector 'suggesting' the direction of the new x-axis
 
     x = np.cos(Lam*np.pi/180)*np.cos(Bet*np.pi/180)
     y = np.sin(Lam*np.pi/180)*np.cos(Bet*np.pi/180)
@@ -827,6 +758,7 @@ def sky_to_pole(sky1, sky2, pole, origin, wrap=False, rad=False):
 #euler angle rotation matrix
 #too long to format like I normally would
 #out here because it's used for the transform and inverse transform
+#is it bad to do this outside because it utilizes memory even without using the relevant functions? Probably. It can't be that bad though, right?
 phi = 128.79*np.pi/180
 theta = 54.39*np.pi/180
 psi = 90.70*np.pi/180
@@ -841,17 +773,16 @@ newberg2010_ERM = np.array([[(np.cos(psi)*np.cos(phi))-(np.cos(theta)*np.sin(phi
                              -np.sin(theta)*np.cos(phi),
                              np.cos(theta)]])
 
+k19_rotmat = np.array([[-0.44761231, -0.08785756, -0.88990128],
+                       [-0.84246097,  0.37511331,  0.38671632],
+                       [ 0.29983786,  0.92280606, -0.24192190]])
+
 #-------------------------------------------------------------------------------
 
 #coordinate transform from (l,b) to Orphan-Chenab Stream (Lambda,Beta) from Newberg et al. (2010)
 #adapted from code by Hiroka Warren
+@fix_arrays
 def gal_to_lambet_newberg2010(l, b):
-
-    use_array = True
-    if not(isinstance(l, np.ndarray)):
-        use_array = False
-        l = np.array([l])
-        b = np.array([b])
 
     l_rad = l*np.pi/180
     b_rad = b*np.pi/180
@@ -865,23 +796,14 @@ def gal_to_lambet_newberg2010(l, b):
     lam = np.arctan2(M3[1], M3[0])*180/np.pi
     bet = np.arcsin(M3[2])*180/np.pi
 
-    if not use_array:
-        lam = lam[0]
-        bet = bet[0]
-
     return lam, bet
 
 #-------------------------------------------------------------------------------
 
 #(inverse) coordinate transform from Orphan-Chenab Stream (Lambda,Beta) to (l,b) from Newberg et al. (2010)
 #adapted from code by Hiroka Warren
+@fix_arrays
 def lambet_to_gal_newberg2010(lam, bet):
-
-    use_array = True
-    if not(isinstance(lam, np.ndarray)):
-        use_array = False
-        lam = np.array([lam])
-        bet = np.array([bet])
 
     inv_M1 = np.linalg.inv(newberg2010_ERM)
 
@@ -897,26 +819,13 @@ def lambet_to_gal_newberg2010(lam, bet):
     l = np.arctan2(M3[1],M3[0])*180/np.pi
     b = np.arcsin(M3[2])*180/np.pi
 
-    if not use_array:
-        l = l[0]
-        b = b[0]
-
     return l, b
 
 #-------------------------------------------------------------------------------
 
 #Conversion from (ra, dec) to (phi1, phi2) for Orphan-Chenab stream as per Koposov et al. (2019)
+@fix_arrays
 def eq_to_OC_koposov2019(ra, dec):
-
-    use_array = True
-    if not(isinstance(ra, np.ndarray)):
-        use_array = False
-        ra = np.array([ra])
-        dec = np.array([dec])
-
-    M1 = np.array([[ 0.455572, -0.165815, -0.874620],
-                   [-0.184451,  0.943594, -0.274968],
-                   [ 0.870880,  0.286592,  0.399290]])
 
     ra_rad = ra*np.pi/180
     dec_rad = dec*np.pi/180
@@ -925,16 +834,34 @@ def eq_to_OC_koposov2019(ra, dec):
                    np.sin(ra_rad)*np.cos(dec_rad),
                    np.sin(dec_rad)])
 
-    M3 = np.matmul(M1,M2)
+    M3 = np.matmul(k19_rotmat,M2)
 
-    phi1 = np.arctan2(M3[1],M3[2])*180/np.pi
+    phi1 = np.arctan2(M3[0],M3[1])*180/np.pi
     phi2 = np.arcsin(M3[2])*180/np.pi
 
-    if not use_array:
-        phi1 = phi1[0]
-        phi2 = phi2[0]
-
     return phi1, phi2
+
+#-------------------------------------------------------------------------------
+
+#Inverse conversion from (phi1, phi2) to (ra, dec) for Orphan-Chenab stream as per Koposov et al. (2019)
+@fix_arrays
+def OC_to_eq_koposov2019(phi1, phi2):
+
+    M1 = np.linalg.inv(k19_rotmat)
+
+    phi1_rad = phi1*np.pi/180
+    phi2_rad = phi2*np.pi/180
+
+    M2 = np.array([np.cos(phi1_rad)*np.cos(phi2_rad),
+                   np.sin(phi1_rad)*np.cos(phi2_rad),
+                   np.sin(phi2_rad)])
+
+    M3 = np.matmul(M1,M2)
+
+    ra = np.arctan2(M3[0],M3[1])*180/np.pi
+    dec = np.arcsin(M3[2])*180/np.pi
+
+    return ra, dec
 
 #-------------------------------------------------------------------------------
 #hard-coded pole_rotation transformations
