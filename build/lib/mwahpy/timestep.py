@@ -310,7 +310,7 @@ class Timestep():
         self.ltot = (self.lx**2 + self.ly**2 + self.lz**2)**0.5
 
         #velocity information
-        self.vgsr = ((self.x+8)*self.vx + self.y*self.vy + self.x*self.vz)/self.dist
+        self.vgsr = ((self.x+8)*self.vx + self.y*self.vy + self.z*self.vz)/self.dist
         self.vlos = self.vgsr - 10.1*np.cos(self.b*np.pi/180)*np.cos(self.l*np.pi/180) - 224*np.cos(self.b*np.pi/180)*np.sin(self.l*np.pi/180) - 6.7*np.sin(self.b*np.pi/180)
         self.vrad = (self.x*self.vx + self.y*self.vy + self.z*self.vz)/self.r
         self.vrot = self.lz/(self.x**2 + self.y**2)**0.5 #should have a factor of cos(theta) I think? Need to define what I mean exactly by this quantity
