@@ -9,11 +9,13 @@ as well as write data out in a variety of formats
 
 import numpy as np
 from pathlib import Path
+import pandas as pd
 
 from .flags import verbose, progress_bars
 from .mwahpy_glob import file_len, progress_bar
 from .timestep import Timestep
 from .nbody import Nbody
+from .histogram import histData
 
 #===============================================================================
 # FUNCTIONS
@@ -188,6 +190,233 @@ def read_folder(f, ts_scale=None):
         n[time] = t #assign each timestep to the correct place in the Nbody
 
     return n
+
+#Reads in histogram file path as a string and creates histData class
+def read_histogram(hist_file_path):
+    
+    #initialising histData class instance
+    hist = histData()
+
+    if (verbose):
+        print('Creating python class for given histogram data...')
+
+    with open(str(hist_file_path)) as f:
+        line = f.readline()
+        lineNumber = 1
+        while (line):
+            line = line.strip()
+            line = line.split(' ')
+            if ('' in line):
+                line = list(filter(None, line))
+            #print(line)
+            if (len(line)> 1):
+                #Date histogram was generated
+                if (line[1]=='Generated'):
+                    generationDate = ''
+                    for i in range(len(line) - 2):
+                        generationDate = generationDate + line[i+2]+ ' '
+                    hist.generationDate = generationDate
+                    #print(hist.generationDate)
+                #Euler Angles in degrees
+                if (line[1]=='(phi,'):
+                    eulerPhi = float(line[5].strip('(').strip(','))
+                    eulerTheta = float(line[6].strip(','))
+                    eulerPsi = float(line[7].strip(')').strip(','))
+                    hist.eulerAngles = [eulerPhi, eulerTheta, eulerPsi]
+                    #print(hist.eulerAngles)
+                #Lambda Range
+                if (line[1]=='(lambdaStart,'):
+                    lambdaStart = float(line[5].strip('(').strip(','))
+                    lambdaCenter = float(line[6].strip(','))
+                    lambdaEnd = float(line[7].strip(')').strip(','))
+                    hist.lambdaRange = [lambdaStart, lambdaCenter, lambdaEnd]
+                    #print(hist.lambdaRange)
+                #Beta Range
+                if (line[1]=='(betaStart,'):
+                    betaStart = float(line[5].strip('(').strip(','))
+                    betaCenter = float(line[6].strip(','))
+                    betaEnd = float(line[7].strip(')').strip(','))
+                    hist.betaRange = [betaStart, betaCenter, betaEnd]
+                    #print(hist.betaRange)
+                #Lambda Bin Size
+                if (line[1]=='Lambda'):
+                    hist.lambdaBinSize = float(line[5])
+                    #print(hist.lambdaBinSize)
+                #Beta Bin Size
+                if (line[1]=='Beta'):
+                    hist.betaBinSize = float(line[5])
+                    #print(hist.betaBinSize)
+                #Nbody (total numbers of body in Nbody simulation)
+                if (line[1]=='Nbody'):
+                    hist.nbody = int(line[3])
+                    #print(hist.nbody)
+                #Evolve backward time and evolve foward time in Gyr
+                if (line[1]=='Evolve'):
+                    if (line[2]=='backward'):
+                        hist.evolveBackwardTime = float(line[5])
+                        #print(hist.evolveBackwardTime)
+                    elif (line[2]=='forward'):
+                        hist.evolveFowardTime = float(line[5])
+                        #print(hist.evolveFowardTime)
+                #Best Likelihood (absolute value of the likelihood score)
+                if (line[1]=='Best'):
+                    hist.bestLikelihood = float(line[4])
+                    #print(hist.bestLikelihood)
+                #Timestep in Gyr
+                if (line[1]=='Timestep'):
+                    hist.timestep = float(line[3])
+                    #print(hist.timestep)
+                #Sun GC Distance in kpc
+                if (line[1]=='Sun'):
+                    hist.sunGCDist = float(line[5])
+                    #print(hist.sunGCDist)
+                #Criterion (method used to caclulate nbody interections)
+                if (line[1]=='Criterion'):
+                    hist.criterion = line[3]
+                    #print(hist.criterion)
+                #Theta (ratio used by treecode to determine whne to calculate using a single body vs using a collection of bodies)
+                if (line[1]=='Theta'): 
+                    hist.theta = float(line[3])
+                    #print(hist.theta)
+                #Quadrupole Moments (used by tree code)
+                if (line[1]=='Quadrupole'):
+                    hist.quadrupoleMoments = line[4]
+                    #print(hist.quadrupoleMoments)
+                #Eps (softening length in kpc)
+                if (line[1]=='Eps'):
+                    hist.eps = float(line[3])
+                    #print(hist.eps)
+                #Bar time error in Gyr and bar angle error in radians
+                if (line[1]=='Bar'):
+                    if (line[2]=='Time'):
+                        hist.barTimeError = float(line[5])
+                        #print(hist.barTimeError)
+                    if (line[2]=='Angle'):
+                        hist.barAngleError = float(line[5])
+                        #print(hist.barAngleError)
+                #Spherical Potential Type (just saves the type of potential and not the mass and such)
+                if (line[1]=='Spherical:'):
+                    hist.spherical = line[2]
+                    #print(hist.spherical)
+                #Primary Disk Potential Type  (just saves the type of potential and not the mass and such)
+                if (line[1]=='Primary'):
+                    hist.primaryDisk = line[3]
+                    #print(hist.primaryDisk)
+                #Secondary Disk Potential Type (just saves the type of potential and not the mass and such)
+                if (line[1]=='Secondary'):
+                    hist.secondaryDisk = line[3]
+                    #print(hist.secondaryDisk)
+                #Halo Potential Type (just saves the type of potential and not the mass and such)
+                if (line[1]=='Halo:'):
+                    hist.halo = line [2]
+                    #print(hist.halo)
+                #Column headers
+                if (line[1]=='UseBin,'):
+                    #print(len(line))
+                    if (len(line) > 22):
+                        hist.orbitFitting = True
+                        if (verbose):
+                            print('Data includes orbit fitting parameters')
+                    else:
+                        hist.orbitFitting = False
+                        if (verbose):
+                            print('Data does not include orbit fitting parameters')
+                    columnHeaders = ''
+                    for i in range(len(line) - 1):
+                        columnHeaders += line[i + 1] + ' '
+                    hist.columnHeaders = columnHeaders
+                    #print(hist.columnHeaders)
+                #n (total number of bodies within ranges of histogram)
+                if (line[0]=='n'):
+                    hist.n = int(line[2])
+                    #print(hist.n)
+                #Mass per particle (structure mass units)
+                if (line[0]=='massPerParticle'):
+                    hist.massPerParticle = float(line[2])
+                    #print(hist.massPerParticle)
+                if (line[0]=='totalSimulated'):
+                    hist.totalSimulated = int(line[2])
+                    #print(hist.totalSimulated)
+                #Number of lambda bins
+                if (line[0]=='lambdaBins'):
+                    hist.lambdaBins = int(line[2])
+                    #print(hist.lambdaBins)
+                #number of Beta Bins
+                if (line[0]=='betaBins'):
+                    hist.betaBins = int(line[2])
+                    #print(hist.betaBins)
+                #Getting Data (Not sure if useBin can have any other value other than 1)
+                if (line[0]=='1'):
+                    if (hist.orbitFitting): #checks to see how many columns there are since different in different versions
+                        try:
+                            hist.useBin.append(float(line[0]))
+                            hist.lamb.append(float(line[1]))
+                            hist.beta.append(float(line[2]))
+                            hist.normalizedCounts.append(float(line[3]))
+                            hist.countError.append(float(line[4]))
+                            hist.betaDispersion.append(float(line[5]))
+                            hist.betaDispersionError.append(float(line[6]))
+                            hist.losVelocityDispersion.append(float(line[7]))
+                            hist.velocityDispersionError.append(float(line[8]))
+                            hist.losVelocity.append(float(line[9]))
+                            hist.losVelocityError.append(float(line[1]))
+                            hist.betaAverage.append(float(line[11]))
+                            hist.betaAverageError.append(float(line[12]))
+                            hist.distance.append(float(line[13]))
+                            hist.distanceError.append(float(line[12]))
+                        except ValueError:
+                            print('Invalid histagram data entry: Non-numerical value in histogram data on line ' + str(lineNumber))
+                    else:
+                        try:
+                            hist.useBin.append(float(line[0]))
+                            hist.lamb.append(float(line[1]))
+                            hist.beta.append(float(line[2]))
+                            hist.normalizedCounts.append(float(line[3]))
+                            hist.countError.append(float(line[4]))
+                            hist.betaDispersion.append(float(line[5]))
+                            hist.betaDispersionError.append(float(line[6]))
+                            hist.losVelocityDispersion.append(float(line[7]))
+                            hist.velocityDispersionError.append(float(line[8]))
+                        except ValueError:
+                            print('Invalid histagram data entry: Non-numerical value in histogram data on line ' + str(lineNumber))
+                
+            line = f.readline()
+            lineNumber += 1
+    f.close()
+
+    if (verbose):
+        print('Done')
+    return hist
+
+def hist_to_df(hist):
+    if (verbose):
+        print('Creating data frame for given histogram data...')
+    #Making Pandas Data Frame
+    df = pd.DataFrame()
+    if (verbose):
+        if (hist.orbitFitting):
+            print('Orbit fitting data included')
+        else:
+            print('Orbit fitting data not included')
+    df['Use Bin'] = hist.useBin
+    df['Lambda'] = hist.lamb
+    df['Beta'] = hist.beta 
+    df['Normalized Counts'] = hist.normalizedCounts
+    df['Count Error'] = hist.countError
+    df['Beta Dispersion'] = hist.betaDispersion
+    df['Beta Dispersion Error'] = hist.betaDispersionError
+    df['LOS Velocity Dispersion'] = hist.losVelocityDispersion
+    df['Velocity Dispersion Error'] = hist.velocityDispersionError
+    if (hist.orbitFitting):
+        df['LOS Velocity'] = hist.losVelocity
+        df['LOS Velocity Error'] = hist.losVelocityError
+        df['Beta Average'] = hist.betaAverage
+        df['Beta Average Error'] = hist.betaAverageError
+        df['Distance'] = hist.distance
+        df['Distance Error'] = hist.distanceError
+    if (verbose):
+        print('Done')
+    return df
 
 #-------------------------------------------------------------------------------
 # OUTPUT
