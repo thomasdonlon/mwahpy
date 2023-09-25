@@ -89,7 +89,6 @@ MAJOR:
  - update documentation so it is current (probably last thing I'll do during summer 2023)
 
 MINOR:
-- Inverse (cut out within range) subset_circ() & subset_rect() options
 - Let subset_circ() and subset_rect() handle None as bounds
 - Implement better linear algebra to reduce the computation time of coords.get_rvpm()
 - Play around with turning off mwahpy_glob.verbose flag for some things to quiet unnecessary output
@@ -98,4 +97,5 @@ MINOR:
 ISSUES
 ========================================
 
+- current pypi repo dist doesn't automatically install pandas on install. This is easily fixed by installing pandas yourself if it is not already installed. It has been fixed in the current github version of the code. 
 - output_handler.make_nbody_input() has to set all particles types to dark matter. This is because MilkyWay@home N-Body can only read .in files that only contain dark matter (#ignore = 1) files. This is more of a bug in the N-Body client than mwahpy, but doesn't change the physics at all. 
