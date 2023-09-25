@@ -63,7 +63,6 @@ def trace_particle(t, id, x, y, vx=None, vy=None, vscale=0.02, show=False, s=50.
     #vx (str, optional): the x-axis arrow parameter
     #vy (str, optional): the y-axis arrow parameter
     #vscale (float, >0, optional): scales the arrow size
-    #TODO: more customization of the arrow, probably
 
     #make sure id is always a numpy array of id values
     if not hasattr(id, "__len__"): #if true, id is not array-like:
@@ -82,7 +81,6 @@ def trace_particle(t, id, x, y, vx=None, vy=None, vscale=0.02, show=False, s=50.
     for i in n:
         plt.scatter(t[x][i], t[y][i], s=s, c=color, marker=marker, **kwargs)
         if vx and vy:
-            #TODO: figure out how to pass kwargs to the arrow and scatter separately
             plt.arrow(t[x][i], t[y][i], t[vx][i]*vscale, t[vy][i]*vscale, color=color, head_width=1)
 
     if show:

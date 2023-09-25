@@ -5,9 +5,6 @@ This orbit fitter is unique compared to other common orbit fitters in that it
 uses a galactocentric generalized plane coordinate system when fitting data
 '''
 
-#TODO: Allow different coordinate systems input
-#TODO: more settings put in through fit_orbit()
-
 import numpy as np
 import scipy.optimize as scopt
 import matplotlib.pyplot as plt

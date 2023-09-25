@@ -172,7 +172,6 @@ def read_input(f):
 
     return d
 
-#TODO: add nested progress bars
 def read_folder(f, ts_scale=None):
     #f: the path to the folder that you want to create an Nbody structure out of
     #ts_scale: the scale of a single timestep in the Nbody sim
@@ -459,7 +458,6 @@ def make_csv(t, f_name):
     f = open(f_name, 'w')
 
     #make the header
-    #TODO: Print out COM's
     if verbose:
         print('Writing header...')
     header = ''

@@ -3,9 +3,6 @@ The contents of this file are focused on the Timestep class, which is used for s
 imported data from N-body output files.
 '''
 
-#TODO: UNIT TESTS
-#TODO: Create sort function that sorts based on id (not really importamt)
-
 #===============================================================================
 # IMPORTS
 #===============================================================================
@@ -394,6 +391,14 @@ class Timestep():
         if auto_update:
             self.update()
 
+    #cut out the rows with the given indices
+    def remove(self, indices):
+        #indices: the indices you want to take, must be array-like
+        for key in self:
+            self[key] = np.delete(self[key], indices)
+        if auto_update:
+            self.update()
+
     #cut the data to only include particles with id in ids
     def take_by_id(self, ids):
         #ids: the ids of the particles you want to take, must be array-like
@@ -417,12 +422,9 @@ class Timestep():
         Timestep1 = self.copy()
         Timestep2 = self.copy()
 
+        #these automatically update both timesteps
         Timestep1.cut_last_n(len(self) - n)
         Timestep2.cut_first_n(n)
-
-        if auto_update:
-            Timestep1.update()
-            Timestep2.update()
 
         return Timestep1, Timestep2
 
@@ -438,14 +440,10 @@ class Timestep():
         Timestep2 = self.copy()
         i = 1
         while i < len(indices): #pseudo-recursive
-            Timestep1, Timestep2 = Timestep2.split(indices[i] - indices[i-1])
+            Timestep1, Timestep2 = Timestep2.split(indices[i] - indices[i-1]) #this automatically updates each timestep
             outlist.append(Timestep1)
             i += 1
         outlist.append(Timestep2)
-
-        if auto_update:
-            for t in outlist:
-                t.update()
 
         return outlist
 
@@ -460,7 +458,7 @@ class Timestep():
 
     #append the nth item of another Timestep object onto this one
     #WARNING: Extremely time intensive if used repeatedly, np.append is not a speedy function
-    #   you should always try to append a timestep instead if possible
+    #   you should always try to append_timestep() instead if possible
     def append_point(self, t, n=0, id=None):
         #t: the Timestep object with the item being appended
         #n (optional): the index of the item in t to be appended
@@ -513,9 +511,6 @@ class Timestep():
         for i in data_list:
             self.append_timestep(i)
 
-        if auto_update:
-            self.update()
-
     #cut the Timestep so only baryons (typ==0) remain
     def only_baryons(self):
         #nasty one liner
@@ -530,9 +525,16 @@ class Timestep():
     # OUTPUT
     #---------------------------------------------------------------------------
 
-    def print_particle(self, n, dec=8):
+    #"fancy" output for showing properties of a given particle
+    def print_particle(self, n, dec=8, use_id=False):
         #n (int): the location of the particle that you want the information for
-        #TODO: allow for using the id to find the particle
+
+        if use_id:
+            tmp = np.where(self.id == n)[0]
+            if len(tmp) == 0:
+                raise Exception('Particle with given ID was not found.')
+            n = tmp[0]
+
         print('Printing data for Particle '+str(n)+':')
 
         outstr = '('
@@ -568,8 +570,7 @@ class Timestep():
     #---------------------------------------------------------------------------
 
     #make an n-dimensional rectangular cut on the data
-    #TODO: make an inverted method, i.e. cut out things within the bounds
-    def subset_rect(self, axes, bounds):
+    def subset_rect(self, axes, bounds, inverse=False):
         #axes ([str, ...]): the parameters/values that you are cutting on. Input as a list of strings
         #   The strings must be in self.index_list
         #bounds ([(float, float), ...]): The boundary conditions that you are cutting on
@@ -577,9 +578,6 @@ class Timestep():
         #   If you wish to only declare a minimum or maximum, then leave the other value as None
         #
         #Both axes and bounds can be given as a tuple instead of a list
-        #
-        #This is substantially faster than the previous subset function, which performed like 30
-        #np.appends for every index that fit the criteria in each axis.
 
         if type(axes) not in [type([]), type((1,1))]: #make the input compatible if it is only 1 axis
             raise Exception('Axes must be a list or a tuple, but was of type ' + str(type(axes)))
@@ -601,18 +599,16 @@ class Timestep():
             indices = np.intersect1d(indices, np.intersect1d(np.where(self[a] > b[0]), np.where(self[a] < b[1])))
 
         #cut the sample down to the indices that work
-        self.take(indices)
-        self.update()
+        if inverse:
+            self.remove(indices)
+        else:
+            self.take(indices)
 
-    #TODO: make n-dimensional like subset_rect
-    #make a circular cut of the data in 2 dimensions
-    def subset_circ(self, axes, rads, centers):
+    #make an elliptical cut of the data in n dimensions
+    def subset_circ(self, axes, rads, centers, inverse=False):
         #axs ([str]): the axes to cut on
         #rads ([float]): The radiii of the circular cut (along each axis)
         #center ([float], len=#axes): The center around which to make the circular cut
-        #
-        #This is substantially faster than the previous subset function, which performed like 30
-        #np.appends for every index that fit the criteria in each axis.
 
         #get the indices that lie within the cut
         dist = 0
@@ -622,8 +618,10 @@ class Timestep():
         indices = np.where(dist < 1)[0]
 
         #cut the sample down to the indices that work
-        self.take(indices)
-        self.update()
+        if inverse:
+            self.remove(indices)
+        else:
+            self.take(indices)
 
     #cut the Timestep instance to n random stars from the Timestep instance
     #uses the reservoir algorithm for single-pass random sampling
@@ -717,7 +715,7 @@ def get_self_energies(t):
 #written by Eric Mendelsohn, 2021
 #adapted for mwahpy by Tom Donlon, 2021
 
-#TODO: Can have trouble finding progenitors around poles. If progenitor is
+#NOTE: Can have trouble finding progenitors around poles. If progenitor is
 #   above 60 deg or so, could apply arbitrary spherical rotation to bring it back
 #   into a spot that the algorithm handles better
 def find_progenitor(t, ran=100.):

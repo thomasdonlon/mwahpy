@@ -2,8 +2,6 @@
 This is a self-contained orbit fitting routine.
 '''
 
-#TODO: Allow fitting on b, ra, or dec instead of l
-
 import numpy as np
 import scipy as sc
 import scipy.optimize as scopt
