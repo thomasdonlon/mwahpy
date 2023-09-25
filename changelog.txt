@@ -4,6 +4,7 @@ v2.0.0 (LONG TERM SUPPORT RELEASE)
    which lets you cut everything inside the bounds instead of keeping everything inside bounds
  - removed extra unecessary .update()s in timestep.subset_rect(), timestep.subset_circ(), 
    timestep.split(), timestep.split_at_id_wrap(), and recenter_each_component()
+ - added histogram reading capability in output_handler.read_histogram()
 
 v1.4.8: (MINOR PATCH)
  - fixed bug in computing vgsr and vr for simulated data

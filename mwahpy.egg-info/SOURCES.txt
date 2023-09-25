@@ -17,6 +17,7 @@ doc/doc.toc
 mwahpy/__init__.py
 mwahpy/coords.py
 mwahpy/flags.py
+mwahpy/histogram.py
 mwahpy/mwahpy_glob.py
 mwahpy/nbody.py
 mwahpy/orbit_fitter.py

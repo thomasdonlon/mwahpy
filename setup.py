@@ -25,6 +25,7 @@ setuptools.setup(
         "galpy",
         "matplotlib",
         "astropy",
-        "scipy"
+        "scipy",
+        "pandas"
         ],
 )
