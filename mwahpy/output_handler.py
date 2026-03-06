@@ -46,18 +46,30 @@ def remove_header(f):
         f.readline()
     else:
         old_format = False
-        f.readline() 
+        f.readline()
 
-
-    #next line has COM info
-    line = f.readline() 
+    #next line has COM info (or hasLMC in new format)
+    line = f.readline()
+    lmc_pos, lmc_vel, haslmc_header_lines = None, None, 0
+    has_lmc = False
+    if 'centerOfMass' not in line:  # New format: hasLMC line
+        has_lmc = int(line.strip().split('=')[1].strip()) == 1
+        haslmc_header_lines = 2 if has_lmc else 1  # hasLMC line + optional LMC pos/vel line
+        line = f.readline()  # centerOfMass line
     line = line.split(',')
     line[0] = line[0].strip('centerOfMass = ')
     line[3] = line[3].strip('centerOfMomentum = ')
     comass = [float(line[0]), float(line[1]), float(line[2])]
     comom = [float(line[3]), float(line[4]), float(line[5])]
+    if has_lmc:
+        lmc_line = f.readline()
+        parts = lmc_line.split(',')
+        lmc_pos = [float(parts[0].strip().replace('LMC position = ', '')),
+                   float(parts[1].strip()), float(parts[2].strip())]
+        lmc_vel = [float(parts[3].strip().replace('LMC velocity = ', '')),
+                   float(parts[4].strip()), float(parts[5].strip())]
 
-    return comass, comom, has_bodies_tag, old_format
+    return comass, comom, has_bodies_tag, old_format, lmc_pos, lmc_vel, haslmc_header_lines
 
 #parses a milkyway ".out" file and returns a Timestep class structure
 def read_output(f, start=None, stop=None):
@@ -79,14 +91,14 @@ def read_output(f, start=None, stop=None):
     f = open(f, 'r')
 
     #remove the header, get relevant info from header
-    comass, comom, has_bodies_tag, old_format = remove_header(f)
+    comass, comom, has_bodies_tag, old_format, lmc_pos, lmc_vel, haslmc_header_lines = remove_header(f)
 
     # Adjust file length for progress bar to account for header lines
     if progress_bars:
         if old_format:
             header_lines = 6 if has_bodies_tag else 5
         else:
-            header_lines = 5 if has_bodies_tag else 4
+            header_lines = 5 if has_bodies_tag else 4 + haslmc_header_lines
         flen -= header_lines
 
     if has_bodies_tag: #have to account for the </bodies> tag at the end of the file
@@ -167,7 +179,11 @@ def read_output(f, start=None, stop=None):
         'center_of_mass': comass,
         'center_of_momentum': comom
     }
-    
+    if lmc_pos is not None:
+        timestep_kwargs['lmc_position'] = lmc_pos
+    if lmc_vel is not None:
+        timestep_kwargs['lmc_velocity'] = lmc_vel
+
     # Map data to kwargs for Timestep class
     for col_name in column_names:
         # Handle special cases for column name mapping
