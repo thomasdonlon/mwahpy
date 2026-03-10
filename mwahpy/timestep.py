@@ -242,8 +242,8 @@ class Timestep():
 
         #the positions and velocities have not changed since updating
         #(since we just updated)
-        changed_pos = False
-        changed_vel = False
+        self.changed_pos = False
+        self.changed_vel = False
 
         if verbose:
             print('Done updating')
