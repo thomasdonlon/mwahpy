@@ -252,18 +252,14 @@ class Timestep():
     #this can't be done by iterating over the object, since comass etc. have to be copied as well
     def copy(self):
         out = Timestep()
-        if self.have_basic: #these set the proper flags and index_list, etc. but don't cost computation time
-            out.calc_basic()
-        if self.have_rvpm:
-            out.calc_rvpm()
-        if self.have_energy:
-            out.calc_energy()
-        for key in self.__dict__.keys():
-            if type(out[str(key)]) == type(np.array([])) or type(out[str(key)]) == type([]):
-                out[str(key)] = self[str(key)].copy()
+        for key in list(self.__dict__.keys()):
+            val = self.__dict__[key]
+            if isinstance(val, np.ndarray):
+                out.__dict__[key] = val.copy()
+            elif isinstance(val, list):
+                out.__dict__[key] = list(val)
             else:
-                out[str(key)] = self[str(key)]
-
+                out.__dict__[key] = val
         return out
 
     #---------------------------------------------------------------------------
