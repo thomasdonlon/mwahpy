@@ -836,7 +836,7 @@ def eq_to_OC_koposov2019(ra, dec):
 
     M3 = np.matmul(k19_rotmat,M2)
 
-    phi1 = np.arctan2(M3[0],M3[1])*180/np.pi
+    phi1 = np.arctan2(M3[1],M3[0])*180/np.pi
     phi2 = np.arcsin(M3[2])*180/np.pi
 
     return phi1, phi2
@@ -858,7 +858,7 @@ def OC_to_eq_koposov2019(phi1, phi2):
 
     M3 = np.matmul(M1,M2)
 
-    ra = np.arctan2(M3[0],M3[1])*180/np.pi
+    ra = np.arctan2(M3[1],M3[0])*180/np.pi
     dec = np.arcsin(M3[2])*180/np.pi
 
     return ra, dec

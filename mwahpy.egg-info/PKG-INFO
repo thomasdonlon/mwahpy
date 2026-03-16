@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: mwahpy
-Version: 2.1.0
+Version: 2.1.4
 Summary: A python package for easily parsing and processing data from MilkyWay@home
 Home-page: https://github.com/thomasdonlon/mwahpy
 Author: Tom Donlon
@@ -24,6 +24,8 @@ Requires-Dist: pandas
 NOTE: MWAHPY HAS ENTERED LONG-TERM LEGACY SUPPORT (V2.0.0+). PULL REQUESTS WILL BE REVIEWED AND MERGED IF POSSIBLE, BUT I AM NO LONGER PLANNING ON IMPLEMENTING NEW FEATURES FOR THE CODE BASE. 
 
 Copyright Tom Donlon, 2020 RPI
+
+Significant work also done by Kevin Roux (Kevnroux)
 
 github user: thomasdonlon
 
@@ -119,5 +121,4 @@ MINOR:
 ISSUES
 ========================================
 
-- current pypi repo dist doesn't automatically install pandas on install. This is easily fixed by installing pandas yourself if it is not already installed. It has been fixed in the current github version of the code. 
 - output_handler.make_nbody_input() has to set all particles types to dark matter. This is because MilkyWay@home N-Body can only read .in files that only contain dark matter (#ignore = 1) files. This is more of a bug in the N-Body client than mwahpy, but doesn't change the physics at all. 

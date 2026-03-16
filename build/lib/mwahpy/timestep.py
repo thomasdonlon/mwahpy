@@ -242,8 +242,8 @@ class Timestep():
 
         #the positions and velocities have not changed since updating
         #(since we just updated)
-        changed_pos = False
-        changed_vel = False
+        self.changed_pos = False
+        self.changed_vel = False
 
         if verbose:
             print('Done updating')
@@ -252,18 +252,14 @@ class Timestep():
     #this can't be done by iterating over the object, since comass etc. have to be copied as well
     def copy(self):
         out = Timestep()
-        if self.have_basic: #these set the proper flags and index_list, etc. but don't cost computation time
-            out.calc_basic()
-        if self.have_rvpm:
-            out.calc_rvpm()
-        if self.have_energy:
-            out.calc_energy()
-        for key in self.__dict__.keys():
-            if type(out[str(key)]) == type(np.array([])) or type(out[str(key)]) == type([]):
-                out[str(key)] = self[str(key)].copy()
+        for key in list(self.__dict__.keys()):
+            val = self.__dict__[key]
+            if isinstance(val, np.ndarray):
+                out.__dict__[key] = val.copy()
+            elif isinstance(val, list):
+                out.__dict__[key] = list(val)
             else:
-                out[str(key)] = self[str(key)]
-
+                out.__dict__[key] = val
         return out
 
     #---------------------------------------------------------------------------
@@ -286,15 +282,17 @@ class Timestep():
         self.msol = self.mass * struct_to_sol
 
         #position information
-        if not 'r' in self._provided_vals:
+        # Compute r if missing - avoids infinite recursion when in _provided_vals but not __dict__
+        if not 'r' in self._provided_vals or 'r' not in self.__dict__:
             self.r = (self.x**2 + self.y**2 + self.z**2)**0.5
         self.dist = ((self.x + 8)**2 + self.y**2 + self.z**2)**0.5
         self.R = (self.x**2 + self.y**2)**0.5
 
         #galactic coordinate information
-        if not 'l' in self._provided_vals:
+        # Compute l/b if missing - avoids infinite recursion when in _provided_vals but not __dict__
+        if not 'l' in self._provided_vals or 'l' not in self.__dict__:
             self.l = np.arctan2(self.y, self.x + 8)*180/np.pi
-        if not 'b' in self._provided_vals:
+        if not 'b' in self._provided_vals or 'b' not in self.__dict__:
             self.b = np.arcsin(self.z/self.dist)*180/np.pi
 
         #ICRS information
