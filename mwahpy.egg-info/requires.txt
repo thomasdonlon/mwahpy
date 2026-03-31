@@ -1,6 +1,0 @@
-numpy
-galpy
-matplotlib
-astropy
-scipy
-pandas

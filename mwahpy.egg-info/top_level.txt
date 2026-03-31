@@ -1,2 +1,0 @@
-mwahpy
-mwahpy_tests
