@@ -283,16 +283,16 @@ class Timestep():
 
         #position information
         # Compute r if missing - avoids infinite recursion when in _provided_vals but not __dict__
-        if not 'r' in self._provided_vals or 'r' not in self.__dict__:
+        if not 'r' in self._provided_vals or 'r' not in self or self.changed_pos:
             self.r = (self.x**2 + self.y**2 + self.z**2)**0.5
         self.dist = ((self.x + 8)**2 + self.y**2 + self.z**2)**0.5
         self.R = (self.x**2 + self.y**2)**0.5
 
         #galactic coordinate information
         # Compute l/b if missing - avoids infinite recursion when in _provided_vals but not __dict__
-        if not 'l' in self._provided_vals or 'l' not in self.__dict__:
+        if not 'l' in self._provided_vals or 'l' not in self or self.changed_pos:
             self.l = np.arctan2(self.y, self.x + 8)*180/np.pi
-        if not 'b' in self._provided_vals or 'b' not in self.__dict__:
+        if not 'b' in self._provided_vals or 'b' not in self or self.changed_pos:
             self.b = np.arcsin(self.z/self.dist)*180/np.pi
 
         #ICRS information
