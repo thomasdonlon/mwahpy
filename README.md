@@ -101,4 +101,4 @@ MINOR:
 ISSUES
 ========================================
 
-- output_handler.make_nbody_input() has to set all particles types to dark matter. This is because MilkyWay@home N-Body can only read .in files that only contain dark matter (#ignore = 1) files. This is more of a bug in the N-Body client than mwahpy, but doesn't change the physics at all. 
+- No known issues.
